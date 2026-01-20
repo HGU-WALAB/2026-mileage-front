@@ -72,12 +72,9 @@ const ChartSection = ({ compareOption }: { compareOption: string[] }) => {
     return {
       capabilityId: cap.capabilityId,
       capabilityName: cap.capabilityName,
-      '나의 마일리지':
-        cap.capabilityId === 1 ? myMileagePercent : myMileagePercent * 1.5,
-      '비교 대상 평균 마일리지':
-        cap.capabilityId === 1
-          ? otherMileagePercent
-          : otherMileagePercent * 1.5,
+      // ver1에서는 퍼센트 스케일링(예: * 1.5) 없이 "그대로" 표시
+      '나의 마일리지': myMileagePercent,
+      '비교 대상 평균 마일리지': otherMileagePercent,
     };
   });
 
