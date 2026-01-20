@@ -1,6 +1,6 @@
 import { CheckCircleIcon, CheckCircleOutlineIcon } from '@/assets';
 import { Flex, Heading, Text } from '@/components';
-import { personalInfoConsent } from '@/constants/personalInfoConsent';
+import { personalInfoConsent } from '@/pages/mileage/constants/personalInfoConsent';
 import { styled } from '@mui/material';
 
 interface Props {
