@@ -26,7 +26,9 @@ const LogoSection = () => {
 export default LogoSection;
 
 const S = {
-  LogoTitle: styled(Heading)<{ isMobile: boolean }>`
+  LogoTitle: styled(Heading, {
+    shouldForwardProp: prop => prop !== 'isMobile',
+  })<{ isMobile: boolean }>`
     color: ${({ theme }) => theme.palette.white};
     filter: drop-shadow(
       0 4px 16px ${({ theme }) => getOpacityColor(theme.palette.black, 0.5)}

@@ -1,9 +1,11 @@
 import { Flex } from '@/components';
-import { MileageHistoryChartSection, RadarChartSection } from '.';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { useMediaQuery } from '@mui/material';
 
-const ChartSection = () => {
+import ActivityRecommendSection from './ActivityRecommendSection';
+import CapabilityDetailSection from './CapabilityDetailSection';
+
+const RecommendSection = () => {
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
 
   return (
@@ -14,10 +16,13 @@ const ChartSection = () => {
       gap="1rem"
       wrap={isMobile ? 'wrap' : 'nowrap'}
     >
-      <RadarChartSection />
-      <MileageHistoryChartSection />
+      <CapabilityDetailSection />
+
+      <ActivityRecommendSection />
     </Flex.Row>
   );
 };
 
-export default ChartSection;
+export default RecommendSection;
+
+
