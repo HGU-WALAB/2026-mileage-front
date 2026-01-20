@@ -1,4 +1,4 @@
-import { Flex } from '@/components';
+import { Flex, Footer } from '@/components';
 import {
   ChartSection,
   FAQSection,
@@ -29,6 +29,8 @@ const DashboardPage = () => {
       <FAQSection />
 
       {student.studentType === '기타' && <NoAccessLogoutModal />}
+
+      <Footer />
     </Flex.Column>
   );
 };

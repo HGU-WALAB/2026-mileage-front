@@ -1,4 +1,4 @@
-import { Flex, PageErrorFallback } from '@/components';
+import { Flex, Footer, PageErrorFallback } from '@/components';
 import {
   MileageCountSection,
   MileageFilterSection,
@@ -38,6 +38,8 @@ const MileageListPage = () => {
           </ErrorBoundary>
         )}
       </QueryErrorResetBoundary>
+
+      <Footer />
     </Flex.Column>
   );
 };

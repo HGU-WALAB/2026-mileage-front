@@ -4,6 +4,7 @@ export { default as LineChart } from './Chart/LineChart';
 export { default as RadarChart } from './Chart/RadarChart';
 export { default as Drawer } from './Drawer/Drawer';
 export { default as Dropdown } from './Dropdown/Dropdown';
+export { default as Footer } from './Footer/Footer';
 export { default as AuthErrorFallback } from './Error/AuthErrorFallback';
 export { default as CountBoxFallback } from './Error/CountBoxFallback';
 export { default as ErrorBox } from './Error/ErrorBox';

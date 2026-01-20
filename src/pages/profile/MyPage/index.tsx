@@ -1,4 +1,4 @@
-import { Flex, PageErrorFallback } from '@/components';
+import { Flex, Footer, PageErrorFallback } from '@/components';
 import { InfoGuideSection, RefreshUserInfoButton, UserInfoSection } from './components';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -19,6 +19,8 @@ const MyPage = () => {
           </ErrorBoundary>
         )}
       </QueryErrorResetBoundary>
+
+      <Footer />
     </Flex.Column>
   );
 };

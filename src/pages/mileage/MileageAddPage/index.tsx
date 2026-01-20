@@ -1,4 +1,4 @@
-import { Flex } from '@/components';
+import { Flex, Footer } from '@/components';
 import { EtcMileageSection, SubmittedMileageSection } from './components';
 import { pageHeight } from '@/constants/layoutSize';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
@@ -11,6 +11,8 @@ const MileageAddPage = () => {
       <EtcMileageSection />
 
       <SubmittedMileageSection />
+
+      <Footer />
     </Flex.Column>
   );
 };
