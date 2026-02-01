@@ -25,23 +25,27 @@ const ScholarshipApplyPage = () => {
       <MileageBannerSection />
 
       <Flex.Column margin="0 1rem" gap="1rem">
-      <ProcessSection />
+        <ProcessSection />
 
         {isScholarshipDuration ? (
           <>
-      <ConsentSection
-        isAgree={isAgree}
-        handleAgree={setIsAgree}
-        isApplied={isApplied?.isApply ?? 0}
-      />
+            <Flex.Column margin="2rem 0" gap="1rem">
+              <ConsentSection
+                isAgree={isAgree}
+                handleAgree={setIsAgree}
+                isApplied={isApplied?.isApply ?? 0}
+              />
 
-      <ApplySection isAgree={isAgree} />
+              <ApplySection isAgree={isAgree} />
+            </Flex.Column>
           </>
         ) : (
-          <NotScholarshipDurationSection />
+          <Flex.Column margin="2rem 0">
+            <NotScholarshipDurationSection />
+          </Flex.Column>
         )}
 
-      <FAQSection />
+        <FAQSection />
       </Flex.Column>
 
       <Footer />

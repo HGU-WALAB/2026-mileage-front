@@ -12,7 +12,7 @@ const NotScholarshipDurationSection = () => {
         height="50%"
         align="center"
         justify="center"
-        gap="1rem"
+        gap="2rem 0"
       >
         <EmptyBoxImg width={100} height={100} />
         <S.Text as="h3">현재 마일리지 장학금 신청기간이 아닙니다.</S.Text>
