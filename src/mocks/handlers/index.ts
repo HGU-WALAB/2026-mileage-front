@@ -1,3 +1,4 @@
+import { AnnouncementHandlers } from '@/mocks/handlers/announcement';
 import { AuthHandlers } from '@/mocks/handlers/auth';
 import { AwardHandlers } from '@/mocks/handlers/award';
 import { CapabilityHandlers } from '@/mocks/handlers/capability';
@@ -15,5 +16,6 @@ export const handlers = [
   ...FAQHandlers,
   ...AwardHandlers,
   ...GitHubHandlers,
+  ...AnnouncementHandlers,
   ...CommonHandlers,
 ];

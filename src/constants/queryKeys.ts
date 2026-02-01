@@ -13,4 +13,5 @@ export const QUERY_KEYS = {
   award: 'award',
   faq: 'faq',
   githubStatus: 'githubStatus',
+  announcement: 'announcement',
 };
