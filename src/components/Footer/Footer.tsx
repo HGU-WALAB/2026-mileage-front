@@ -4,20 +4,22 @@ import { styled } from '@mui/material';
 const Footer = () => {
   return (
     <S.Container>
-      <Flex.Row justify="space-between" align="center" wrap="wrap" gap="1rem">
-        <Flex.Column gap="0.5rem">
-          <S.ServiceName>마일스톤 시스템</S.ServiceName>
-          <S.Description>
-            한동대학교 SW전공생을 위한 역량 모니터링 서비스
-          </S.Description>
+      <Flex.Column gap="1rem">
+        <Flex.Row align="center" wrap="wrap" gap="1rem" justify="space-between">
+          <Flex.Row align="center" gap="1rem">
+            <S.ServiceName>마일스톤 시스템</S.ServiceName>
+            <S.Description>
+              한동대학교 SW전공생을 위한 역량 모니터링 서비스
+            </S.Description>
+          </Flex.Row>
+          <S.Link href="mailto:pyc50633@handong.edu">문의하기</S.Link>
+        </Flex.Row>
+
+        <Flex.Row align="center" wrap="wrap" gap="1rem">
           <S.Text>© {new Date().getFullYear()} WALAB. All rights reserved.</S.Text>
           <S.Text>Developed by 이유현, 김나임, 최혜림, 권채은, 황유민</S.Text>
-        </Flex.Column>
-
-        <Flex.Column align="flex-end" gap="0.3rem">
-          <S.Link href="mailto:pyc50633@handong.edu">문의하기</S.Link>
-        </Flex.Column>
-      </Flex.Row>
+        </Flex.Row>
+      </Flex.Column>
     </S.Container>
   );
 };
