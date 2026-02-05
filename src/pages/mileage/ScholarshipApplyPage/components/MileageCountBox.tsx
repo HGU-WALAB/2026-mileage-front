@@ -30,10 +30,10 @@ const MileageCountBox = () => {
       isMobile={isMobile}
       pointer
     >
-      <Flex.Row style={{ fontSize: isMobile ? '0.75rem' : '1rem' }}>
+      <Flex.Row style={{ fontSize: isMobile ? '0.75rem' : '1rem', cursor: 'pointer' }}>
         {text}
       </Flex.Row>
-      <Flex.Row align="baseline" gap=".5rem">
+      <Flex.Row align="baseline" gap=".5rem" style={{ cursor: 'pointer' }}>
         <S.CountNumber isMobile={isMobile}>
           {mileageList?.length ?? '-'}
         </S.CountNumber>
