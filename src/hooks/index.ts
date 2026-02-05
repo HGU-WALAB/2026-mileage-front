@@ -12,3 +12,4 @@ export { default as useNewMileageForm } from './useNewMileageForm';
 export { default as useOpenModal } from './useOpenModal';
 export { default as useQueryParams } from './useQueryParams';
 export { default as useScholarshipDuration } from './useScholarshipDuration';
+export { useMaintenanceCheck } from './useMaintenanceCheck';

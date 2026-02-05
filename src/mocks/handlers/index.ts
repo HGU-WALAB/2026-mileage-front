@@ -6,6 +6,7 @@ import { CommonHandlers } from '@/mocks/handlers/common';
 import { FAQHandlers } from '@/mocks/handlers/faq';
 import { GitHubHandlers } from '@/mocks/handlers/github';
 import { MileageHandlers } from '@/mocks/handlers/mileage';
+import { MaintenanceHandlers } from '@/mocks/handlers/maintenance';
 import { ScholarshipHandlers } from '@/mocks/handlers/scholarship';
 
 export const handlers = [
@@ -17,5 +18,6 @@ export const handlers = [
   ...AwardHandlers,
   ...GitHubHandlers,
   ...AnnouncementHandlers,
+  ...MaintenanceHandlers,
   ...CommonHandlers,
 ];
