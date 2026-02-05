@@ -18,7 +18,12 @@ const MileageCountBox = () => {
   });
 
   const handleClick = () => {
-    navigate(ROUTE_PATH.mileageList);
+    const searchParams = new URLSearchParams({
+      semester: currentSemester,
+      done: 'Y',
+    });
+
+    navigate(`${ROUTE_PATH.mileageList}?${searchParams.toString()}`);
   };
 
   const text = isMobile ? '마일리지 건수' : '마일리지 항목 건수';
