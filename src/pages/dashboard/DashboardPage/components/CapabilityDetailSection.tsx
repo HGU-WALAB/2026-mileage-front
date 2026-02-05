@@ -15,7 +15,7 @@ const CapabilityDetailSection = () => {
 
   return (
     <S.Container height="300px" width="100%" padding="1rem" gap=".5rem">
-      <Heading as="h3">나의 역량 상세 세부사항</Heading>
+      <Heading as="h3">나의 역량 세부사항</Heading>
 
       <Flex.Row height="90%" width="100%" justify="center" align="center">
         {isLoading && <LoadingIcon width={100} height={100} />}
@@ -37,6 +37,8 @@ const S = {
     ${boxShadow}
   `,
 };
+
+
 
 
 
