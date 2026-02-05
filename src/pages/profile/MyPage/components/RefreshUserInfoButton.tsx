@@ -1,12 +1,18 @@
 import { Button, Flex } from '@/components';
-import { UpdateSucceedModal } from '.';
+import { UpdateConfirmModal, UpdateSucceedModal } from '.';
 import { useLogin } from '@/hooks';
 import { styled } from '@mui/material';
+import { useState } from 'react';
 
 const RefreshUserInfoButton = () => {
   const { handleHisnetAuth, isLoginSucceed } = useLogin();
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const handleRefreshAuth = () => {
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmUpdate = () => {
     handleHisnetAuth();
   };
 
@@ -16,6 +22,11 @@ const RefreshUserInfoButton = () => {
         label="정보 업데이트하기"
         size="large"
         onClick={handleRefreshAuth}
+      />
+      <UpdateConfirmModal
+        isOpen={isConfirmModalOpen}
+        onConfirm={handleConfirmUpdate}
+        onClose={() => setIsConfirmModalOpen(false)}
       />
       <UpdateSucceedModal isSucceed={isLoginSucceed} />
     </Flex.Row>

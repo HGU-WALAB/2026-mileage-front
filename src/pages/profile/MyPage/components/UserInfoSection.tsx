@@ -5,8 +5,9 @@ import { getDate } from '@/utils/getDate';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { styled, useTheme, useMediaQuery } from '@mui/material';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
+import { useState } from 'react';
 
-import { UpdateSucceedModal } from '.';
+import { UpdateConfirmModal, UpdateSucceedModal } from '.';
 import infoLabels from './InfoLabels';
 
 const UserInfoSection = () => {
@@ -14,6 +15,7 @@ const UserInfoSection = () => {
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const { data: userInfo, isLoading } = useGetUserInfoQuery();
   const { handleHisnetAuth, isLoginSucceed } = useLogin();
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const customOrder = [
     'studentName',
@@ -26,6 +28,10 @@ const UserInfoSection = () => {
   ];
 
   const handleRefreshAuth = () => {
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmUpdate = () => {
     handleHisnetAuth();
   };
 
@@ -76,6 +82,11 @@ const UserInfoSection = () => {
           >
             * 아래 정보는 히즈넷에서 자동으로 가져온 데이터입니다.
           </Text>
+          <UpdateConfirmModal
+            isOpen={isConfirmModalOpen}
+            onConfirm={handleConfirmUpdate}
+            onClose={() => setIsConfirmModalOpen(false)}
+          />
           <UpdateSucceedModal isSucceed={isLoginSucceed} />
         </Flex.Column>
       ) : (
@@ -115,6 +126,11 @@ const UserInfoSection = () => {
               정보 업데이트
             </Text>
           </S.UpdateButton>
+          <UpdateConfirmModal
+            isOpen={isConfirmModalOpen}
+            onConfirm={handleConfirmUpdate}
+            onClose={() => setIsConfirmModalOpen(false)}
+          />
           <UpdateSucceedModal isSucceed={isLoginSucceed} />
         </Flex.Row>
       )}
