@@ -17,13 +17,13 @@ const CapabilityDetailSection = () => {
     <S.Container height="300px" width="100%" padding="1rem" gap=".5rem">
       <Heading as="h3">나의 역량 세부사항</Heading>
 
-      <Flex.Row height="90%" width="100%" justify="center" align="center">
+      <S.ContentWrapper>
         {isLoading && <LoadingIcon width={100} height={100} />}
         {isError && (
           <ErrorBox error={(capabilityQuery.error ?? detailQuery.error) as any} />
         )}
         {!isLoading && !isError && <CapabilityDetailContent />}
-      </Flex.Row>
+      </S.ContentWrapper>
     </S.Container>
   );
 };
@@ -35,6 +35,15 @@ const S = {
     background-color: ${({ theme }) => theme.palette.variant.default};
     border-radius: 1rem;
     ${boxShadow}
+    position: relative;
+  `,
+  ContentWrapper: styled(Flex.Row)`
+    height: 90%;
+    width: 100%;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    overflow: visible;
   `,
 };
 
