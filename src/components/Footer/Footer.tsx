@@ -15,14 +15,7 @@ const Footer = () => {
         </Flex.Column>
 
         <Flex.Column align="flex-end" gap="0.3rem">
-          <S.Link
-            href="https://github.com/HGU-WALAB/2025-mileage-front"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </S.Link>
-          <S.Link href="mailto:HyelimChoi01@gmail.com">문의하기</S.Link>
+          <S.Link href="mailto:pyc50633@handong.edu">문의하기</S.Link>
         </Flex.Column>
       </Flex.Row>
     </S.Container>
