@@ -14,6 +14,9 @@ const ScholarshipApplyPage = React.lazy(
   () => import('@/pages/mileage/ScholarshipApplyPage'),
 );
 const MyPage = React.lazy(() => import('@/pages/profile/MyPage'));
+const SummaryPage = React.lazy(
+  () => import('@/pages/summary/SummaryPage/index'),
+);
 const GitHubCallbackPage = React.lazy(
   () => import('@/pages/profile/GitHubCallbackPage'),
 );
@@ -46,6 +49,10 @@ const router = createBrowserRouter(
         {
           path: ROUTE_PATH.scholarship,
           element: <ScholarshipApplyPage />,
+        },
+        {
+          path: ROUTE_PATH.summary,
+          element: <SummaryPage />,
         },
         {
           path: ROUTE_PATH.myPage,

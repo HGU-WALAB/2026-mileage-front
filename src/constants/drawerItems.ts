@@ -1,4 +1,5 @@
 import {
+  BuildingIcon,
   DashboardBlueIcon,
   DashboardIcon,
   MileageAddBlueIcon,
@@ -44,6 +45,14 @@ export const drawerItems = [
     icon: ScholarshipIcon,
     selectedIcon: ScholarshipBlueIcon,
     route: ROUTE_PATH.scholarship,
+  },
+  {
+    id: 5,
+    text: '활동 요약',
+    shortText: '활동요약',
+    icon: BuildingIcon,
+    selectedIcon: BuildingIcon,
+    route: ROUTE_PATH.summary,
   },
   {
     id: 6,
