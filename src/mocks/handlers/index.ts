@@ -7,6 +7,7 @@ import { FAQHandlers } from '@/mocks/handlers/faq';
 import { GitHubHandlers } from '@/mocks/handlers/github';
 import { MileageHandlers } from '@/mocks/handlers/mileage';
 import { MaintenanceHandlers } from '@/mocks/handlers/maintenance';
+import { PortfolioHandlers } from '@/mocks/handlers/portfolio';
 import { ScholarshipHandlers } from '@/mocks/handlers/scholarship';
 
 export const handlers = [
@@ -19,5 +20,6 @@ export const handlers = [
   ...GitHubHandlers,
   ...AnnouncementHandlers,
   ...MaintenanceHandlers,
+  ...PortfolioHandlers,
   ...CommonHandlers,
 ];

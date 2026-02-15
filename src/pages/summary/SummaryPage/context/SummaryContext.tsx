@@ -1,15 +1,30 @@
 import {
   createContext,
   type ReactNode,
+  useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { toast } from 'react-toastify';
 
+import { getTechStack, putTechStack } from '../../apis/portfolio';
 import {
   DRAGGABLE_SECTION_ORDER,
   type DraggableSectionKey,
 } from '../../constants/constants';
+
+/** 변경사항 반영 대기 시간 (ms). 이 시간 동안 추가 변경이 없으면 PUT 호출 */
+const DEBOUNCE_PUT_MS = 10_000;
+
+/**
+ * 활동 요약 API 패턴:
+ * - GET: 페이지 진입 시(SummaryProvider 마운트) 1회만 호출
+ * - PUT/DELETE: 사용자 변경 후 DEBOUNCE_PUT_MS 동안 변경이 없을 때 1회 호출
+ * - 새 리소스 추가 시: apis/portfolio.ts에 함수 추가 → 여기서 useEffect로 진입 시 GET, 디바운스 후 PUT 연결
+ */
 
 export interface RepoItem {
   repo_id: number;
@@ -160,12 +175,7 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   const [sectionOrder, setSectionOrder] = useState<DraggableSectionKey[]>(
     DRAGGABLE_SECTION_ORDER,
   );
-  const [techStackTags, setTechStackTags] = useState<string[]>([
-    'Java',
-    'Spring Boot',
-    'TypeScript',
-    'React',
-  ]);
+  const [techStackTags, setTechStackTagsState] = useState<string[]>([]);
   const [repos, setRepos] = useState<RepoItem[]>(INITIAL_REPOS);
   const [mileageItems, setMileageItems] = useState<MileageItem[]>(
     INITIAL_MILEAGE,
@@ -174,6 +184,40 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     INITIAL_ACTIVITIES,
   );
   const [activitiesNextId, setActivitiesNextId] = useState(2);
+
+  const techStackUserModifiedRef = useRef(false);
+  const setTechStackTags = useCallback(
+    (v: string[] | ((p: string[]) => string[])) => {
+      techStackUserModifiedRef.current = true;
+      setTechStackTagsState(v);
+    },
+    [],
+  );
+
+  /** 활동 요약 페이지 진입 시 GET 1회 */
+  useEffect(() => {
+    getTechStack()
+      .then(res => {
+        setTechStackTagsState(res.tech_stack ?? []);
+      })
+      .catch(() => {
+        toast.error('기술 스택을 불러오지 못했습니다.');
+      });
+  }, []);
+
+  /** 기술 스택 변경 시 10초 디바운스 후 PUT */
+  useEffect(() => {
+    if (!techStackUserModifiedRef.current) return;
+
+    const id = window.setTimeout(() => {
+      putTechStack({ tech_stack: techStackTags })
+        .catch(() => {
+          toast.error('기술 스택 저장에 실패했습니다.');
+        });
+    }, DEBOUNCE_PUT_MS);
+
+    return () => window.clearTimeout(id);
+  }, [techStackTags]);
 
   const value = useMemo<SummaryState>(
     () => ({
@@ -193,6 +237,7 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     [
       sectionOrder,
       techStackTags,
+      setTechStackTags,
       repos,
       mileageItems,
       activities,

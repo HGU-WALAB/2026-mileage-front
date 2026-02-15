@@ -22,4 +22,6 @@ export const ENDPOINT = {
   GITHUB_CALLBACK: `/api/mileage/auth/github/callback`,
   // announcement
   ANNOUNCEMENT: `/api/mileage/announcement`,
+  // portfolio (활동 요약)
+  PORTFOLIO_TECH_STACK: `/api/portfolio/tech-stack`,
 };
