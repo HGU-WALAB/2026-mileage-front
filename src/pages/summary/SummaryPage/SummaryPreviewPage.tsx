@@ -9,10 +9,13 @@ import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Button as MuiButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { SECTION_TITLES, type DraggableSectionKey } from '../constants/constants';
 import { useSummaryContext } from './context/SummaryContext';
+import { buildSummaryMarkdown } from './utils/buildSummaryMarkdown';
 import {
   ActivitiesSectionContent,
   MileageSectionContent,
@@ -32,7 +35,29 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
 const SummaryPreviewPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약 미리보기' });
   const navigate = useNavigate();
-  const { sectionOrder } = useSummaryContext();
+  const {
+    sectionOrder,
+    techStackTags,
+    repos,
+    mileageItems,
+    activities,
+  } = useSummaryContext();
+
+  const handleCopyMarkdown = useCallback(async () => {
+    const markdown = buildSummaryMarkdown({
+      sectionOrder,
+      techStackTags,
+      repos,
+      mileageItems,
+      activities,
+    });
+    try {
+      await navigator.clipboard.writeText(markdown);
+      toast.success('마크다운이 클립보드에 복사되었습니다.');
+    } catch {
+      toast.error('클립보드 복사에 실패했습니다.');
+    }
+  }, [sectionOrder, techStackTags, repos, mileageItems, activities]);
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
@@ -60,14 +85,14 @@ const SummaryPreviewPage = () => {
           편집
         </S.EditButton>
         <Button
-          label="PDF"
+          label="마크다운"
           variant="contained"
           color="blue"
           size="medium"
           icon={DownloadIcon}
           iconPosition="start"
           style={{ width: '7.5rem' }}
-          onClick={() => {}}
+          onClick={handleCopyMarkdown}
         />
       </S.ButtonRow>
       <UserInfoSectionContent />

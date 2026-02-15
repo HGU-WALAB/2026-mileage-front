@@ -10,6 +10,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import SearchIcon from '@mui/icons-material/Search';
 import { useCallback, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import {
   DRAGGABLE_SECTION_ORDER,
@@ -24,6 +25,8 @@ import {
   TechStackSectionContent,
   UserInfoSectionContent,
 } from './components';
+import { useSummaryContext } from './context/SummaryContext';
+import { buildSummaryMarkdown } from './utils/buildSummaryMarkdown';
 
 const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   tech_stack: <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
@@ -34,6 +37,12 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
 
 const SummaryPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약' });
+  const {
+    techStackTags,
+    repos,
+    mileageItems,
+    activities,
+  } = useSummaryContext();
   const [sectionOrder, setSectionOrder] = useState<DraggableSectionKey[]>(
     DRAGGABLE_SECTION_ORDER,
   );
@@ -97,6 +106,22 @@ const SummaryPage = () => {
     }
   };
 
+  const handleCopyMarkdown = useCallback(async () => {
+    const markdown = buildSummaryMarkdown({
+      sectionOrder,
+      techStackTags,
+      repos,
+      mileageItems,
+      activities,
+    });
+    try {
+      await navigator.clipboard.writeText(markdown);
+      toast.success('마크다운이 클립보드에 복사되었습니다.');
+    } catch {
+      toast.error('클립보드 복사에 실패했습니다.');
+    }
+  }, [sectionOrder, techStackTags, repos, mileageItems, activities]);
+
   const repoHeaderRight = (
     <S.SearchInputWrap>
       <SearchIcon sx={{ fontSize: 18, color: palette.grey500 }} />
@@ -116,14 +141,14 @@ const SummaryPage = () => {
           미리보기
         </S.PreviewButton>
         <Button
-          label="PDF"
+          label="마크다운"
           variant="contained"
           color="blue"
           size="medium"
           icon={DownloadIcon}
           iconPosition="start"
           style={{ width: '7.5rem' }}
-          onClick={() => {}}
+          onClick={handleCopyMarkdown}
         />
       </S.ButtonRow>
       <UserInfoSectionContent />
