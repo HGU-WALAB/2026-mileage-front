@@ -5,6 +5,7 @@ import AsteriskIcon from '@/assets/icons/asterisk.svg?react';
 import AwardListIcon from '@/assets/icons/awardList.svg?react';
 import AwardListBlueIcon from '@/assets/icons/awardListBlue.svg?react';
 import BuildingIcon from '@/assets/icons/other.svg?react';
+import BuildingBlueIcon from '@/assets/icons/otherBlue.svg?react';
 import CheckIcon from '@/assets/icons/check.svg?react';
 import CheckBoxIcon from '@/assets/icons/checkBox.svg?react';
 import CheckCircleIcon from '@/assets/icons/checkCircle.svg?react';
@@ -54,6 +55,7 @@ export {
   AwardListBlueIcon,
   AwardListIcon,
   BackgroundImg,
+  BuildingBlueIcon,
   BuildingIcon,
   CheckBoxIcon,
   CheckCircleIcon,

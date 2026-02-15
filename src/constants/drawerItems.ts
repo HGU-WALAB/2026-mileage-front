@@ -1,4 +1,5 @@
 import {
+  BuildingBlueIcon,
   BuildingIcon,
   DashboardBlueIcon,
   DashboardIcon,
@@ -51,7 +52,7 @@ export const drawerItems = [
     text: '활동 요약',
     shortText: '활동요약',
     icon: BuildingIcon,
-    selectedIcon: BuildingIcon,
+    selectedIcon: BuildingBlueIcon,
     route: ROUTE_PATH.summary,
   },
   {
