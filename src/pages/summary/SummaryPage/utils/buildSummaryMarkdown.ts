@@ -1,4 +1,5 @@
 import type { DraggableSectionKey } from '../../constants/constants';
+import type { UserInfoResponse } from '../../apis/portfolio';
 import type {
   ActivityItem,
   MileageItem,
@@ -8,6 +9,7 @@ import { SECTION_TITLES } from '../../constants/constants';
 
 /** 미리보기에 보여지는 데이터만 사용해 마크다운 문자열 생성 */
 export interface BuildSummaryMarkdownParams {
+  userInfo: UserInfoResponse | null;
   sectionOrder: DraggableSectionKey[];
   techStackTags: string[];
   repos: RepoItem[];
@@ -15,25 +17,31 @@ export interface BuildSummaryMarkdownParams {
   activities: ActivityItem[];
 }
 
-/** 유저 정보는 현재 하드코딩 (추후 API 연동 시 파라미터로 받기) */
-const DEFAULT_USER = {
-  name: '홍길동 (김길동)',
-  bio: 'CS student',
-  major: '전공1 / 전공2',
-};
-
 function escapeMarkdown(text: string): string {
   return text.replace(/([\\`*_[#!|])/g, '\\$1');
 }
 
-function sectionUserInfo(): string {
-  const { name, bio, major } = DEFAULT_USER;
+function sectionUserInfo(userInfo: UserInfoResponse | null): string {
+  const name = userInfo?.name?.trim() ?? '-';
+  const bio = userInfo?.bio?.trim() ?? '';
+  const department = userInfo?.department?.trim() ?? '';
+  const major1 = userInfo?.major1?.trim() ?? '';
+  const major2 = userInfo?.major2?.trim() ?? '';
+  const majorLine = [major1, major2].filter(Boolean).join(' / ') || '-';
+  const departmentMajorLine =
+    department !== '' ? `${department} ${majorLine}` : majorLine;
+  const grade = userInfo?.grade;
+  const semester = userInfo?.semester;
+  const gradeSemester =
+    grade != null && semester != null
+      ? ` (${grade}학년 ${semester}학기)`
+      : '';
+
   const lines: string[] = [
     `# ${escapeMarkdown(name)}`,
     '',
-    `**${escapeMarkdown(bio)}**`,
-    '',
-    escapeMarkdown(major),
+    ...(bio ? [`**${escapeMarkdown(bio)}**`, ''] : []),
+    escapeMarkdown(departmentMajorLine) + (gradeSemester ? escapeMarkdown(gradeSemester) : ''),
   ];
   return lines.join('\n');
 }
@@ -93,7 +101,7 @@ const SECTION_BUILDERS: Record<
  * 미리보기와 동일한 내용(유저 정보 + 선택된 섹션 순서·표시 항목)을 마크다운 문자열로 반환
  */
 export function buildSummaryMarkdown(params: BuildSummaryMarkdownParams): string {
-  const parts: string[] = [sectionUserInfo(), ''];
+  const parts: string[] = [sectionUserInfo(params.userInfo), ''];
 
   for (const key of params.sectionOrder) {
     const builder = SECTION_BUILDERS[key as DraggableSectionKey];

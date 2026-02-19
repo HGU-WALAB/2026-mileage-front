@@ -60,6 +60,7 @@ const SummaryEditPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약' });
   const navigate = useNavigate();
   const {
+    userInfo,
     sectionOrder,
     setSectionOrder,
     techStackTags,
@@ -139,6 +140,7 @@ const SummaryEditPage = () => {
     let markdown: string;
     try {
       markdown = buildSummaryMarkdown({
+        userInfo,
         sectionOrder,
         techStackTags,
         repos,
@@ -166,7 +168,7 @@ const SummaryEditPage = () => {
     } catch {
       toast.error('클립보드 복사에 실패했습니다.');
     }
-  }, [sectionOrder, techStackTags, repos, mileageItems, activities]);
+  }, [userInfo, sectionOrder, techStackTags, repos, mileageItems, activities]);
 
   const repoHeaderRight =
     hasGithub ? (
