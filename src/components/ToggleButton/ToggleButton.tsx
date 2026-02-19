@@ -34,7 +34,7 @@ const ToggleButton = ({
       variant={variant}
       value={value}
       disabled={disabled}
-      size={size}
+      size={size === 'xlarge' ? 'large' : size}
       sx={{
         whiteSpace: 'nowrap',
         overflow: 'visible',

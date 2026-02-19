@@ -31,7 +31,13 @@ const Button = ({
     <MuiButton
       variant={variant}
       disabled={disabled}
-      size={size === 'full' ? 'medium' : size}
+      size={
+        size === 'full'
+          ? 'medium'
+          : size === 'xlarge'
+            ? 'large'
+            : size
+      }
       sx={{
         backgroundColor: variant === 'contained' ? baseColor : 'transparent',
         borderColor: variant === 'outlined' ? baseColor : 'transparent',
