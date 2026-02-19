@@ -1,4 +1,8 @@
 import type { DraggableSectionKey } from '../../constants/constants';
+import {
+  INPUT_DATA_LABEL,
+  PORTFOLIO_PROMPT_TEMPLATE,
+} from '../../constants/promptTemplate';
 import type { UserInfoResponse } from '../../apis/portfolio';
 import type {
   ActivityItem,
@@ -98,7 +102,8 @@ const SECTION_BUILDERS: Record<
 };
 
 /**
- * 미리보기와 동일한 내용(유저 정보 + 선택된 섹션 순서·표시 항목)을 마크다운 문자열로 반환
+ * 미리보기와 동일한 내용(유저 정보 + 선택된 섹션 순서·표시 항목)을 마크다운 문자열로 반환.
+ * 프롬프트 템플릿 + [입력 데이터] + 실제 데이터 순으로 붙여 반환.
  */
 export function buildSummaryMarkdown(params: BuildSummaryMarkdownParams): string {
   const parts: string[] = [sectionUserInfo(params.userInfo), ''];
@@ -112,5 +117,12 @@ export function buildSummaryMarkdown(params: BuildSummaryMarkdownParams): string
     }
   }
 
-  return parts.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const dataMarkdown = parts.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return [
+    PORTFOLIO_PROMPT_TEMPLATE,
+    '',
+    INPUT_DATA_LABEL,
+    '',
+    dataMarkdown,
+  ].join('\n');
 }
