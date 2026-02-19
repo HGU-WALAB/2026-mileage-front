@@ -23,6 +23,7 @@ const ActivitiesSectionContent = ({
   const {
     activities,
     setActivities,
+    deleteActivity,
     activitiesNextId,
     setActivitiesNextId,
   } = useSummaryContext();
@@ -38,7 +39,7 @@ const ActivitiesSectionContent = ({
       end_date: new Date().toISOString().slice(0, 10),
     };
     setActivities(prev => [newItem, ...prev]);
-    setActivitiesNextId(prev => prev + 1);
+    setActivitiesNextId(prev => prev - 1);
     setEditingId(newItem.id);
     setEditDraft(newItem);
   }, [activitiesNextId, setActivities, setActivitiesNextId]);
@@ -74,13 +75,13 @@ const ActivitiesSectionContent = ({
 
   const handleDelete = useCallback(
     (id: number) => {
-      setActivities(prev => prev.filter(a => a.id !== id));
+      deleteActivity(id);
       if (editingId === id) {
         setEditingId(null);
         setEditDraft({});
       }
     },
-    [editingId, setActivities],
+    [editingId, deleteActivity],
   );
 
   return (

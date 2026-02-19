@@ -1,5 +1,5 @@
 import { DownloadIcon } from '@/assets';
-import { Button, Flex, Footer } from '@/components';
+import { Button, Flex, Footer, Text } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
@@ -137,25 +137,30 @@ const SummaryEditPage = () => {
 
   return (
     <Flex.Column margin="1rem" gap="1.5rem">
-      <S.ButtonRow justify="flex-end" gap="0.5rem">
-        <S.PreviewButton
-          variant="outlined"
-          size="medium"
-          onClick={() => navigate(ROUTE_PATH.summaryPreview)}
-        >
-          미리보기
-        </S.PreviewButton>
-        <Button
-          label="마크다운"
-          variant="contained"
-          color="blue"
-          size="medium"
-          icon={DownloadIcon}
-          iconPosition="start"
-          style={{ width: '7.5rem' }}
-          onClick={handleCopyMarkdown}
-        />
-      </S.ButtonRow>
+      <S.TopRow align="center" justify="space-between" gap="1rem" wrap="wrap">
+        <S.GuideText>
+          포트폴리오를 제작하기 위한 페이지입니다. 아래 항목을 통해
+          포트폴리오가 생성됩니다.
+        </S.GuideText>
+        <S.ButtonGroup gap="0.5rem">
+          <S.PreviewButton
+            variant="outlined"
+            size="large"
+            onClick={() => navigate(ROUTE_PATH.summaryPreview)}
+          >
+            미리보기
+          </S.PreviewButton>
+          <Button
+            label="프롬프트 복사"
+            variant="contained"
+            color="blue"
+            size="large"
+            icon={DownloadIcon}
+            iconPosition="start"
+            onClick={handleCopyMarkdown}
+          />
+        </S.ButtonGroup>
+      </S.TopRow>
       <UserInfoSectionContent />
       <Flex.Column gap="1rem">
         {sectionOrder.map(key => (
@@ -202,9 +207,25 @@ const S = {
       }
     }
   `,
-  ButtonRow: styled(Flex.Row)`
+  TopRow: styled(Flex.Row)`
     margin-bottom: 0.5rem;
     width: 100%;
+  `,
+  GuideText: styled(Text)`
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+    color: ${palette.grey600};
+    background-color: ${palette.blue300};
+    border-left: 3px solid ${palette.blue500};
+    border-radius: 0 0.5rem 0.5rem 0;
+    flex: 1 1 16rem;
+    min-width: 0;
+  `,
+  ButtonGroup: styled(Flex.Row)`
+    flex-shrink: 0;
   `,
   PreviewButton: styled(MuiButton)`
     width: 7.5rem;

@@ -24,4 +24,6 @@ export const ENDPOINT = {
   ANNOUNCEMENT: `/api/mileage/announcement`,
   // portfolio (활동 요약)
   PORTFOLIO_TECH_STACK: `/api/portfolio/tech-stack`,
+  PORTFOLIO_ACTIVITIES: `/api/portfolio/activities`,
+  PORTFOLIO_USER_INFO: `/api/portfolio/user-info`,
 };

@@ -10,20 +10,30 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 
-import { getTechStack, putTechStack } from '../../apis/portfolio';
+import {
+  deleteActivity as deleteActivityApi,
+  getActivities,
+  getTechStack,
+  getUserInfo,
+  postActivity,
+  putActivity as putActivityApi,
+  putTechStack,
+} from '../../apis/portfolio';
+import type { UserInfoResponse } from '../../apis/portfolio';
 import {
   DRAGGABLE_SECTION_ORDER,
   type DraggableSectionKey,
 } from '../../constants/constants';
 
-/** 변경사항 반영 대기 시간 (ms). 이 시간 동안 추가 변경이 없으면 PUT 호출 */
+/** 변경사항 반영 대기 시간 (ms). 이 시간 동안 추가 변경이 있으면 PUT/POST/DELETE 호출 */
 const DEBOUNCE_PUT_MS = 10_000;
 
 /**
  * 활동 요약 API 패턴:
  * - GET: 페이지 진입 시(SummaryProvider 마운트) 1회만 호출
- * - PUT/DELETE: 사용자 변경 후 DEBOUNCE_PUT_MS 동안 변경이 없을 때 1회 호출
- * - 새 리소스 추가 시: apis/portfolio.ts에 함수 추가 → 여기서 useEffect로 진입 시 GET, 디바운스 후 PUT 연결
+ * - PUT/DELETE/POST: 변경사항이 있을 때 10초(DEBOUNCE_PUT_MS) 동안 추가 변경이 없으면,
+ *   그때 모아둔 변경사항을 한꺼번에 API로 전송 (DELETE → POST → PUT 순)
+ * - 새 리소스 추가 시: apis/portfolio.ts에 함수 추가 → 여기서 진입 시 GET, 디바운스 후 flush에서 함께 호출
  */
 
 export interface RepoItem {
@@ -53,6 +63,21 @@ export interface ActivityItem {
   description: string;
   start_date: string;
   end_date: string;
+  /** API 응답용. 0이 맨 위. 로컬 추가분은 없을 수 있음 */
+  display_order?: number;
+}
+
+function apiActivityToItem(
+  a: import('../../apis/portfolio').ActivityApiItem,
+): ActivityItem {
+  return {
+    id: a.id,
+    title: a.title,
+    description: a.description,
+    start_date: a.start_date,
+    end_date: a.end_date,
+    display_order: a.display_order,
+  };
 }
 
 const INITIAL_REPOS: RepoItem[] = [
@@ -132,17 +157,11 @@ const INITIAL_MILEAGE: MileageItem[] = [
   },
 ];
 
-const INITIAL_ACTIVITIES: ActivityItem[] = [
-  {
-    id: 1,
-    title: '교내 해커톤 대상',
-    description: '소프트웨어 중심대학',
-    start_date: '2024-01-01',
-    end_date: '2024-06-30',
-  },
-];
+export type UserInfo = UserInfoResponse;
 
 export interface SummaryState {
+  userInfo: UserInfo | null;
+  setUserInfo: (v: UserInfo | null | ((p: UserInfo | null) => UserInfo | null)) => void;
   sectionOrder: DraggableSectionKey[];
   setSectionOrder: (v: DraggableSectionKey[] | ((p: DraggableSectionKey[]) => DraggableSectionKey[])) => void;
   techStackTags: string[];
@@ -153,6 +172,8 @@ export interface SummaryState {
   setMileageItems: (v: MileageItem[] | ((p: MileageItem[]) => MileageItem[])) => void;
   activities: ActivityItem[];
   setActivities: (v: ActivityItem[] | ((p: ActivityItem[]) => ActivityItem[])) => void;
+  /** 서버에 반영할 삭제는 deleteActivity로 호출 (디바운스 후 DELETE API) */
+  deleteActivity: (id: number) => void;
   activitiesNextId: number;
   setActivitiesNextId: (v: number | ((p: number) => number)) => void;
 }
@@ -172,6 +193,7 @@ interface SummaryProviderProps {
 }
 
 export const SummaryProvider = ({ children }: SummaryProviderProps) => {
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [sectionOrder, setSectionOrder] = useState<DraggableSectionKey[]>(
     DRAGGABLE_SECTION_ORDER,
   );
@@ -180,12 +202,13 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   const [mileageItems, setMileageItems] = useState<MileageItem[]>(
     INITIAL_MILEAGE,
   );
-  const [activities, setActivities] = useState<ActivityItem[]>(
-    INITIAL_ACTIVITIES,
-  );
-  const [activitiesNextId, setActivitiesNextId] = useState(2);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [activitiesNextId, setActivitiesNextId] = useState(-1);
 
   const techStackUserModifiedRef = useRef(false);
+  const activitiesDeletedIdsRef = useRef<Set<number>>(new Set());
+  const activitiesFirstRunAfterLoadRef = useRef(true);
+
   const setTechStackTags = useCallback(
     (v: string[] | ((p: string[]) => string[])) => {
       techStackUserModifiedRef.current = true;
@@ -193,6 +216,14 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     },
     [],
   );
+
+  /** 서버 id인 활동 삭제 시 디바운스 flush에서 DELETE 호출하도록 기록 */
+  const deleteActivity = useCallback((id: number) => {
+    if (id > 0) {
+      activitiesDeletedIdsRef.current.add(id);
+    }
+    setActivities(prev => prev.filter(a => a.id !== id));
+  }, []);
 
   /** 활동 요약 페이지 진입 시 GET 1회 */
   useEffect(() => {
@@ -202,6 +233,25 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       })
       .catch(() => {
         toast.error('기술 스택을 불러오지 못했습니다.');
+      });
+
+    getActivities()
+      .then(res => {
+        const list = res.activities ?? [];
+        const sorted = [...list].sort(
+          (a, b) => a.display_order - b.display_order,
+        );
+        setActivities(sorted.map(apiActivityToItem));
+        activitiesFirstRunAfterLoadRef.current = true;
+      })
+      .catch(() => {
+        toast.error('활동 목록을 불러오지 못했습니다.');
+      });
+
+    getUserInfo()
+      .then(res => setUserInfo(res))
+      .catch(() => {
+        toast.error('유저 정보를 불러오지 못했습니다.');
       });
   }, []);
 
@@ -219,8 +269,75 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     return () => window.clearTimeout(id);
   }, [techStackTags]);
 
+  /** 활동 변경 시 10초 디바운스 후 DELETE → POST(신규) → PUT(기존) */
+  useEffect(() => {
+    if (activitiesFirstRunAfterLoadRef.current) {
+      activitiesFirstRunAfterLoadRef.current = false;
+      return;
+    }
+
+    const id = window.setTimeout(async () => {
+      const deletedIds = new Set(activitiesDeletedIdsRef.current);
+      activitiesDeletedIdsRef.current.clear();
+
+      for (const activityId of deletedIds) {
+        try {
+          await deleteActivityApi(activityId);
+        } catch {
+          toast.error('활동 삭제에 실패했습니다.');
+        }
+      }
+
+      const current = activities;
+      const toPost = current.filter(a => a.id < 0);
+      const toPut = current.filter(a => a.id > 0);
+
+      if (toPost.length > 0) {
+        try {
+          const posted: import('../../apis/portfolio').ActivityApiItem[] =
+            await Promise.all(
+              toPost.map(a =>
+                postActivity({
+                  title: a.title,
+                  description: a.description,
+                  start_date: a.start_date,
+                  end_date: a.end_date,
+                }),
+              ),
+            );
+          const newIds = new Set(toPost.map(a => a.id));
+          let i = 0;
+          setActivities(prev =>
+            prev.map(x =>
+              newIds.has(x.id) ? apiActivityToItem(posted[i++]) : x,
+            ),
+          );
+        } catch {
+          toast.error('활동 추가에 실패했습니다.');
+        }
+      }
+
+      for (const a of toPut) {
+        try {
+          await putActivityApi(a.id, {
+            title: a.title,
+            description: a.description,
+            start_date: a.start_date,
+            end_date: a.end_date,
+          });
+        } catch {
+          toast.error('활동 수정에 실패했습니다.');
+        }
+      }
+    }, DEBOUNCE_PUT_MS);
+
+    return () => window.clearTimeout(id);
+  }, [activities]);
+
   const value = useMemo<SummaryState>(
     () => ({
+      userInfo,
+      setUserInfo,
       sectionOrder,
       setSectionOrder,
       techStackTags,
@@ -231,16 +348,19 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       setMileageItems,
       activities,
       setActivities,
+      deleteActivity,
       activitiesNextId,
       setActivitiesNextId,
     }),
     [
+      userInfo,
       sectionOrder,
       techStackTags,
       setTechStackTags,
       repos,
       mileageItems,
       activities,
+      deleteActivity,
       activitiesNextId,
     ],
   );

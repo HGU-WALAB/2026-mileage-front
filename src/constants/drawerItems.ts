@@ -49,8 +49,8 @@ export const drawerItems = [
   },
   {
     id: 5,
-    text: '활동 요약',
-    shortText: '활동요약',
+    text: '포트폴리오 생성',
+    shortText: '포트폴리오',
     icon: BuildingIcon,
     selectedIcon: BuildingBlueIcon,
     route: ROUTE_PATH.summary,
