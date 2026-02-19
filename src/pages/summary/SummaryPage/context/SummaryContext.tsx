@@ -14,6 +14,7 @@ import {
   deleteActivity as deleteActivityApi,
   getActivities,
   getGitHubReposWithFallback,
+  getPortfolioSettings,
   getRepositories,
   getTechStack,
   getUserInfo,
@@ -201,6 +202,21 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
 
   /** 활동 요약 페이지 진입 시 GET 1회 */
   useEffect(() => {
+    getPortfolioSettings()
+      .then(res => {
+        const order = res.section_order ?? [];
+        const validKeys = order.filter((k): k is DraggableSectionKey =>
+          DRAGGABLE_SECTION_ORDER.includes(k as DraggableSectionKey),
+        );
+        const missing = DRAGGABLE_SECTION_ORDER.filter(k => !validKeys.includes(k));
+        if (validKeys.length > 0) {
+          setSectionOrder([...validKeys, ...missing]);
+        }
+      })
+      .catch(() => {
+        // 설정 조회 실패 시 기본 순서 유지
+      });
+
     getTechStack()
       .then(res => {
         setTechStackTagsState(res.tech_stack ?? []);

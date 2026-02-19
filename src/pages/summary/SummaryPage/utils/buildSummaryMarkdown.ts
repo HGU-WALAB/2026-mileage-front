@@ -40,7 +40,7 @@ function sectionUserInfo(): string {
 
 function sectionTechStack(tags: string[]): string {
   if (tags.length === 0) return '';
-  const title = SECTION_TITLES.tech_stack;
+  const title = SECTION_TITLES.tech;
   const tagList = tags.map(t => `- ${escapeMarkdown(t)}`).join('\n');
   return `## ${escapeMarkdown(title)}\n\n${tagList}`;
 }
@@ -83,7 +83,7 @@ const SECTION_BUILDERS: Record<
   DraggableSectionKey,
   (params: BuildSummaryMarkdownParams) => string
 > = {
-  tech_stack: p => sectionTechStack(p.techStackTags),
+  tech: p => sectionTechStack(p.techStackTags),
   repo: p => sectionRepos(p.repos),
   mileage: p => sectionMileage(p.mileageItems),
   activities: p => sectionActivities(p.activities),

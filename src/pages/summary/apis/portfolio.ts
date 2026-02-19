@@ -9,6 +9,34 @@ export interface TechStackPutRequest {
   tech_stack: string[];
 }
 
+/** 활동 요약 - 설정 (섹션 순서) */
+export interface PortfolioSettingsResponse {
+  section_order: string[];
+}
+
+export interface PortfolioSettingsPutRequest {
+  section_order: string[];
+}
+
+/** 활동 요약 - 설정 조회 (페이지 진입 시 1회) */
+export const getPortfolioSettings = async () => {
+  const response = await http.get<PortfolioSettingsResponse>(
+    ENDPOINT.PORTFOLIO_SETTINGS,
+  );
+  return response;
+};
+
+/** 활동 요약 - 설정 수정 (섹션 순서 변경 시) */
+export const putPortfolioSettings = async (
+  body: PortfolioSettingsPutRequest,
+) => {
+  const response = await http.put<
+    PortfolioSettingsPutRequest,
+    PortfolioSettingsResponse
+  >(ENDPOINT.PORTFOLIO_SETTINGS, body);
+  return response;
+};
+
 /** API 활동 한 건 (display_order: 0이 맨 위) */
 export interface ActivityApiItem {
   id: number;

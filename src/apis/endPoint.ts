@@ -28,4 +28,5 @@ export const ENDPOINT = {
   PORTFOLIO_USER_INFO: `/api/portfolio/user-info`,
   PORTFOLIO_REPOSITORIES: `/api/portfolio/repositories`,
   PORTFOLIO_GITHUB_REPOS: `/api/portfolio/github/repos`,
+  PORTFOLIO_SETTINGS: `/api/portfolio/settings`,
 };

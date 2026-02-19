@@ -13,6 +13,7 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
+import { putPortfolioSettings } from '../apis/portfolio';
 import {
   SECTION_TITLES,
   type DraggableSectionKey,
@@ -49,7 +50,7 @@ function getGithubUsernameFromStorage(): string | null {
 }
 
 const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
-  tech_stack: <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
+  tech: <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   repo: <FolderIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   mileage: <MenuBookIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   activities: <EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
@@ -106,13 +107,22 @@ const SummaryEditPage = () => {
       setSectionOrder(next);
       setDraggedId(null);
       setDragOverId(null);
+      putPortfolioSettings({ section_order: next })
+        .then(() => {
+          toast.success('변경사항이 저장되었습니다.', {
+            position: 'bottom-right',
+          });
+        })
+        .catch(() => {
+          toast.error('섹션 순서 저장에 실패했습니다.');
+        });
     },
     [draggedId, sectionOrder, setSectionOrder],
   );
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
-      case 'tech_stack':
+      case 'tech':
         return <TechStackSectionContent />;
       case 'repo':
         return <RepoSectionContent />;

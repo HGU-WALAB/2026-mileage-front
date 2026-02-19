@@ -8,6 +8,7 @@ import type {
   PutRepositoryItem,
   UserInfoResponse,
 } from '@/pages/summary/apis/portfolio';
+import { DRAGGABLE_SECTION_ORDER } from '@/pages/summary/constants/constants';
 import { mockActivitiesResponse } from '@/mocks/fixtures/portfolioActivities';
 import { mockGitHubRepos } from '@/mocks/fixtures/portfolioGithubRepos';
 import { mockPortfolioRepositories } from '@/mocks/fixtures/portfolioRepositories';
@@ -16,6 +17,10 @@ import { mockUserInfoResponse } from '@/mocks/fixtures/portfolioUserInfo';
 
 const techStackStore = {
   tech_stack: [...mockTechStackResponse.tech_stack],
+};
+
+const settingsStore: { section_order: string[] } = {
+  section_order: [...DRAGGABLE_SECTION_ORDER],
 };
 
 const userInfoStore: UserInfoResponse = { ...mockUserInfoResponse };
@@ -44,6 +49,24 @@ export const PortfolioHandlers = [
     techStackStore.tech_stack = body.tech_stack ?? [];
 
     return HttpResponse.json({}, { status: 200 });
+  }),
+
+  http.get(BASE_URL + ENDPOINT.PORTFOLIO_SETTINGS, () => {
+    return HttpResponse.json(
+      { section_order: [...settingsStore.section_order] },
+      { status: 200 },
+    );
+  }),
+
+  http.put(BASE_URL + ENDPOINT.PORTFOLIO_SETTINGS, async ({ request }) => {
+    const body = (await request.json()) as { section_order: string[] };
+    settingsStore.section_order = Array.isArray(body.section_order)
+      ? [...body.section_order]
+      : [...DRAGGABLE_SECTION_ORDER];
+    return HttpResponse.json(
+      { section_order: [...settingsStore.section_order] },
+      { status: 200 },
+    );
   }),
 
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_ACTIVITIES, () => {
