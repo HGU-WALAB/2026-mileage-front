@@ -3,12 +3,13 @@ import { ENDPOINT } from '@/apis/endPoint';
 import { Flex, Text } from '@/components';
 import { boxShadow } from '@/styles/common';
 import { palette } from '@/styles/palette';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import EditIcon from '@mui/icons-material/Edit';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { styled } from '@mui/material';
 import { toast } from 'react-toastify';
 
-import { patchUserInfo } from '../../apis/portfolio';
+import { patchUserInfo, patchUserInfoWithImage } from '../../apis/portfolio';
 import { useSummaryContext } from '../context/SummaryContext';
 
 const getProfileImageUrl = (filename: string | null | undefined): string | null =>
@@ -58,6 +59,8 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
 
   const profileImageUrl = getProfileImageUrl(userInfo?.profile_image_url ?? null);
   const [imageError, setImageError] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setImageError(false);
@@ -65,18 +68,69 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
 
   const showProfileImage = Boolean(profileImageUrl && !imageError);
 
+  const handleEditImageClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file || !userInfo) return;
+      if (!file.type.startsWith('image/')) {
+        toast.error('이미지 파일만 업로드할 수 있습니다.');
+        e.target.value = '';
+        return;
+      }
+      setImageUploading(true);
+      try {
+        const res = await patchUserInfoWithImage(userInfo.bio ?? '', file);
+        setUserInfo(res);
+        setImageError(false);
+        toast.success('프로필 이미지가 변경되었습니다.');
+      } catch {
+        toast.error('프로필 이미지 변경에 실패했습니다.');
+      } finally {
+        setImageUploading(false);
+        e.target.value = '';
+      }
+    },
+    [userInfo, setUserInfo],
+  );
+
   return (
     <S.Card>
       <S.Inner>
-        {showProfileImage ? (
-          <S.AvatarImg
-            src={profileImageUrl!}
-            alt="프로필"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <S.Avatar />
-        )}
+        <S.AvatarWrap>
+          {showProfileImage ? (
+            <S.AvatarImg
+              src={profileImageUrl!}
+              alt="프로필"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <S.Avatar />
+          )}
+          {!readOnly && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageFileChange}
+                style={{ display: 'none' }}
+                aria-hidden
+              />
+              <S.EditImageButton
+                type="button"
+                onClick={handleEditImageClick}
+                disabled={imageUploading}
+                title="이미지 수정"
+              >
+                <CameraAltIcon sx={{ fontSize: 20 }} />
+              </S.EditImageButton>
+            </>
+          )}
+        </S.AvatarWrap>
         <Flex.Column gap="0.375rem" style={{ minWidth: 0, flex: 1 }}>
           <Text
             style={{
@@ -159,19 +213,48 @@ const S = {
     align-items: flex-start;
     flex-wrap: wrap;
   `,
+  AvatarWrap: styled('div')`
+    position: relative;
+    flex-shrink: 0;
+    width: 6rem;
+    height: 6rem;
+  `,
   Avatar: styled('div')`
     width: 6rem;
     height: 6rem;
     border-radius: 0.5rem;
     background-color: ${({ theme }) => theme.palette.grey[300]};
-    flex-shrink: 0;
   `,
   AvatarImg: styled('img')`
     width: 6rem;
     height: 6rem;
     border-radius: 0.5rem;
     object-fit: cover;
-    flex-shrink: 0;
+    display: block;
+  `,
+  EditImageButton: styled('button')`
+    position: absolute;
+    top: -0.25rem;
+    right: -0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: 1.5px solid ${palette.blue400};
+    background-color: ${palette.white};
+    color: ${palette.blue500};
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    &:hover:not(:disabled) {
+      background-color: ${palette.blue300};
+      color: ${palette.blue600};
+    }
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   `,
   EditBioButton: styled('button')`
     display: inline-flex;

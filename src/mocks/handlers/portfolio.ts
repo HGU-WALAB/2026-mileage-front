@@ -137,9 +137,49 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
   }),
 
+  http.get(
+    BASE_URL + `${ENDPOINT.PORTFOLIO_USER_INFO_IMAGE}/:filename`,
+    () => {
+      const minimalPng = Uint8Array.from(
+        atob(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        ),
+        c => c.charCodeAt(0),
+      );
+      return new HttpResponse(new Blob([minimalPng], { type: 'image/png' }), {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      });
+    },
+  ),
+
   http.patch(BASE_URL + ENDPOINT.PORTFOLIO_USER_INFO, async ({ request }) => {
-    const body = (await request.json()) as { bio: string };
-    userInfoStore.bio = body.bio ?? userInfoStore.bio;
+    const url = new URL(request.url);
+    const bioParam = url.searchParams.get('bio');
+    if (bioParam !== null) {
+      userInfoStore.bio = bioParam;
+    }
+    const contentType = request.headers.get('Content-Type') ?? '';
+    if (contentType.includes('multipart/form-data')) {
+      try {
+        const formData = await request.formData();
+        const profileImage = formData.get('profile_image');
+        if (profileImage instanceof File && profileImage.name) {
+          userInfoStore.profile_image_url = profileImage.name;
+        }
+      } catch {
+        // ignore formData parse
+      }
+    } else {
+      try {
+        const body = (await request.json()) as { bio?: string };
+        if (body.bio !== undefined) {
+          userInfoStore.bio = body.bio;
+        }
+      } catch {
+        // ignore json parse
+      }
+    }
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
   }),
 

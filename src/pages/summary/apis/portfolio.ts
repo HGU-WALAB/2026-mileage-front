@@ -1,3 +1,4 @@
+import axiosInstance from '@/apis/axios';
 import { ENDPOINT } from '@/apis/endPoint';
 import { http } from '@/apis/http';
 
@@ -150,6 +151,20 @@ export const patchUserInfo = async (body: UserInfoPatchRequest) => {
     UserInfoResponse
   >(ENDPOINT.PORTFOLIO_USER_INFO, body);
   return response;
+};
+
+/** 활동 요약 - 유저 정보 수정 (bio + 프로필 이미지, multipart/form-data) */
+export const patchUserInfoWithImage = async (
+  bio: string,
+  profileImage?: File,
+): Promise<UserInfoResponse> => {
+  const url = `${ENDPOINT.PORTFOLIO_USER_INFO}?bio=${encodeURIComponent(bio)}`;
+  const formData = new FormData();
+  if (profileImage) {
+    formData.append('profile_image', profileImage);
+  }
+  const res = await axiosInstance.patch<UserInfoResponse>(url, formData);
+  return res.data;
 };
 
 /** 활동 요약 - 포트폴리오 레포지토리 한 건 (GET 응답) */
