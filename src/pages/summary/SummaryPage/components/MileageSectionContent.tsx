@@ -141,10 +141,10 @@ const MileageSectionContent = ({
               }}
             >
               {row.additional_info ? (
-                <>· {row.additional_info}</>
+                <>{row.additional_info}</>
               ) : (
                 <span style={{ color: theme.palette.grey[400] }}>
-                  · 추가 설명 없음
+                  추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
                 </span>
               )}
             </Text>

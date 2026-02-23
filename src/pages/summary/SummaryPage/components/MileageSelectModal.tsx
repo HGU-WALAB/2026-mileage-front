@@ -4,7 +4,7 @@ import { palette } from '@/styles/palette';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { getMileageList } from '@/pages/mileage/apis/mileage';
 import { MileageResponse } from '@/pages/mileage/types/mileage';
-import { ALL_SEMESTER } from '@/constants/system';
+import { ALL_CATEGORY, ALL_SEMESTER, MILEAGE_CATEGORY_OPTIONS } from '@/constants/system';
 import {
   getPortfolioMileage,
   putPortfolioMileage,
@@ -51,6 +51,7 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
   const [selectedMileageIds, setSelectedMileageIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [semesterFilter, setSemesterFilter] = useState(ALL_SEMESTER);
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORY);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -109,8 +110,11 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
     if (semesterFilter !== ALL_SEMESTER) {
       list = list.filter(m => m.semester === semesterFilter);
     }
+    if (categoryFilter !== ALL_CATEGORY) {
+      list = list.filter(m => m.categoryName === categoryFilter);
+    }
     return list;
-  }, [searchList, searchQuery, semesterFilter]);
+  }, [searchList, searchQuery, semesterFilter, categoryFilter]);
 
   const allFilteredSelected =
     filteredList.length > 0 &&
@@ -179,20 +183,14 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
           포트폴리오에 추가할 마일리지를 선택하세요.
         </Text>
         {!loading && (
-          <Flex.Row
-            gap="0.5rem"
-            wrap="wrap"
-            align="center"
-            justify="space-between"
-          >
-            <Flex.Row gap="0.5rem" align="center" style={{ flex: 1, minWidth: 0 }}>
+          <S.FilterBar>
+            <Flex.Row gap="0.5rem" align="center">
               <Input
                 placeholder="항목명을 입력하세요"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{
-                  flex: 1,
-                  maxWidth: '20rem',
+                  width: '14rem',
                   backgroundColor:
                     theme.palette.variant?.default ?? theme.palette.grey[50],
                 }}
@@ -202,7 +200,7 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
                 <SearchIcon />
               </S.SearchButton>
             </Flex.Row>
-            <Flex.Row gap="0.5rem" align="center" wrap="wrap">
+            <S.FilterRight>
               <Text
                 style={{
                   ...theme.typography.body2,
@@ -220,15 +218,25 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
                 setSelectedItem={setSemesterFilter}
                 width="8rem"
               />
-              <S.ToggleAllButton
-                type="button"
-                onClick={handleToggleAllFiltered}
-                disabled={filteredList.length === 0}
+              <Text
+                style={{
+                  ...theme.typography.body2,
+                  color: theme.palette.grey[600],
+                  margin: 0,
+                  flexShrink: 0,
+                }}
               >
-                {allFilteredSelected ? '전체 취소' : '전체 선택'}
-              </S.ToggleAllButton>
-            </Flex.Row>
-          </Flex.Row>
+                카테고리 선택
+              </Text>
+              <Dropdown
+                label="카테고리"
+                items={MILEAGE_CATEGORY_OPTIONS}
+                selectedItem={categoryFilter}
+                setSelectedItem={setCategoryFilter}
+                width="10rem"
+              />
+            </S.FilterRight>
+          </S.FilterBar>
         )}
         <S.ListWrap>
           {loading ? (
@@ -252,7 +260,22 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
                   <S.TableHead>
                     <TableRow>
                       <S.HeadCell align="center" sx={{ width: '56px' }}>
-                        선택
+                        <Checkbox
+                          checked={allFilteredSelected}
+                          indeterminate={
+                            !allFilteredSelected &&
+                            filteredList.some((m, i) =>
+                              selectedMileageIds.has(getMileageRowId(m, i)),
+                            )
+                          }
+                          onChange={handleToggleAllFiltered}
+                          disabled={filteredList.length === 0}
+                          sx={{
+                            color: palette.grey400,
+                            '&.Mui-checked': { color: palette.blue500 },
+                            '&.MuiCheckbox-indeterminate': { color: palette.blue400 },
+                          }}
+                        />
                       </S.HeadCell>
                       <S.HeadCell align="right" sx={{ width: '100px' }}>
                         학기
@@ -356,6 +379,20 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
 export default MileageSelectModal;
 
 const S = {
+  FilterBar: styled('div')`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  `,
+  FilterRight: styled('div')`
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  `,
   SearchButton: styled('button')`
     display: flex;
     align-items: center;
@@ -369,28 +406,6 @@ const S = {
     &:hover,
     &:active {
       background-color: ${palette.blue600};
-    }
-  `,
-  ToggleAllButton: styled('button')`
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    border: 1px solid ${palette.grey200};
-    background-color: ${palette.white};
-    color: ${palette.grey600};
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    &:hover:not(:disabled) {
-      background-color: ${palette.grey100};
-      border-color: ${palette.grey300};
-    }
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
   `,
   ListWrap: styled('div')`
