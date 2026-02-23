@@ -63,33 +63,36 @@ const MileageSectionContent = ({
   return (
     <S.List>
       {displayItems.map(row => (
-        <S.Row key={row.mileage_id} align="center" gap="0.75rem" wrap="wrap">
-          <Text
-            as="span"
-            style={{
-              ...theme.typography.body2,
-              color: theme.palette.grey[600],
-              flexShrink: 0,
-              margin: 0,
-            }}
-          >
-            {row.semester}
-          </Text>
-          <S.CategoryTag>{row.category}</S.CategoryTag>
-          <Text
-            as="span"
-            style={{
-              ...theme.typography.body2,
-              fontWeight: 600,
-              minWidth: 0,
-              flex: 1,
-              margin: 0,
-            }}
-          >
-            {row.item}
-          </Text>
+        <S.Row key={row.mileage_id}>
+          {/* 메타 행: 학기 + 카테고리 + 제목 */}
+          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
+            <Text
+              as="span"
+              style={{
+                ...theme.typography.body2,
+                color: theme.palette.grey[600],
+                flexShrink: 0,
+                margin: 0,
+              }}
+            >
+              {row.semester}
+            </Text>
+            <S.CategoryTag>{row.category}</S.CategoryTag>
+            <Text
+              as="span"
+              style={{
+                ...theme.typography.body2,
+                fontWeight: 600,
+                margin: 0,
+                wordBreak: 'break-word',
+              }}
+            >
+              {row.item}
+            </Text>
+          </Flex.Row>
+          {/* 내용 행: 추가 설명 + 편집 버튼 */}
           {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
-            <Flex.Row gap="0.5rem" align="flex-start" style={{ flex: 1, minWidth: '12rem' }}>
+            <Flex.Row gap="0.5rem" align="flex-start" style={{ width: '100%' }}>
               <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
                 <S.EditTextarea
                   value={editDraft}
@@ -120,32 +123,37 @@ const MileageSectionContent = ({
               </Flex.Column>
             </Flex.Row>
           ) : (
-            <Text
-              as="span"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-                minWidth: 0,
-                margin: 0,
-              }}
-            >
-              {row.additional_info ? (
-                <>{row.additional_info}</>
-              ) : (
-                <span style={{ color: theme.palette.grey[400] }}>
-                  추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
-                </span>
+            <Flex.Row align="center" justify="space-between" gap="0.5rem" style={{ width: '100%' }}>
+              <Text
+                as="span"
+                style={{
+                  ...theme.typography.body2,
+                  color: theme.palette.grey[600],
+                  margin: 0,
+                  wordBreak: 'break-word',
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {row.additional_info ? (
+                  <>{row.additional_info}</>
+                ) : (
+                  <span style={{ color: theme.palette.grey[400] }}>
+                    추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
+                  </span>
+                )}
+              </Text>
+              {!readOnly && (
+                <S.EditButton
+                  type="button"
+                  onClick={() => handleStartEdit(row)}
+                  aria-label="내용 수정"
+                  style={{ flexShrink: 0 }}
+                >
+                  <EditIcon sx={{ fontSize: 16 }} />
+                </S.EditButton>
               )}
-            </Text>
-          )}
-          {!readOnly && editingItem?.mileage_id !== row.mileage_id && (
-            <S.EditButton
-              type="button"
-              onClick={() => handleStartEdit(row)}
-              aria-label="내용 수정"
-            >
-              <EditIcon sx={{ fontSize: 16 }} />
-            </S.EditButton>
+            </Flex.Row>
           )}
         </S.Row>
       ))}
@@ -159,14 +167,14 @@ const S = {
   List: styled(Flex.Column)`
     gap: 0.5rem;
   `,
-  Row: styled(Flex.Row)`
+  Row: styled(Flex.Column)`
     padding: 0.75rem 1rem;
+    gap: 0.375rem;
     border-radius: 0.5rem;
     background-color: ${({ theme }) => theme.palette.background.paper};
     border-left: 3px solid ${palette.blue400};
     ${boxShadow};
     transition: transform 0.15s ease, box-shadow 0.15s ease;
-    overflow: hidden;
     &:hover {
       box-shadow: 0 2px 8px rgba(83, 127, 241, 0.1);
     }

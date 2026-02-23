@@ -2,6 +2,8 @@ import { ROUTE_PATH } from '@/constants/routePath';
 import { useMaintenanceCheck } from '@/hooks';
 import useAuthStore from '@/stores/useAuthStore';
 import { MaintenancePage } from '@/pages/etc/MaintenancePage';
+import { palette } from '@/styles/palette';
+import LinearProgress from '@mui/material/LinearProgress';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,7 +35,17 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           height: '100vh',
         }}
       >
-        로딩 중...
+        <LinearProgress
+          sx={{
+            width: '12rem',
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: palette.blue300,
+            '& .MuiLinearProgress-bar': {
+              backgroundColor: palette.blue500,
+            },
+          }}
+        />
       </div>
     );
   }

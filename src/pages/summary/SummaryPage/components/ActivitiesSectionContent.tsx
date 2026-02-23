@@ -98,7 +98,7 @@ const ActivitiesSectionContent = ({
       )}
       <S.List>
         {activities.map(item => (
-          <S.Row key={item.id} align={editingId === item.id ? 'flex-start' : 'center'} gap="0.75rem" wrap="wrap">
+          <S.Row key={item.id}>
             {!readOnly && editingId === item.id ? (
               <S.EditForm gap="0.5rem">
                 <Flex.Column gap="0.5rem" style={{ flex: 1, minWidth: 0 }}>
@@ -173,67 +173,72 @@ const ActivitiesSectionContent = ({
               </S.EditForm>
             ) : (
               <>
-                <Text
-                  as="span"
-                  style={{
-                    ...theme.typography.body2,
-                    color: theme.palette.grey[600],
-                    flexShrink: 0,
-                    margin: 0,
-                  }}
-                >
-                  {item.start_date} ~ {item.end_date}
-                </Text>
-                <Text
-                  as="span"
-                  style={{
-                    ...theme.typography.body2,
-                    fontWeight: 600,
-                    minWidth: 0,
-                    flex: 1,
-                    margin: 0,
-                  }}
-                >
-                  {item.title}
-                </Text>
-                <Text
-                  as="span"
-                  style={{
-                    ...theme.typography.body2,
-                    color: theme.palette.grey[600],
-                    minWidth: 0,
-                    margin: 0,
-                  }}
-                >
-                  {item.description ? (
-                    <>{item.description}</>
-                  ) : (
-                    <span style={{ color: theme.palette.grey[400] }}>
-                      추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
-                    </span>
-                  )}
-                </Text>
-              </>
-            )}
-            {!readOnly && (
-              <Flex.Row gap="0.25rem" align="center" style={{ flexShrink: 0 }}>
-                {editingId !== item.id && (
-                  <S.EditButton
-                    type="button"
-                    onClick={() => handleStartEdit(item)}
-                    aria-label="수정"
+                {/* 메타 행: 날짜 + 제목 */}
+                <Flex.Row align="center" gap="0.5rem" wrap="wrap">
+                  <Text
+                    as="span"
+                    style={{
+                      ...theme.typography.body2,
+                      color: theme.palette.grey[600],
+                      flexShrink: 0,
+                      margin: 0,
+                    }}
                   >
-                    <EditIcon sx={{ fontSize: 16 }} />
-                  </S.EditButton>
-                )}
-                <S.DeleteButton
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  aria-label="삭제"
-                >
-                  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                </S.DeleteButton>
-              </Flex.Row>
+                    {item.start_date} ~ {item.end_date}
+                  </Text>
+                  <Text
+                    as="span"
+                    style={{
+                      ...theme.typography.body2,
+                      fontWeight: 600,
+                      margin: 0,
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                </Flex.Row>
+                {/* 내용 행: 설명 + 버튼 */}
+                <Flex.Row align="center" justify="space-between" gap="0.5rem" style={{ width: '100%' }}>
+                  <Text
+                    as="span"
+                    style={{
+                      ...theme.typography.body2,
+                      color: theme.palette.grey[600],
+                      margin: 0,
+                      wordBreak: 'break-word',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    {item.description ? (
+                      <>{item.description}</>
+                    ) : (
+                      <span style={{ color: theme.palette.grey[400] }}>
+                        추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
+                      </span>
+                    )}
+                  </Text>
+                  {!readOnly && (
+                    <Flex.Row gap="0.25rem" align="center" style={{ flexShrink: 0 }}>
+                      <S.EditButton
+                        type="button"
+                        onClick={() => handleStartEdit(item)}
+                        aria-label="수정"
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} />
+                      </S.EditButton>
+                      <S.DeleteButton
+                        type="button"
+                        onClick={() => handleDelete(item.id)}
+                        aria-label="삭제"
+                      >
+                        <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                      </S.DeleteButton>
+                    </Flex.Row>
+                  )}
+                </Flex.Row>
+              </>
             )}
           </S.Row>
         ))}
@@ -270,14 +275,14 @@ const S = {
   List: styled(Flex.Column)`
     gap: 0.5rem;
   `,
-  Row: styled(Flex.Row)`
+  Row: styled(Flex.Column)`
     padding: 0.75rem 1rem;
+    gap: 0.375rem;
     border-radius: 0.5rem;
     background-color: ${({ theme }) => theme.palette.background.paper};
     border-left: 3px solid ${palette.blue400};
     ${boxShadow};
     transition: box-shadow 0.15s ease;
-    overflow: hidden;
     &:hover {
       box-shadow: 0 2px 8px rgba(83, 127, 241, 0.1);
     }
