@@ -2,9 +2,7 @@ import { Flex, Text } from '@/components';
 import { boxShadow } from '@/styles/common';
 import { palette } from '@/styles/palette';
 import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { styled, useTheme } from '@mui/material';
 import { toast } from 'react-toastify';
 
@@ -27,21 +25,7 @@ const MileageSectionContent = ({
   const [editingItem, setEditingItem] = useState<MileageItem | null>(null);
   const [editDraft, setEditDraft] = useState('');
 
-  const displayItems = useMemo(
-    () => (readOnly ? mileageItems.filter(m => m.is_visible) : mileageItems),
-    [mileageItems, readOnly],
-  );
-
-  const handleToggleVisible = useCallback(
-    (mileageId: number) => {
-      setMileageItems(prev =>
-        prev.map(m =>
-          m.mileage_id === mileageId ? { ...m, is_visible: !m.is_visible } : m,
-        ),
-      );
-    },
-    [setMileageItems],
-  );
+  const displayItems = mileageItems;
 
   const handleStartEdit = useCallback((item: MileageItem) => {
     setEditingItem(item);
@@ -154,35 +138,14 @@ const MileageSectionContent = ({
               )}
             </Text>
           )}
-          {!readOnly && (
-            <Flex.Row gap="0.25rem" align="center" style={{ flexShrink: 0 }}>
-              {editingItem?.mileage_id !== row.mileage_id && (
-                <S.EditButton
-                  type="button"
-                  onClick={() => handleStartEdit(row)}
-                  aria-label="내용 수정"
-                >
-                  <EditIcon sx={{ fontSize: 16 }} />
-                </S.EditButton>
-              )}
-              <S.EyeButton
-                type="button"
-                onClick={() => handleToggleVisible(row.mileage_id)}
-                aria-label={
-                  row.is_visible ? '미리보기에서 숨기기' : '미리보기에 표시'
-                }
-              >
-                {row.is_visible ? (
-                  <VisibilityIcon
-                    sx={{ fontSize: 18, color: palette.blue500 }}
-                  />
-                ) : (
-                  <VisibilityOffOutlinedIcon
-                    sx={{ fontSize: 18, color: theme.palette.grey[500] }}
-                  />
-                )}
-              </S.EyeButton>
-            </Flex.Row>
+          {!readOnly && editingItem?.mileage_id !== row.mileage_id && (
+            <S.EditButton
+              type="button"
+              onClick={() => handleStartEdit(row)}
+              aria-label="내용 수정"
+            >
+              <EditIcon sx={{ fontSize: 16 }} />
+            </S.EditButton>
           )}
         </S.Row>
       ))}
@@ -272,19 +235,6 @@ const S = {
       variant === 'outline' ? palette.grey600 : palette.white};
     &:hover {
       opacity: 0.9;
-    }
-  `,
-  EyeButton: styled('button')`
-    padding: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    &:hover {
-      opacity: 0.8;
     }
   `,
 };
