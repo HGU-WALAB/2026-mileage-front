@@ -71,11 +71,7 @@ const DraggableSection = ({
       onDrop={handleDrop}
       $isDragOver={isDragOver}
     >
-      <S.Header
-        align="center"
-        gap="0.5rem"
-        justify={headerRight != null ? 'space-between' : undefined}
-      >
+      <S.Header $hasRight={headerRight != null}>
         <Flex.Row align="center" gap="0.5rem">
           <S.DragHandle
             onMouseDown={e => e.stopPropagation()}
@@ -118,7 +114,13 @@ const S = {
     opacity: ${({ $isDragOver }) => ($isDragOver ? 0.85 : 1)};
     transition: opacity 0.15s ease;
   `,
-  Header: styled(Flex.Row)`
+  Header: styled('div')<{ $hasRight?: boolean }>`
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: ${({ $hasRight }) => ($hasRight ? 'space-between' : 'flex-start')};
+    gap: 0.5rem;
+    flex-wrap: wrap;
     margin-bottom: 1rem;
   `,
   DragHandle: styled('div')`
@@ -136,6 +138,9 @@ const S = {
   `,
   HeaderRight: styled('div')`
     flex-shrink: 0;
+    @media (max-width: 500px) {
+      width: 100%;
+    }
   `,
   Content: styled('div')`
     width: 100%;

@@ -42,7 +42,7 @@ export const drawerItems = [
   {
     id: 4,
     text: '장학금 신청',
-    shortText: '장학신청',
+    shortText: '장학금 신청',
     icon: ScholarshipIcon,
     selectedIcon: ScholarshipBlueIcon,
     route: ROUTE_PATH.scholarship,
@@ -50,7 +50,7 @@ export const drawerItems = [
   {
     id: 5,
     text: '포트폴리오 생성',
-    shortText: '포폴생성',
+    shortText: '포트폴리오',
     icon: BuildingIcon,
     selectedIcon: BuildingBlueIcon,
     route: ROUTE_PATH.summary,

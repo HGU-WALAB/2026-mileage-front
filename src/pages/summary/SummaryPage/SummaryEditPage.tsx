@@ -305,9 +305,14 @@ const S = {
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(83, 127, 241, 0.25);
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
     &:hover {
       background-color: ${palette.blue600};
       box-shadow: 0 2px 6px rgba(83, 127, 241, 0.3);
+    }
+    @media (max-width: 500px) {
+      width: 100%;
+      justify-content: center;
     }
   `,
 };
