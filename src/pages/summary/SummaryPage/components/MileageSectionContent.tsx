@@ -63,76 +63,81 @@ const MileageSectionContent = ({
   return (
     <S.List>
       {displayItems.map(row => (
-        <S.Row key={row.mileage_id} align="flex-start" gap="0.5rem">
-          <Flex.Column gap="0.375rem" style={{ flex: 1, minWidth: 0 }}>
-            <Flex.Row gap="0.5rem" align="center" wrap="wrap">
-              <Text
-                as="span"
-                style={{
-                  ...theme.typography.body2,
-                  color: theme.palette.grey[600],
-                  flexShrink: 0,
-                  margin: 0,
-                }}
-              >
-                {row.semester}
-              </Text>
-              <S.CategoryTag>{row.category}</S.CategoryTag>
+        <S.Row key={row.mileage_id} align="center" gap="0.75rem" wrap="wrap">
+          <Text
+            as="span"
+            style={{
+              ...theme.typography.body2,
+              color: theme.palette.grey[600],
+              flexShrink: 0,
+              margin: 0,
+            }}
+          >
+            {row.semester}
+          </Text>
+          <S.CategoryTag>{row.category}</S.CategoryTag>
+          <Text
+            as="span"
+            style={{
+              ...theme.typography.body2,
+              fontWeight: 600,
+              minWidth: 0,
+              flex: 1,
+              margin: 0,
+            }}
+          >
+            {row.item}
+          </Text>
+          {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
+            <Flex.Row gap="0.5rem" align="flex-start" style={{ flex: 1, minWidth: '12rem' }}>
+              <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
+                <S.EditTextarea
+                  value={editDraft}
+                  onChange={e => setEditDraft(e.target.value)}
+                  placeholder="추가 설명"
+                  autoFocus
+                  rows={2}
+                  maxLength={INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                />
+                <S.CharCount warn={editDraft.length >= INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO - 20}>
+                  {editDraft.length} / {INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
+                </S.CharCount>
+              </Flex.Column>
+              <Flex.Column gap="0.25rem" style={{ flexShrink: 0 }}>
+                <S.SmallButton type="button" onClick={handleSaveEdit}>
+                  저장
+                </S.SmallButton>
+                <S.SmallButton
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                >
+                  취소
+                </S.SmallButton>
+              </Flex.Column>
             </Flex.Row>
+          ) : (
             <Text
               as="span"
               style={{
                 ...theme.typography.body2,
-                fontWeight: 600,
+                color: theme.palette.grey[600],
+                minWidth: 0,
                 margin: 0,
               }}
             >
-              {row.item}
+              {row.additional_info ? (
+                <>{row.additional_info}</>
+              ) : (
+                <span style={{ color: theme.palette.grey[400] }}>
+                  추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
+                </span>
+              )}
             </Text>
-            {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
-              <Flex.Row gap="0.5rem" align="flex-start">
-                <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
-                  <S.EditTextarea
-                    value={editDraft}
-                    onChange={e => setEditDraft(e.target.value)}
-                    placeholder="추가 설명"
-                    autoFocus
-                    rows={2}
-                    maxLength={INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
-                    onKeyDown={e => {
-                      if (e.key === 'Escape') handleCancelEdit();
-                    }}
-                  />
-                  <S.CharCount warn={editDraft.length >= INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO - 20}>
-                    {editDraft.length} / {INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
-                  </S.CharCount>
-                </Flex.Column>
-                <Flex.Column gap="0.25rem" style={{ flexShrink: 0 }}>
-                  <S.SmallButton type="button" onClick={handleSaveEdit}>
-                    저장
-                  </S.SmallButton>
-                  <S.SmallButton
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancelEdit}
-                  >
-                    취소
-                  </S.SmallButton>
-                </Flex.Column>
-              </Flex.Row>
-            ) : (
-              <Text
-                as="span"
-                style={{
-                  ...theme.typography.body2,
-                  color: row.additional_info ? theme.palette.grey[600] : theme.palette.grey[400],
-                  margin: 0,
-                }}
-              >
-                {row.additional_info || '추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.'}
-              </Text>
-            )}
-          </Flex.Column>
+          )}
           {!readOnly && editingItem?.mileage_id !== row.mileage_id && (
             <S.EditButton
               type="button"
