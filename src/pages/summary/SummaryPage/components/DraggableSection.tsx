@@ -120,6 +120,8 @@ const S = {
   `,
   Header: styled(Flex.Row)`
     margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   `,
   DragHandle: styled('div')`
     cursor: grab;

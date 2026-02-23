@@ -6,8 +6,8 @@ import { styled } from '@mui/material';
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-/** 모바일 하단 네비 순서 (shortText 기준) */
-const MOBILE_NAV_ORDER: string[] = ['대시보드', '조회', '등록', '장학신청', '포폴생성', '프로필'];
+/** 모바일 하단 네비 순서: 대시보드 맨 왼쪽, 포트폴리오는 프로필 왼쪽 */
+const customOrder = ['대시보드', '조회', '등록', '장학금 신청', '포트폴리오', '프로필'];
 
 const NavigationBar = () => {
   const navigate = useNavigate();
@@ -16,9 +16,9 @@ const NavigationBar = () => {
   const navigationItems = useMemo(() => {
     return [...drawerItems].sort(
       (a, b) =>
-        MOBILE_NAV_ORDER.indexOf(a.shortText) - MOBILE_NAV_ORDER.indexOf(b.shortText),
+        customOrder.indexOf(a.shortText) - customOrder.indexOf(b.shortText),
     );
-  }, []);
+  }, [customOrder]);
 
   return (
     <S.Container

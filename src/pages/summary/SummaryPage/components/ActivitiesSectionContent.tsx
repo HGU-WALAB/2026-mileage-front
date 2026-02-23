@@ -98,7 +98,7 @@ const ActivitiesSectionContent = ({
       )}
       <S.List>
         {activities.map(item => (
-          <S.Row key={item.id} align={editingId === item.id ? 'flex-start' : 'center'} gap="0.75rem" wrap="wrap">
+          <S.Row key={item.id} align="flex-start" gap="0.75rem" wrap="wrap">
             {!readOnly && editingId === item.id ? (
               <S.EditForm gap="0.5rem">
                 <Flex.Column gap="0.5rem" style={{ flex: 1, minWidth: 0 }}>
@@ -172,25 +172,12 @@ const ActivitiesSectionContent = ({
                 </Flex.Column>
               </S.EditForm>
             ) : (
-              <>
-                <Text
-                  as="span"
-                  style={{
-                    ...theme.typography.body2,
-                    color: theme.palette.grey[600],
-                    flexShrink: 0,
-                    margin: 0,
-                  }}
-                >
-                  {item.start_date} ~ {item.end_date}
-                </Text>
+              <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
                 <Text
                   as="span"
                   style={{
                     ...theme.typography.body2,
                     fontWeight: 600,
-                    minWidth: 0,
-                    flex: 1,
                     margin: 0,
                   }}
                 >
@@ -201,19 +188,22 @@ const ActivitiesSectionContent = ({
                   style={{
                     ...theme.typography.body2,
                     color: theme.palette.grey[600],
-                    minWidth: 0,
                     margin: 0,
                   }}
                 >
-                  {item.description ? (
-                    <>{item.description}</>
-                  ) : (
-                    <span style={{ color: theme.palette.grey[400] }}>
-                      추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
-                    </span>
-                  )}
+                  {item.start_date} ~ {item.end_date}
                 </Text>
-              </>
+                <Text
+                  as="span"
+                  style={{
+                    ...theme.typography.body2,
+                    color: item.description ? theme.palette.grey[600] : theme.palette.grey[400],
+                    margin: 0,
+                  }}
+                >
+                  {item.description || '설명 없음'}
+                </Text>
+              </Flex.Column>
             )}
             {!readOnly && (
               <Flex.Row gap="0.25rem" align="center" style={{ flexShrink: 0 }}>
