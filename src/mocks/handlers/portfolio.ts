@@ -12,7 +12,6 @@ import type {
 } from '@/pages/summary/apis/portfolio';
 import { DRAGGABLE_SECTION_ORDER } from '@/pages/summary/constants/constants';
 import { mockActivitiesResponse } from '@/mocks/fixtures/portfolioActivities';
-import { mockGitHubRepos } from '@/mocks/fixtures/portfolioGithubRepos';
 import { mockMileageList } from '@/mocks/fixtures/mileageList';
 import { mockPortfolioMileage } from '@/mocks/fixtures/portfolioMileage';
 import { mockPortfolioRepositories } from '@/mocks/fixtures/portfolioRepositories';
@@ -255,34 +254,49 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
   }),
 
-  http.get(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, () => {
+  http.get(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, ({ request }) => {
     const sorted = [...repositoriesStore].sort(
       (a, b) => a.display_order - b.display_order,
     );
-    return HttpResponse.json({ repositories: sorted }, { status: 200 });
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10));
+    const perPage = Math.min(
+      100,
+      Math.max(1, parseInt(url.searchParams.get('per_page') ?? '20', 10)),
+    );
+    const start = (page - 1) * perPage;
+    const slice = sorted.slice(start, start + perPage);
+    return HttpResponse.json({ repositories: slice }, { status: 200 });
   }),
 
   http.put(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, async ({ request }) => {
     const body = (await request.json()) as PutRepositoryItem[];
+    const byRepoId = new Map(repositoriesStore.map(r => [r.repo_id, r]));
     repositoriesStore.length = 0;
     body.forEach((item, index) => {
+      const existing = byRepoId.get(item.repo_id);
       repositoriesStore.push({
-        id: nextRepoId++,
+        id: existing?.id ?? nextRepoId++,
         repo_id: item.repo_id,
         custom_title: item.custom_title ?? null,
         description: item.description ?? '',
         is_visible: item.is_visible ?? true,
         display_order: index,
+        name: existing?.name ?? '',
+        html_url: existing?.html_url ?? '',
+        language: existing?.language ?? '',
+        created_at: existing?.created_at ?? '',
+        updated_at: existing?.updated_at ?? '',
       });
     });
+    if (repositoriesStore.length > 0) {
+      nextRepoId =
+        Math.max(...repositoriesStore.map(r => r.id), nextRepoId) + 1;
+    }
     const sorted = [...repositoriesStore].sort(
       (a, b) => a.display_order - b.display_order,
     );
     return HttpResponse.json({ repositories: sorted }, { status: 200 });
-  }),
-
-  http.get(BASE_URL + ENDPOINT.PORTFOLIO_GITHUB_REPOS, () => {
-    return HttpResponse.json({ repos: [...mockGitHubRepos] }, { status: 200 });
   }),
 
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_MILEAGE, () => {

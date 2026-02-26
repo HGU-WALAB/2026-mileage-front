@@ -1,55 +1,33 @@
 import { Flex, Text } from '@/components';
-import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { boxShadow } from '@/styles/common';
 import { palette } from '@/styles/palette';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import LinkIcon from '@mui/icons-material/Link';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { styled, useTheme, useMediaQuery } from '@mui/material';
 
 import { formatDateRange } from '../../utils/date';
 import { useSummaryContext } from '../context/SummaryContext';
 
-const GITHUB_STORAGE_KEY = 'github-storage';
 const ITEMS_PER_PAGE = 4;
-
-function getGithubUsernameFromStorage(): string | null {
-  try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem(GITHUB_STORAGE_KEY) : null;
-    if (!raw) return null;
-    const data = JSON.parse(raw) as {
-      state?: { connected?: boolean; githubName?: string | null };
-      githubUsername?: string;
-    } | null;
-    const name = data?.state?.githubName ?? data?.githubUsername;
-    return typeof name === 'string' && name.trim() ? name.trim() : null;
-  } catch {
-    return null;
-  }
-}
 
 interface RepoSectionContentProps {
   readOnly?: boolean;
 }
 
-/** 깃허브 레포지토리. 추후 PUT /api/portfolio/repositories (repo_id, custom_title, is_visible) 연동 */
+/** 깃허브 레포지토리. GET /api/portfolio/repositories 페이지네이션으로 조회, is_visible true만 표시 */
 const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const { repos: contextRepos } = useSummaryContext();
   const repos = Array.isArray(contextRepos) ? contextRepos : [];
   const [page, setPage] = useState(0);
 
-  const hasGithubInStorage = useMemo(() => getGithubUsernameFromStorage(), []);
-
-  const displayRepos = useMemo(() => {
-    if (readOnly) return repos.filter(r => r.is_visible);
-    return repos;
-  }, [repos, readOnly]);
+  const displayRepos = useMemo(
+    () => repos.filter(r => r.is_visible),
+    [repos],
+  );
 
   const totalPages = Math.ceil(displayRepos.length / ITEMS_PER_PAGE) || 1;
   const paginatedRepos = useMemo(
@@ -61,22 +39,7 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     [displayRepos, page],
   );
 
-  if (!readOnly && !hasGithubInStorage) {
-    return (
-      <S.ConnectCard>
-        <S.ConnectMessage>
-          깃허브 계정이 연결되어 있지 않습니다. 깃허브 계정 연결을 통해
-          포트폴리오 항목을 추가할 수 있습니다.
-        </S.ConnectMessage>
-        <S.ConnectButton type="button" onClick={() => navigate(ROUTE_PATH.myPage)}>
-          <LinkIcon sx={{ fontSize: 18 }} />
-          깃허브 계정 연결
-        </S.ConnectButton>
-      </S.ConnectCard>
-    );
-  }
-
-  if (!readOnly && hasGithubInStorage && displayRepos.length === 0) {
+  if (!readOnly && displayRepos.length === 0) {
     return (
       <S.ConnectCard>
         <S.ConnectMessage>선택된 레포지토리가 없습니다.</S.ConnectMessage>
@@ -84,8 +47,16 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     );
   }
 
-  const displayName = (repo: { custom_title: string | null; name: string }) =>
-    repo.custom_title ?? repo.name;
+  const displayName = (repo: {
+    custom_title: string | null;
+    name: string;
+    repo_id: number;
+  }) =>
+    (repo.custom_title != null && repo.custom_title.trim() !== '')
+      ? repo.custom_title.trim()
+      : (repo.name != null && repo.name.trim() !== '')
+        ? repo.name.trim()
+        : String(repo.repo_id);
 
   return (
     <Flex.Column gap="1rem">
@@ -100,14 +71,16 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
               >
                 {displayName(repo)}
               </S.RepoLink>
-              <Text
-                style={{
-                  ...theme.typography.body2,
-                  color: theme.palette.grey[600],
-                }}
-              >
-                {repo.description}
-              </Text>
+              {(repo.description?.trim() ?? '') !== '' && (
+                <Text
+                  style={{
+                    ...theme.typography.body2,
+                    color: theme.palette.grey[600],
+                  }}
+                >
+                  {repo.description}
+                </Text>
+              )}
               <Text
                 style={{
                   ...theme.typography.caption,
@@ -174,26 +147,6 @@ const S = {
     letter-spacing: 0.01em;
     color: ${palette.grey600};
     font-weight: 500;
-  `,
-  ConnectButton: styled('button')`
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: none;
-    background-color: ${palette.blue500};
-    color: ${palette.white};
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    align-self: flex-start;
-    box-shadow: 0 1px 3px rgba(83, 127, 241, 0.25);
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
-    &:hover {
-      background-color: ${palette.blue600};
-      box-shadow: 0 2px 6px rgba(83, 127, 241, 0.3);
-    }
   `,
   Grid: styled('div')<{ $isMobile?: boolean }>`
     display: flex;

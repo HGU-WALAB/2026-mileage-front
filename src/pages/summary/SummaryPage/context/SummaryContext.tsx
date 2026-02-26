@@ -13,10 +13,9 @@ import { toast } from 'react-toastify';
 import {
   deleteActivity as deleteActivityApi,
   getActivities,
-  getGitHubReposWithFallback,
+  getAllRepositories,
   getPortfolioMileage,
   getPortfolioSettings,
-  getRepositories,
   getTechStack,
   getUserInfo,
   postActivity,
@@ -24,7 +23,6 @@ import {
   putTechStack,
 } from '../../apis/portfolio';
 import type {
-  GitHubRepoItem,
   PortfolioRepositoryItem,
   UserInfoResponse,
 } from '../../apis/portfolio';
@@ -91,27 +89,23 @@ function apiActivityToItem(
   };
 }
 
-export function mergeRepositories(
-  portfolio: PortfolioRepositoryItem[],
-  githubRepos: GitHubRepoItem[],
-): RepoItem[] {
-  const byRepoId = new Map(githubRepos.map(r => [r.repo_id, r]));
-  return portfolio
-    .sort((a, b) => a.display_order - b.display_order)
-    .map(p => {
-      const gh = byRepoId.get(p.repo_id);
-      return {
-        repo_id: p.repo_id,
-        custom_title: p.custom_title,
-        is_visible: p.is_visible,
-        name: gh?.name ?? p.custom_title ?? String(p.repo_id),
-        description: p.description || (gh?.description ?? ''),
-        created_at: gh?.created_at ?? '',
-        updated_at: gh?.updated_at ?? '',
-        languages: gh?.languages ?? [],
-        html_url: gh?.html_url,
-      };
-    });
+function nonEmpty(s: string | null | undefined): string | null {
+  const t = s?.trim();
+  return t !== undefined && t !== null && t !== '' ? t : null;
+}
+
+export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
+  return {
+    repo_id: p.repo_id,
+    custom_title: p.custom_title,
+    is_visible: p.is_visible,
+    name: nonEmpty(p.name) ?? nonEmpty(p.custom_title) ?? String(p.repo_id),
+    description: p.description ?? '',
+    created_at: p.created_at ?? '',
+    updated_at: p.updated_at ?? '',
+    languages: p.language ? [p.language] : [],
+    html_url: p.html_url ?? '',
+  };
 }
 
 export function portfolioMileageToItem(
@@ -377,17 +371,9 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
         toast.error('유저 정보를 불러오지 못했습니다.');
       });
 
-    getRepositories()
-      .then(portfolioRes => {
-        const repositories = portfolioRes.repositories ?? [];
-        return getGitHubReposWithFallback().then(ghRepos => ({
-          repositories,
-          ghRepos,
-        }));
-      })
-      .then(({ repositories, ghRepos }) => {
-        const merged = mergeRepositories(repositories, ghRepos);
-        setRepos(merged);
+    getAllRepositories()
+      .then(list => {
+        setRepos(list.map(portfolioRepoToRepoItem));
       })
       .catch(() => {
         toast.error('레포지토리 목록을 불러오지 못했습니다.');

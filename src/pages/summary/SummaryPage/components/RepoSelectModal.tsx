@@ -1,14 +1,10 @@
 import { SearchIcon } from '@/assets';
 import { Button, Flex, Input, Modal, Text } from '@/components';
 import { palette } from '@/styles/palette';
-import type { GitHubRepoItem, PortfolioRepositoryItem, PutRepositoryItem } from '../../apis/portfolio';
-import {
-  getGitHubReposWithFallback,
-  getRepositories,
-  putRepositories,
-} from '../../apis/portfolio';
+import type { PortfolioRepositoryItem, PutRepositoryItem } from '../../apis/portfolio';
+import { getAllRepositories, putRepositories } from '../../apis/portfolio';
 import { formatDateRange } from '../../utils/date';
-import { mergeRepositories, useSummaryContext } from '../context/SummaryContext';
+import { portfolioRepoToRepoItem, useSummaryContext } from '../context/SummaryContext';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Checkbox from '@mui/material/Checkbox';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -20,34 +16,23 @@ interface RepoSelectModalProps {
   onClose: () => void;
 }
 
-/** 포트폴리오 레포지토리 선택 모달. GitHub 레포 목록 + 기존 선택 비교 후 확인 시 PUT */
+/** 포트폴리오 레포지토리 선택 모달. GET /api/portfolio/repositories 전체 페이지 조회, is_visible true 체크, 확인 시 PUT */
 const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const theme = useTheme();
   const { setRepos } = useSummaryContext();
-  const [githubRepos, setGitHubRepos] = useState<GitHubRepoItem[]>([]);
-  const [portfolioRepos, setPortfolioRepos] = useState<PortfolioRepositoryItem[]>([]);
+  const [allRepos, setAllRepos] = useState<PortfolioRepositoryItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const portfolioByRepoId = useMemo(
-    () => new Map(portfolioRepos.map(p => [p.repo_id, p])),
-    [portfolioRepos],
-  );
-
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    getRepositories()
-      .then(portfolioRes => {
-        const list = portfolioRes.repositories ?? [];
-        return getGitHubReposWithFallback().then(ghList => ({ list, ghList }));
-      })
-      .then(({ list, ghList }) => {
-        setPortfolioRepos(list);
-        setGitHubRepos(ghList);
-        setSelectedIds(new Set(list.map(r => r.repo_id)));
+    getAllRepositories()
+      .then(list => {
+        setAllRepos(list);
+        setSelectedIds(new Set(list.filter(r => r.is_visible).map(r => r.repo_id)));
       })
       .catch(() => {
         toast.error('레포지토리 목록을 불러오지 못했습니다.');
@@ -66,23 +51,16 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   }, []);
 
   const handleConfirm = useCallback(async () => {
-    const portfolioMap = portfolioByRepoId;
-    const putBody: PutRepositoryItem[] = githubRepos
-      .filter(gh => selectedIds.has(gh.repo_id))
-      .map(gh => {
-        const p = portfolioMap.get(gh.repo_id);
-        return {
-          repo_id: gh.repo_id,
-          custom_title: p?.custom_title ?? gh.name ?? null,
-          description: p?.description ?? gh.description ?? '',
-          is_visible: p?.is_visible ?? true,
-        };
-      });
+    const putBody: PutRepositoryItem[] = allRepos.map(p => ({
+      repo_id: p.repo_id,
+      custom_title: p.custom_title != null ? p.custom_title : '',
+      description: p.description != null ? p.description : '',
+      is_visible: selectedIds.has(p.repo_id),
+    }));
     setSubmitting(true);
     try {
       const res = await putRepositories(putBody);
-      const merged = mergeRepositories(res.repositories ?? [], githubRepos);
-      setRepos(merged);
+      setRepos((res.repositories ?? []).map(portfolioRepoToRepoItem));
       toast.success('변경사항이 저장되었습니다.', {
         position: 'top-center',
       });
@@ -92,22 +70,22 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedIds, portfolioByRepoId, githubRepos, setRepos, onClose]);
+  }, [selectedIds, allRepos, setRepos, onClose]);
 
   const filteredRepos = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return githubRepos;
-    return githubRepos.filter(
+    if (!q) return allRepos;
+    return allRepos.filter(
       r =>
-        r.name.toLowerCase().includes(q) ||
+        (r.name ?? '').toLowerCase().includes(q) ||
         (r.description?.toLowerCase().includes(q) ?? false) ||
-        r.languages.some(l => l.toLowerCase().includes(q)),
+        (r.language?.toLowerCase().includes(q) ?? false),
     );
-  }, [githubRepos, searchQuery]);
+  }, [allRepos, searchQuery]);
 
   const selectedRepos = useMemo(
-    () => githubRepos.filter(r => selectedIds.has(r.repo_id)),
-    [githubRepos, selectedIds],
+    () => allRepos.filter(r => selectedIds.has(r.repo_id)),
+    [allRepos, selectedIds],
   );
 
   const selectedCount = selectedIds.size;
@@ -160,9 +138,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   e.stopPropagation();
                   toggleRepo(repo.repo_id);
                 }}
-                aria-label={`${repo.name} 선택 해제`}
+                aria-label={`${(repo.custom_title?.trim() && repo.custom_title) || repo.name || repo.repo_id} 선택 해제`}
               >
-                <span>{repo.name}</span>
+                <span>{(repo.custom_title != null && repo.custom_title.trim() !== '') ? repo.custom_title.trim() : (repo.name != null && repo.name.trim() !== '') ? repo.name.trim() : String(repo.repo_id)}</span>
                 <S.TagRemove aria-hidden>×</S.TagRemove>
               </S.SelectedTag>
             ))}
@@ -208,16 +186,41 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   }}
                 />
                 <Flex.Column gap="0.375rem" style={{ flex: 1, minWidth: 0 }}>
-                  <Text
-                    style={{
-                      ...theme.typography.body2,
-                      fontWeight: 600,
-                      margin: 0,
-                      color: theme.palette.text.primary,
-                    }}
-                  >
-                    {repo.name}
-                  </Text>
+                  {repo.html_url ? (
+                    <S.RepoNameLink
+                      href={repo.html_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      style={{
+                        ...theme.typography.body2,
+                        fontWeight: 600,
+                        margin: 0,
+                        color: theme.palette.text.primary,
+                      }}
+                    >
+                      {(repo.custom_title != null && repo.custom_title.trim() !== '')
+                        ? repo.custom_title.trim()
+                        : (repo.name != null && repo.name.trim() !== '')
+                          ? repo.name.trim()
+                          : String(repo.repo_id)}
+                    </S.RepoNameLink>
+                  ) : (
+                    <Text
+                      style={{
+                        ...theme.typography.body2,
+                        fontWeight: 600,
+                        margin: 0,
+                        color: theme.palette.text.primary,
+                      }}
+                    >
+                      {(repo.custom_title != null && repo.custom_title.trim() !== '')
+                        ? repo.custom_title.trim()
+                        : (repo.name != null && repo.name.trim() !== '')
+                          ? repo.name.trim()
+                          : String(repo.repo_id)}
+                    </Text>
+                  )}
                   {repo.description && (
                     <Text
                       style={{
@@ -238,11 +241,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   >
                     {formatDateRange(repo.created_at, repo.updated_at)}
                   </Text>
-                  {repo.languages.length > 0 && (
+                  {repo.language && (
                     <Flex.Row gap="0.375rem" wrap="wrap">
-                      {repo.languages.map(lang => (
-                        <S.LangTag key={lang}>{lang}</S.LangTag>
-                      ))}
+                      <S.LangTag>{repo.language}</S.LangTag>
                     </Flex.Row>
                   )}
                 </Flex.Column>
@@ -348,6 +349,15 @@ const S = {
     &:hover {
       border-color: ${palette.blue300};
       box-shadow: 0 2px 8px rgba(83, 127, 241, 0.08);
+    }
+  `,
+  RepoNameLink: styled('a')`
+    color: ${palette.blue500};
+    text-decoration: none;
+    cursor: pointer;
+    &:hover {
+      color: ${palette.blue600};
+      text-decoration: underline;
     }
   `,
   LangTag: styled('span')`
