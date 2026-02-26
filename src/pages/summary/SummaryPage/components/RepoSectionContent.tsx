@@ -120,80 +120,53 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
           return (
             <S.Card key={repo.repo_id} $isMobile={isMobile}>
               {isEditing ? (
-                <Flex.Column gap="0.75rem">
-                  <Flex.Column gap="0.5rem">
-                    <Text
-                      style={{
-                        ...theme.typography.body2,
-                        fontWeight: 600,
-                        margin: 0,
-                        color: theme.palette.text.primary,
-                      }}
-                    >
-                      제목
-                    </Text>
-                    <input
-                      type="text"
-                      value={editTitle}
-                      onChange={e => setEditTitle(e.target.value)}
-                      placeholder={displayName(repo)}
-                      maxLength={INPUT_MAX_LENGTH.REPO_TITLE}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        border: `1px solid ${theme.palette.grey[300]}`,
-                        fontSize: '0.875rem',
-                        boxSizing: 'border-box',
-                      }}
-                      aria-label="레포지토리 제목"
-                    />
-                  </Flex.Column>
-                  <Flex.Column gap="0.5rem">
-                    <Text
-                      style={{
-                        ...theme.typography.body2,
-                        fontWeight: 600,
-                        margin: 0,
-                        color: theme.palette.text.primary,
-                      }}
-                    >
-                      설명
-                    </Text>
-                    <textarea
-                      value={editDescription}
-                      onChange={e => setEditDescription(e.target.value)}
-                      placeholder="설명을 입력하세요"
-                      maxLength={INPUT_MAX_LENGTH.REPO_DESCRIPTION}
-                      rows={3}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        border: `1px solid ${theme.palette.grey[300]}`,
-                        fontSize: '0.875rem',
-                        resize: 'vertical',
-                        boxSizing: 'border-box',
-                      }}
-                      aria-label="레포지토리 설명"
-                    />
-                  </Flex.Column>
-                  <Flex.Row
-                    gap="0.5rem"
-                    justify="flex-end"
-                    style={{ marginTop: '0.25rem' }}
-                  >
+                <Flex.Column gap="0.5rem">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    placeholder={displayName(repo)}
+                    maxLength={INPUT_MAX_LENGTH.REPO_TITLE}
+                    style={{
+                      width: '100%',
+                      padding: '0.35rem 0.5rem',
+                      borderRadius: '0.5rem',
+                      border: `1px solid ${theme.palette.grey[300]}`,
+                      fontSize: '0.875rem',
+                      boxSizing: 'border-box',
+                    }}
+                    aria-label="레포지토리 제목"
+                  />
+                  <textarea
+                    value={editDescription}
+                    onChange={e => setEditDescription(e.target.value)}
+                    placeholder="설명을 입력하세요"
+                    maxLength={INPUT_MAX_LENGTH.REPO_DESCRIPTION}
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      padding: '0.35rem 0.5rem',
+                      borderRadius: '0.5rem',
+                      border: `1px solid ${theme.palette.grey[300]}`,
+                      fontSize: '0.875rem',
+                      resize: 'none',
+                      boxSizing: 'border-box',
+                      minHeight: '2.5rem',
+                    }}
+                    aria-label="레포지토리 설명"
+                  />
+                  <Flex.Row gap="0.5rem" justify="flex-end">
                     <Button
                       label="취소"
                       variant="outlined"
-                      size="large"
+                      size="medium"
                       onClick={closeEdit}
                     />
                     <Button
                       label="저장"
                       variant="contained"
                       color="blue"
-                      size="large"
+                      size="medium"
                       disabled={submitting}
                       onClick={handleSaveEdit}
                     />
