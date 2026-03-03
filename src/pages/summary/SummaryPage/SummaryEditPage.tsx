@@ -14,13 +14,12 @@ import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { putPortfolioSettings } from '../apis/portfolio';
+import { getExportPrompt, putPortfolioSettings } from '../apis/portfolio';
 import {
   SECTION_TITLES,
   type DraggableSectionKey,
 } from '../constants/constants';
 import { useSummaryContext } from './context/SummaryContext';
-import { buildSummaryMarkdown } from './utils/buildSummaryMarkdown';
 import {
   ActivitiesSectionContent,
   CertificatesSectionContent,
@@ -64,14 +63,8 @@ const SummaryEditPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약' });
   const navigate = useNavigate();
   const {
-    userInfo,
     sectionOrder,
     setSectionOrder,
-    techStackTags,
-    repos,
-    mileageItems,
-    activities,
-    certificates,
   } = useSummaryContext();
   const [draggedId, setDraggedId] = useState<DraggableSectionKey | null>(null);
   const [dragOverId, setDragOverId] = useState<DraggableSectionKey | null>(null);
@@ -144,28 +137,20 @@ const SummaryEditPage = () => {
     }
   };
 
-  const handleCopyMarkdown = useCallback(async () => {
-    let markdown: string;
+  const handleCopyPrompt = useCallback(async () => {
+    let prompt: string;
     try {
-      markdown = buildSummaryMarkdown({
-        userInfo,
-        sectionOrder,
-        techStackTags,
-        repos,
-        mileageItems,
-        activities,
-        certificates,
-      });
+      prompt = await getExportPrompt();
     } catch {
-      toast.error('마크다운 생성에 실패했습니다.');
+      toast.error('프롬프트를 불러오지 못했습니다.');
       return;
     }
     try {
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(markdown);
+        await navigator.clipboard.writeText(prompt);
       } else {
         const textArea = document.createElement('textarea');
-        textArea.value = markdown;
+        textArea.value = prompt;
         textArea.style.position = 'fixed';
         textArea.style.left = '-9999px';
         document.body.appendChild(textArea);
@@ -177,7 +162,7 @@ const SummaryEditPage = () => {
     } catch {
       toast.error('클립보드 복사에 실패했습니다.');
     }
-  }, [userInfo, sectionOrder, techStackTags, repos, mileageItems, activities, certificates]);
+  }, []);
 
   const repoHeaderRight =
     hasGithub ? (
@@ -222,7 +207,7 @@ const SummaryEditPage = () => {
             size="large"
             icon={DownloadIcon}
             iconPosition="start"
-            onClick={handleCopyMarkdown}
+            onClick={handleCopyPrompt}
           />
         </S.ButtonGroup>
       </S.TopRow>

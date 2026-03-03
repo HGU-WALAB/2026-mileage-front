@@ -32,4 +32,5 @@ export const ENDPOINT = {
   PORTFOLIO_GITHUB_REPOS: `/api/portfolio/github/repos`,
   PORTFOLIO_SETTINGS: `/api/portfolio/settings`,
   PORTFOLIO_MILEAGE: `/api/portfolio/mileage`,
+  PORTFOLIO_EXPORT_PROMPT: `/api/portfolio/export/prompt`,
 };

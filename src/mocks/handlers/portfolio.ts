@@ -255,6 +255,19 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
   }),
 
+  http.get(BASE_URL + ENDPOINT.PORTFOLIO_EXPORT_PROMPT, () => {
+    const prompt = [
+      '# 포트폴리오 프롬프트 (Mock)',
+      '',
+      '이 텍스트는 개발 환경에서 사용하는 mock 데이터입니다.',
+      '실제 서비스에서는 서버에서 생성한 프롬프트가 내려옵니다.',
+    ].join('\n');
+    return new HttpResponse(prompt, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }),
+
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, ({ request }) => {
     const url = new URL(request.url);
     const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1', 10));

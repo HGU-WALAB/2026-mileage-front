@@ -8,6 +8,7 @@
  *   - repositories.ts
  *   - mileage.ts
  *   - settings.ts
+ *   - exportPrompt.ts
  */
 export * from './userInfo';
 export * from './techStack';
@@ -15,3 +16,4 @@ export * from './activities';
 export * from './repositories';
 export * from './mileage';
 export * from './settings';
+export * from './exportPrompt';
