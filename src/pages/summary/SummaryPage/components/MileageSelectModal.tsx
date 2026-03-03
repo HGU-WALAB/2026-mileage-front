@@ -135,6 +135,17 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
     }
   }, [allFilteredSelected, filteredList]);
 
+  const selectedList = useMemo(
+    () =>
+      searchList
+        .map((m, index) => ({
+          mileage: m,
+          rowId: getMileageRowId(m, index),
+        }))
+        .filter(({ rowId }) => selectedMileageIds.has(rowId)),
+    [searchList, selectedMileageIds],
+  );
+
   const handleConfirm = useCallback(async () => {
     const putBody = Array.from(selectedMileageIds).map(mileageId => {
       const p = portfolioByMileageId.get(mileageId);
@@ -254,91 +265,208 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
               />
             </S.LoadingWrap>
           ) : (
-            <S.TableScroll>
-              <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
-                <MuiTable sx={{ minWidth: 500 }} aria-label="마일리지 선택 테이블">
-                  <S.TableHead>
-                    <TableRow>
-                      <S.HeadCell align="center" sx={{ width: '56px' }}>
-                        <Checkbox
-                          checked={allFilteredSelected}
-                          indeterminate={
-                            !allFilteredSelected &&
-                            filteredList.some((m, i) =>
-                              selectedMileageIds.has(getMileageRowId(m, i)),
-                            )
-                          }
-                          onChange={handleToggleAllFiltered}
-                          disabled={filteredList.length === 0}
-                          sx={{
-                            color: palette.grey400,
-                            '&.Mui-checked': { color: palette.blue500 },
-                            '&.MuiCheckbox-indeterminate': { color: palette.blue400 },
-                          }}
-                        />
-                      </S.HeadCell>
-                      <S.HeadCell align="right" sx={{ width: '100px' }}>
-                        학기
-                      </S.HeadCell>
-                      <S.HeadCell align="left" sx={{ width: '140px' }}>
-                        카테고리명
-                      </S.HeadCell>
-                      <S.HeadCell align="left" sx={{ minWidth: '160px' }}>
-                        항목명
-                      </S.HeadCell>
-                      <S.HeadCell align="left">
-                        내용
-                      </S.HeadCell>
-                    </TableRow>
-                  </S.TableHead>
-                  <TableBody>
-                    {filteredList.map((m, index) => {
-                      const rowId = getMileageRowId(m, index);
-                      const isSelected = selectedMileageIds.has(rowId);
-                      return (
-                        <TableRow
-                          key={rowId}
-                          hover
-                          onClick={() => toggleMileage(rowId)}
-                          sx={{
-                            cursor: 'pointer',
-                            '&:last-child td': { border: 0 },
-                          }}
-                        >
-                          <S.BodyCell
-                            component="td"
-                            align="center"
-                            onClick={e => e.stopPropagation()}
-                          >
+            <S.ListColumns>
+              <S.ListColumn>
+                <S.ColumnTitle>
+                  <Text
+                    style={{
+                      ...theme.typography.body2,
+                      fontWeight: 600,
+                      margin: 0,
+                    }}
+                  >
+                    전체 마일리지
+                  </Text>
+                </S.ColumnTitle>
+                <S.TableScroll>
+                  <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+                    <MuiTable
+                      sx={{ minWidth: 800 }}
+                      aria-label="마일리지 선택 테이블"
+                    >
+                      <S.TableHead>
+                        <TableRow>
+                          <S.HeadCell align="center" sx={{ width: '56px' }}>
                             <Checkbox
-                              checked={isSelected}
-                              onChange={() => toggleMileage(rowId)}
-                              onClick={e => e.stopPropagation()}
+                              checked={allFilteredSelected}
+                              indeterminate={
+                                !allFilteredSelected &&
+                                filteredList.some((m, i) =>
+                                  selectedMileageIds.has(getMileageRowId(m, i)),
+                                )
+                              }
+                              onChange={handleToggleAllFiltered}
+                              disabled={filteredList.length === 0}
                               sx={{
                                 color: palette.grey400,
                                 '&.Mui-checked': { color: palette.blue500 },
+                                '&.MuiCheckbox-indeterminate': {
+                                  color: palette.blue400,
+                                },
                               }}
                             />
-                          </S.BodyCell>
-                          <S.BodyCell component="td" align="right">
-                            {m.semester}
-                          </S.BodyCell>
-                          <S.BodyCell component="td" align="left">
-                            {m.categoryName}
-                          </S.BodyCell>
-                          <S.BodyCell component="td" align="left">
-                            {m.subitemName}
-                          </S.BodyCell>
-                          <S.BodyCell component="td" align="left">
-                            {m.description1 || '—'}
-                          </S.BodyCell>
+                          </S.HeadCell>
+                          <S.HeadCell align="right" sx={{ width: '100px' }}>
+                            학기
+                          </S.HeadCell>
+                          <S.HeadCell align="left" sx={{ width: '140px' }}>
+                            카테고리명
+                          </S.HeadCell>
+                          <S.HeadCell align="left" sx={{ minWidth: '160px' }}>
+                            항목명
+                          </S.HeadCell>
+                          <S.HeadCell align="left">
+                            내용
+                          </S.HeadCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </MuiTable>
-              </TableContainer>
-            </S.TableScroll>
+                      </S.TableHead>
+                      <TableBody>
+                        {filteredList.map((m, index) => {
+                          const rowId = getMileageRowId(m, index);
+                          const isSelected = selectedMileageIds.has(rowId);
+                          return (
+                            <TableRow
+                              key={rowId}
+                              hover
+                              onClick={() => toggleMileage(rowId)}
+                              sx={{
+                                cursor: 'pointer',
+                                '&:last-child td': { border: 0 },
+                              }}
+                            >
+                              <S.BodyCell
+                                component="td"
+                                align="center"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  onChange={() => toggleMileage(rowId)}
+                                  onClick={e => e.stopPropagation()}
+                                  sx={{
+                                    color: palette.grey400,
+                                    '&.Mui-checked': { color: palette.blue500 },
+                                  }}
+                                />
+                              </S.BodyCell>
+                              <S.BodyCell component="td" align="right">
+                                {m.semester}
+                              </S.BodyCell>
+                              <S.BodyCell component="td" align="left">
+                                {m.categoryName}
+                              </S.BodyCell>
+                              <S.BodyCell component="td" align="left">
+                                {m.subitemName}
+                              </S.BodyCell>
+                              <S.BodyCell component="td" align="left">
+                                {m.description1 || '—'}
+                              </S.BodyCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </MuiTable>
+                  </TableContainer>
+                </S.TableScroll>
+              </S.ListColumn>
+              <S.ListColumn>
+                <S.ColumnTitle>
+                  <Text
+                    style={{
+                      ...theme.typography.body2,
+                      fontWeight: 600,
+                      margin: 0,
+                    }}
+                  >
+                    선택된 마일리지
+                  </Text>
+                  <Text
+                    style={{
+                      ...theme.typography.caption,
+                      color: theme.palette.grey[600],
+                      margin: 0,
+                    }}
+                  >
+                    {selectedCount}개 선택됨
+                  </Text>
+                </S.ColumnTitle>
+                <S.SelectedScroll>
+                  {selectedList.length === 0 ? (
+                    <S.SelectedEmpty>
+                      <Text
+                        style={{
+                          ...theme.typography.body2,
+                          color: theme.palette.grey[500],
+                          margin: 0,
+                        }}
+                      >
+                        선택된 마일리지가 없습니다.
+                      </Text>
+                    </S.SelectedEmpty>
+                  ) : (
+                    <S.SelectedList>
+                      {selectedList.map(({ mileage, rowId }) => (
+                        <S.SelectedRow
+                          key={rowId}
+                          align="center"
+                          gap="0.5rem"
+                          onClick={() => toggleMileage(rowId)}
+                        >
+                          <Checkbox
+                            checked
+                            onChange={() => toggleMileage(rowId)}
+                            onClick={e => e.stopPropagation()}
+                            sx={{
+                              color: palette.blue500,
+                              '&.Mui-checked': { color: palette.blue500 },
+                            }}
+                          />
+                          <Flex.Column
+                            gap="0.125rem"
+                            style={{ flex: 1, minWidth: 0 }}
+                          >
+                            <Flex.Row
+                              align="center"
+                              justify="space-between"
+                              style={{ width: '100%' }}
+                            >
+                              <Text
+                                style={{
+                                  ...theme.typography.body2,
+                                  fontWeight: 600,
+                                  margin: 0,
+                                }}
+                              >
+                                {mileage.subitemName}
+                              </Text>
+                              <Text
+                                style={{
+                                  ...theme.typography.caption,
+                                  color: theme.palette.grey[600],
+                                  margin: 0,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {mileage.semester}
+                              </Text>
+                            </Flex.Row>
+                            <Text
+                              style={{
+                                ...theme.typography.caption,
+                                color: theme.palette.grey[600],
+                                margin: 0,
+                              }}
+                            >
+                              {mileage.categoryName}
+                            </Text>
+                          </Flex.Column>
+                        </S.SelectedRow>
+                      ))}
+                    </S.SelectedList>
+                  )}
+                </S.SelectedScroll>
+              </S.ListColumn>
+            </S.ListColumns>
           )}
         </S.ListWrap>
       </Modal.Body>
@@ -351,15 +479,6 @@ const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
           gap: '0.75rem',
         }}
       >
-        <Text
-          style={{
-            ...theme.typography.body2,
-            color: theme.palette.grey[600],
-            margin: 0,
-          }}
-        >
-          {selectedCount}개 선택됨
-        </Text>
         <Flex.Row gap="0.5rem">
           <Button label="취소" variant="outlined" size="large" onClick={onClose} />
           <Button
@@ -410,11 +529,17 @@ const S = {
   `,
   ListWrap: styled('div')`
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     width: 100%;
     height: ${LIST_AREA_HEIGHT};
     min-height: ${LIST_AREA_HEIGHT};
     flex-shrink: 0;
+    gap: 1rem;
+    @media (max-width: 900px) {
+      flex-direction: column;
+      height: auto;
+      min-height: 18rem;
+    }
   `,
   LoadingWrap: styled('div')`
     display: flex;
@@ -424,10 +549,37 @@ const S = {
     height: 100%;
     min-height: ${LIST_AREA_HEIGHT};
   `,
+  ListColumns: styled('div')`
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    gap: 1rem;
+    @media (max-width: 900px) {
+      flex-direction: column;
+    }
+  `,
+  ListColumn: styled(Flex.Column)`
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    &:first-of-type {
+      @media (max-width: 900px) {
+        height: 16rem;
+      }
+    }
+  `,
+  ColumnTitle: styled(Flex.Row)`
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  `,
   TableScroll: styled('div')`
     width: 100%;
     height: 100%;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
   `,
   TableHead: styled(TableHead)`
     background-color: ${({ theme }) => theme.palette.primary.light};
@@ -442,5 +594,42 @@ const S = {
     border-bottom: 1px solid
       ${({ theme }) => getOpacityColor(theme.palette.grey200, 0.4)};
     padding: 0.75rem 1rem;
+  `,
+  SelectedScroll: styled('div')`
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    border-radius: 0.75rem;
+    background-color: ${({ theme }) => theme.palette.background.paper};
+    border: 1px solid ${({ theme }) => theme.palette.grey[200]};
+    @media (max-width: 900px) {
+      margin-bottom: 0.75rem;
+    }
+  `,
+  SelectedEmpty: styled('div')`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    padding: 1rem;
+  `,
+  SelectedList: styled(Flex.Column)`
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    gap: 0.25rem;
+  `,
+  SelectedRow: styled(Flex.Row)`
+    padding: 0.5rem 0.25rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border-bottom: 1px solid
+      ${({ theme }) => getOpacityColor(theme.palette.grey200, 0.6)};
+    &:hover {
+      background-color: ${({ theme }) => theme.palette.grey[100]};
+    }
+    &:last-of-type {
+      border-bottom: none;
+    }
   `,
 };
