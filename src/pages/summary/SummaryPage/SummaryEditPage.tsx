@@ -233,6 +233,15 @@ const SummaryEditPage = () => {
             key={key}
             sectionId={key}
             title={SECTION_TITLES[key]}
+            subtitle={
+              key === 'activities'
+                ? '교내·외 수상 경력, 동아리, 대외활동 등을 추가하면 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
+                : key === 'mileage'
+                  ? '해당 마일리지 활동의 구체적인 내용을 입력하면 더욱 완성도 높은 포트폴리오 설명을 생성할 수 있습니다.'
+                  : key === 'certificates'
+                    ? '운전면허증, 정보처리기사, SQLD 등 보유 자격증을 추가하여 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
+                    : undefined
+            }
             icon={SECTION_ICONS[key]}
             headerRight={
               key === 'repo'
@@ -248,9 +257,10 @@ const SummaryEditPage = () => {
             isDragOver={dragOverId === key}
           >
             {renderSectionContent(key)}
-          </DraggableSection>
+          </DraggableSection> 
+
         ))}
-      </Flex.Column>
+      </Flex.Column> 
       <RepoSelectModal
         open={repoModalOpen}
         onClose={() => setRepoModalOpen(false)}

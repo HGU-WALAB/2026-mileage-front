@@ -110,6 +110,7 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
     updated_at: p.updated_at ?? '',
     languages: p.language ? [p.language] : [],
     html_url: p.html_url ?? '',
+    owner: p.owner ?? '',
   };
 }
 

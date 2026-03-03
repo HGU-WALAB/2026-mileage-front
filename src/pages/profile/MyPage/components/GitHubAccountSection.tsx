@@ -1,4 +1,5 @@
 import { BoxSkeleton, Flex, Heading, Text } from '@/components';
+import { boxShadow } from '@/styles/common';
 import LinkIcon from '@mui/icons-material/Link';
 import CloseIcon from '@mui/icons-material/Close';
 import { styled, useTheme, useMediaQuery } from '@mui/material';
@@ -185,6 +186,7 @@ const S = {
     border-radius: 0.75rem;
     padding: 1.25rem;
     width: 100%;
+    ${boxShadow};
   `,
   ConnectButton: styled(Flex.Row)`
     align-items: center;

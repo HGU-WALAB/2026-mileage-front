@@ -13,6 +13,8 @@ export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
     language: 'Java',
     created_at: '2024-03-01',
     updated_at: '2025-01-20',
+    visibility: 'public',
+    owner: 'user',
   },
   {
     id: 2,
@@ -26,6 +28,8 @@ export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
     language: 'JavaScript',
     created_at: '2024-05-10',
     updated_at: '2025-02-05',
+    visibility: 'public',
+    owner: 'user',
   },
   {
     id: 3,
@@ -39,5 +43,7 @@ export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
     language: 'Python',
     created_at: '2024-02-20',
     updated_at: '2025-01-15',
+    visibility: 'private',
+    owner: 'user',
   },
 ];

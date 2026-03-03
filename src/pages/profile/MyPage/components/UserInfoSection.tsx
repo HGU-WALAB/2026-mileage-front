@@ -1,4 +1,5 @@
 import { BoxSkeleton, Flex, Heading, Text } from '@/components';
+import { boxShadow } from '@/styles/common';
 import { useGetUserInfoQuery } from '@/hooks/queries';
 import { useLogin } from '@/hooks';
 import { getDate } from '@/utils/getDate';
@@ -221,6 +222,7 @@ const S = {
     border-radius: 0.75rem;
     padding: 1.25rem;
     width: 100%;
+    ${boxShadow};
   `,
   UpdateButton: styled(Flex.Row)`
     align-items: center;

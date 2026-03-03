@@ -14,6 +14,8 @@ export interface PortfolioRepositoryItem {
   language: string;
   created_at: string;
   updated_at: string;
+  visibility: string;
+  owner: string;
 }
 
 /** PATCH /api/portfolio/repositories/:id 요청 body */
@@ -39,6 +41,11 @@ export interface PutRepositoryItem {
 export interface GetRepositoriesParams {
   page?: number;
   per_page?: number;
+  selected_only?: boolean;
+  visible_only?: boolean;
+  sort?: string;
+  visibility?: string;
+  affiliation?: string;
 }
 
 /** 활동 요약 - 포트폴리오 레포지토리 조회 (페이지네이션) */
@@ -46,6 +53,15 @@ export const getRepositories = async (params?: GetRepositoriesParams) => {
   const searchParams = new URLSearchParams();
   if (params?.page != null) searchParams.set('page', String(params.page));
   if (params?.per_page != null) searchParams.set('per_page', String(params.per_page));
+   if (params?.selected_only != null) {
+    searchParams.set('selected_only', String(params.selected_only));
+  }
+  if (params?.visible_only != null) {
+    searchParams.set('visible_only', String(params.visible_only));
+  }
+  if (params?.sort != null) searchParams.set('sort', params.sort);
+  if (params?.visibility != null) searchParams.set('visibility', params.visibility);
+  if (params?.affiliation != null) searchParams.set('affiliation', params.affiliation);
   const query = searchParams.toString();
   const url = query ? `${ENDPOINT.PORTFOLIO_REPOSITORIES}?${query}` : ENDPOINT.PORTFOLIO_REPOSITORIES;
   const response = await http.get<RepositoriesResponse>(url);

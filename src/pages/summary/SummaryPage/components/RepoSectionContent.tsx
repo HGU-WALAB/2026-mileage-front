@@ -288,7 +288,10 @@ const S = {
     width: 100%;
   `,
   Card: styled('div')<{ $isMobile?: boolean }>`
-    flex: ${({ $isMobile }) => ($isMobile ? '1 1 100%' : '1 1 18rem')};
+    flex: ${({ $isMobile }) =>
+      $isMobile ? '1 1 100%' : '0 1 calc(50% - 0.5rem)'};
+    max-width: ${({ $isMobile }) =>
+      $isMobile ? '100%' : 'calc(50% - 0.5rem)'};
     min-width: 0;
     padding: 1.25rem;
     border-radius: 0.75rem;

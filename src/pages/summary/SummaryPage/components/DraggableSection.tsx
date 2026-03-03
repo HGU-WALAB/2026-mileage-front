@@ -1,4 +1,4 @@
-import { Flex, Heading } from '@/components';
+import { Flex, Heading, Text } from '@/components';
 import { boxShadow } from '@/styles/common';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { styled, useTheme } from '@mui/material';
@@ -13,6 +13,8 @@ import type { DraggableSectionKey } from '../../constants/constants';
 interface DraggableSectionProps {
   sectionId: DraggableSectionKey;
   title: string;
+  /** 섹션 타이틀 옆에 표시할 회색 가이드 텍스트 */
+  subtitle?: string;
   icon?: ReactNode;
   headerRight?: ReactNode;
   onDragStart: (id: DraggableSectionKey) => void;
@@ -26,6 +28,7 @@ interface DraggableSectionProps {
 const DraggableSection = ({
   sectionId,
   title,
+  subtitle,
   icon,
   headerRight,
   onDragStart,
@@ -72,29 +75,34 @@ const DraggableSection = ({
       $isDragOver={isDragOver}
     >
       <S.Header $hasRight={headerRight != null}>
-        <Flex.Row align="center" gap="0.5rem">
-          <S.DragHandle
-            onMouseDown={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-          >
-            <DragIndicatorIcon
-              sx={{ fontSize: 20, color: theme.palette.grey[500] }}
-            />
-          </S.DragHandle>
-          {icon != null && <S.IconWrap>{icon}</S.IconWrap>}
-          <Heading
-            as="h3"
-            style={{
-              fontWeight: 700,
-              margin: 0,
-              fontSize: '1.125rem',
-              lineHeight: '1.5',
-              color: theme.palette.text.primary,
-            }}
-          >
-            {title}
-          </Heading>
-        </Flex.Row>
+        <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
+          <Flex.Row align="center" gap="0.5rem">
+            <S.DragHandle
+              onMouseDown={e => e.stopPropagation()}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <DragIndicatorIcon
+                sx={{ fontSize: 20, color: theme.palette.grey[500] }}
+              />
+            </S.DragHandle>
+            {icon != null && <S.IconWrap>{icon}</S.IconWrap>}
+            <Heading
+              as="h3"
+              style={{
+                fontWeight: 700,
+                margin: 0,
+                fontSize: '1.125rem',
+                lineHeight: '1.5',
+                color: theme.palette.text.primary,
+              }}
+            >
+              {title}
+            </Heading>
+          </Flex.Row>
+          {subtitle != null && subtitle.trim() !== '' && (
+            <S.Subtitle>{subtitle}</S.Subtitle>
+          )}
+        </Flex.Column>
         {headerRight != null && <S.HeaderRight>{headerRight}</S.HeaderRight>}
       </S.Header>
       <S.Content>{children}</S.Content>
@@ -118,7 +126,8 @@ const S = {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: ${({ $hasRight }) => ($hasRight ? 'space-between' : 'flex-start')};
+    justify-content: ${({ $hasRight }) =>
+      $hasRight ? 'space-between' : 'flex-start'};
     gap: 0.5rem;
     flex-wrap: wrap;
     margin-bottom: 1rem;
@@ -142,7 +151,15 @@ const S = {
       width: 100%;
     }
   `,
+  Subtitle: styled(Text)`
+    margin: 0;
+    padding: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: ${({ theme }) => theme.palette.grey[600]};
+  `,
   Content: styled('div')`
     width: 100%;
   `,
 };
+

@@ -97,7 +97,7 @@ const MileageSectionContent = ({
                 <S.EditTextarea
                   value={editDraft}
                   onChange={e => setEditDraft(e.target.value)}
-                  placeholder="해당 마일리지 활동의 구체적인 내용을 입력하면 더욱 완성도 높은 포트폴리오 설명을 생성할 수 있습니다."
+                  placeholder="마일리지 활동의 상세 내용을 입력해 주세요."
                   autoFocus
                   rows={2}
                   maxLength={INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}

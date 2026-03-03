@@ -178,7 +178,7 @@ const CertificatesSectionContent = ({
                           description: e.target.value,
                         }))
                       }
-                      placeholder="운전면허증, 정보처리기사, SQLD 등 보유 자격증을 추가하여 포트폴리오를 더욱 풍부하게 구성할 수 있습니다."
+                      placeholder="자격증의 상세 내용을 입력해 주세요."
                       rows={2}
                       maxLength={INPUT_MAX_LENGTH.ACTIVITY_DESCRIPTION}
                     />

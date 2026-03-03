@@ -178,7 +178,7 @@ const ActivitiesSectionContent = ({
                           description: e.target.value,
                         }))
                       }
-                      placeholder="교내·외 수상 경력, 동아리, 대외활동 등을 추가하면 더 풍부한 포트폴리오 설명을 생성할 수 있습니다."
+                      placeholder="활동의 상세 내용을 입력해 주세요."
                       rows={2}
                       maxLength={INPUT_MAX_LENGTH.ACTIVITY_DESCRIPTION}
                     />

@@ -288,6 +288,8 @@ export const PortfolioHandlers = [
         language: existing?.language ?? '',
         created_at: existing?.created_at ?? '',
         updated_at: existing?.updated_at ?? '',
+        visibility: existing?.visibility ?? 'public',
+        owner: existing?.owner ?? 'user',
       });
     });
     if (repositoriesStore.length > 0) {
