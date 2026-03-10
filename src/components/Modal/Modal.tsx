@@ -34,7 +34,15 @@ const Modal = ({
             open={open}
             onClose={toggleModal}
             fullWidth
-            maxWidth={size === 'large' ? 'md' : size === 'medium' ? 'sm' : 'xs'}
+            maxWidth={
+              size === 'xlarge'
+                ? 'lg'
+                : size === 'large'
+                  ? 'md'
+                  : size === 'medium'
+                    ? 'sm'
+                    : 'xs'
+            }
             PaperProps={{ sx: { borderRadius: '.75rem' } }}
           >
             <DialogContent {...props}>

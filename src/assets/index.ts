@@ -5,6 +5,7 @@ import AsteriskIcon from '@/assets/icons/asterisk.svg?react';
 import AwardListIcon from '@/assets/icons/awardList.svg?react';
 import AwardListBlueIcon from '@/assets/icons/awardListBlue.svg?react';
 import BuildingIcon from '@/assets/icons/other.svg?react';
+import BuildingBlueIcon from '@/assets/icons/otherBlue.svg?react';
 import CheckIcon from '@/assets/icons/check.svg?react';
 import CheckBoxIcon from '@/assets/icons/checkBox.svg?react';
 import CheckCircleIcon from '@/assets/icons/checkCircle.svg?react';
@@ -12,6 +13,7 @@ import CheckCircleOutlineIcon from '@/assets/icons/checkCircleOutline.svg?react'
 import DashboardIcon from '@/assets/icons/dashboard.svg?react';
 import DashboardBlueIcon from '@/assets/icons/dashboardBlue.svg?react';
 import DeleteIcon from '@/assets/icons/delete.svg?react';
+import DownloadIcon from '@/assets/icons/download.svg?react';
 import EditIcon from '@/assets/icons/edit.svg?react';
 import JoinedCheckCircleIcon from '@/assets/icons/joinedCheckCircle.svg?react';
 import LoadingIcon from '@/assets/icons/loading.svg?react';
@@ -53,6 +55,7 @@ export {
   AwardListBlueIcon,
   AwardListIcon,
   BackgroundImg,
+  BuildingBlueIcon,
   BuildingIcon,
   CheckBoxIcon,
   CheckCircleIcon,
@@ -63,6 +66,7 @@ export {
   DashboardBlueIcon,
   DashboardIcon,
   DeleteIcon,
+  DownloadIcon,
   EditIcon,
   EmptyBoxImg,
   ExpandMoreIcon,

@@ -18,7 +18,12 @@ const MileageCountBox = () => {
   });
 
   const handleClick = () => {
-    navigate(ROUTE_PATH.mileageList);
+    const searchParams = new URLSearchParams({
+      semester: currentSemester,
+      done: 'Y',
+    });
+
+    navigate(`${ROUTE_PATH.mileageList}?${searchParams.toString()}`);
   };
 
   const text = isMobile ? '마일리지 건수' : '마일리지 항목 건수';
@@ -30,10 +35,10 @@ const MileageCountBox = () => {
       isMobile={isMobile}
       pointer
     >
-      <Flex.Row style={{ fontSize: isMobile ? '0.75rem' : '1rem' }}>
+      <Flex.Row style={{ fontSize: isMobile ? '0.75rem' : '1rem', cursor: 'pointer' }}>
         {text}
       </Flex.Row>
-      <Flex.Row align="baseline" gap=".5rem">
+      <Flex.Row align="baseline" gap=".5rem" style={{ cursor: 'pointer' }}>
         <S.CountNumber isMobile={isMobile}>
           {mileageList?.length ?? '-'}
         </S.CountNumber>
@@ -46,7 +51,9 @@ const MileageCountBox = () => {
 export default MileageCountBox;
 
 const S = {
-  CountContainer: styled(Flex.Column)<{ isMobile: boolean }>`
+  CountContainer: styled(Flex.Column, {
+    shouldForwardProp: (prop) => prop !== 'isMobile',
+  })<{ isMobile: boolean }>`
     background-color: ${({ theme }) => theme.palette.white};
     border-radius: 1rem;
     color: ${({ theme }) => theme.palette.black};
@@ -58,7 +65,9 @@ const S = {
     width: ${({ isMobile }) => (isMobile ? '100px' : '200px')};
     ${boxShadow}
   `,
-  CountNumber: styled(Flex.Row)<{ isMobile: boolean }>`
+  CountNumber: styled(Flex.Row, {
+    shouldForwardProp: (prop) => prop !== 'isMobile',
+  })<{ isMobile: boolean }>`
     color: ${({ theme }) => theme.palette.primary.main};
     font-size: ${({ isMobile }) => (isMobile ? '2rem' : '2.5rem')};
     font-weight: bold;

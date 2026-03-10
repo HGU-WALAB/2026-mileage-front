@@ -12,4 +12,6 @@ export const QUERY_KEYS = {
   semesterCapability: 'semesterCapability',
   award: 'award',
   faq: 'faq',
+  githubStatus: 'githubStatus',
+  announcement: 'announcement',
 };

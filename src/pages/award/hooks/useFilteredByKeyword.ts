@@ -1,4 +1,3 @@
-import { debounce } from '@/utils/debounce';
 import { useCallback } from 'react';
 
 import { useQueryParams } from '../hooks/useQueryParams';
@@ -8,10 +7,10 @@ export const useFilteredByKeyword = () => {
   const keyword = queryParams.keyword;
 
   const setKeyword = useCallback(
-    debounce((newKeyword: string) => {
+    (newKeyword: string) => {
       updateQueryParams({ keyword: newKeyword });
-    }, 300),
-    [],
+    },
+    [updateQueryParams],
   );
   return { keyword, setKeyword };
 };

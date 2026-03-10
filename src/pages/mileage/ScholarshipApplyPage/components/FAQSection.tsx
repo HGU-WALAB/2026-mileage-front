@@ -18,14 +18,14 @@ const FAQSection = () => {
       faq => faq.category === '기타 서비스 문의',
     );
 
-    if (contactFaqIndex !== -1 && contactDesc) {
+    if (contactFaqIndex !== -1 && contactDesc?.contactInfo) {
       faqList[contactFaqIndex] = {
         ...faqList[contactFaqIndex],
         list: faqList[contactFaqIndex].list.map((item, index) => {
           if (index === 0) {
             return {
               ...item,
-              desc: contactDesc,
+              desc: [contactDesc.contactInfo],
             };
           }
           return item;
@@ -67,11 +67,15 @@ const FAQDescBox = ({ list }: { list: FAQListItem[] }) => {
         {list.map((item, index) => (
           <Flex.Column key={index}>
             <Text bold>{item.title}</Text>
-            {item?.desc?.map((desc, i) => (
-              <Text key={i} style={{ wordBreak: 'keep-all' }}>
-                {desc}
-              </Text>
-            ))}
+            {Array.isArray(item?.desc)
+              ? item.desc.map((desc, i) => (
+                  <Text key={i} style={{ wordBreak: 'keep-all' }}>
+                    {desc}
+                  </Text>
+                ))
+              : item?.desc && (
+                  <Text style={{ wordBreak: 'keep-all' }}>{item.desc}</Text>
+                )}
           </Flex.Column>
         ))}
       </Flex.Column>

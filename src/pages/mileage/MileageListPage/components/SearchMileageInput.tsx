@@ -32,7 +32,6 @@ const SearchMileageInput = () => {
     </Flex.Row>
   );
 };
-
 export default SearchMileageInput;
 
 const S = {

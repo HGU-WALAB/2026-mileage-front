@@ -30,8 +30,10 @@ const Dropdown = ({
   ...props
 }: Props) => {
   const theme = useTheme();
+  const formControlSize = size === 'xlarge' ? 'medium' : size;
+
   return (
-    <FormControl sx={{ minWidth: 120, width, ...props }} size={size}>
+    <FormControl sx={{ minWidth: 120, width, ...props }} size={formControlSize}>
       <InputLabel>{label}</InputLabel>
       <Select
         value={selectedItem}

@@ -1,6 +1,8 @@
-export const mockFAQContactDesc: string[] = [
-  '→ 이메일: HyelimChoi@handong.ac.kr',
-];
+import { ContactInfoResponse } from '@/pages/mileage/types/faq';
+
+export const mockFAQContactDesc: ContactInfoResponse = {
+  contactInfo: '→ 이메일: HyelimChoi@handong.ac.kr',
+};
 
 
 

@@ -1,9 +1,13 @@
 import { AlertBoxIcon } from '@/assets';
-import { Flex, Heading, Text } from '@/components';
+import { BoxSkeleton, Flex, Heading, Text } from '@/components';
 import { styled, useTheme } from '@mui/material';
+import useGetAnnouncementQuery from '@/pages/profile/hooks/useGetAnnouncementQuery';
 
 const ImportantNoticeSection = () => {
   const theme = useTheme();
+  const { data: announcementData, isLoading } = useGetAnnouncementQuery();
+
+  if (isLoading) return <BoxSkeleton height={100} />;
 
   return (
     <S.Container>
@@ -31,7 +35,7 @@ const ImportantNoticeSection = () => {
               lineHeight: '1.5',
             }}
           >
-            학부와 전공 정보를 확인한 후, 장학금 신청 대상인 경우에만 신청하세요.
+            {announcementData?.announcement ?? ''}
           </Text>
         </Flex.Column>
       </Flex.Row>

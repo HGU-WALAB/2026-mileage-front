@@ -2,6 +2,8 @@ import { MileageResponse } from '@/pages/mileage/types/mileage';
 
 export const mockMileageList: MileageResponse[] = [
   {
+    mileage_id: 1,
+    recordId: 1,
     subitemId: 1,
     subitemName: '기술 스택 학습',
     categoryId: 101,
@@ -15,6 +17,8 @@ export const mockMileageList: MileageResponse[] = [
     isEtcActioned: false,
   },
   {
+    mileage_id: 2,
+    recordId: 2,
     subitemId: 2,
     subitemName: '알고리즘 풀이',
     categoryId: 102,
@@ -28,6 +32,8 @@ export const mockMileageList: MileageResponse[] = [
     isEtcActioned: true,
   },
   {
+    mileage_id: 3,
+    recordId: 3,
     subitemId: 3,
     subitemName: '클린 코드 작성',
     categoryId: 103,
@@ -41,6 +47,8 @@ export const mockMileageList: MileageResponse[] = [
     isEtcActioned: false,
   },
   {
+    mileage_id: 4,
+    recordId: 4,
     subitemId: 4,
     subitemName: '팀 프로젝트 진행',
     categoryId: 101,
@@ -54,6 +62,8 @@ export const mockMileageList: MileageResponse[] = [
     isEtcActioned: false,
   },
   {
+    mileage_id: 5,
+    recordId: 5,
     subitemId: 5,
     subitemName: '프론트엔드 프레임워크 학습',
     categoryId: 102,
@@ -67,6 +77,8 @@ export const mockMileageList: MileageResponse[] = [
     isEtcActioned: true,
   },
   {
+    mileage_id: 6,
+    recordId: 6,
     subitemId: 6,
     subitemName: '서버 개발 학습',
     categoryId: 103,

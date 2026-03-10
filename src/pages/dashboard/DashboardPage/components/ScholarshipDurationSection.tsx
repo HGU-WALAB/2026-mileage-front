@@ -25,7 +25,7 @@ const ScholarshipDurationSection = () => {
       isMobile={isMobile}
       pointer
     >
-      <S.LabelBox>신청기간</S.LabelBox>
+      <S.LabelBox isScholarshipDuration={isScholarshipDuration}>신청기간</S.LabelBox>
       {isScholarshipDuration ? (
         <Flex.Column>
           <Text>{`${currentSemester} 마일리지 장학금 신청`}</Text>
@@ -53,8 +53,9 @@ const S = {
     width: ${({ isMobile }) => (isMobile ? '100%' : 'fit-content')};
     ${boxShadow}
   `,
-  LabelBox: styled(Flex.Row)`
-    background-color: ${({ theme }) => theme.palette.primary.main};
+  LabelBox: styled(Flex.Row)<{ isScholarshipDuration: boolean }>`
+    background-color: ${({ isScholarshipDuration, theme }) =>
+      isScholarshipDuration ? theme.palette.primary.main : '#EF4444'};
     border-radius: 0.25rem;
     color: ${({ theme }) => theme.palette.white};
     padding: 0.25rem;

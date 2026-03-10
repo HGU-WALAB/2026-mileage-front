@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { Flex, Heading } from '@/components';
 import { processStep } from '@/pages/mileage/constants/processStep';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
@@ -9,9 +10,8 @@ const ProcessStep = () => {
   return (
     <>
       {processStep.map((step, index) => (
-        <>
+        <Fragment key={`step-${index}`}>
           <S.StepBox
-            key={`step-${step}`}
             justify="center"
             align="center"
             isMobile={isMobile}
@@ -27,11 +27,11 @@ const ProcessStep = () => {
           </S.StepBox>
           {index + 1 !== processStep.length &&
             (isMobile ? (
-              <S.DownArrowBox key={`down-arrow-${step}`} />
+              <S.DownArrowBox />
             ) : (
-              <S.RightArrowBox key={`right-arrow-${step}`} />
+              <S.RightArrowBox />
             ))}
-        </>
+        </Fragment>
       ))}
     </>
   );
@@ -40,7 +40,9 @@ const ProcessStep = () => {
 export default ProcessStep;
 
 const S = {
-  StepBox: styled(Flex.Row)<{ isMobile: boolean }>`
+  StepBox: styled(Flex.Row, {
+    shouldForwardProp: (prop) => prop !== 'isMobile',
+  })<{ isMobile: boolean }>`
     background-color: ${({ theme }) => theme.palette.primary.light};
     border: 2px solid
       ${({ theme }) => getOpacityColor(theme.palette.primary.main, 0.5)};

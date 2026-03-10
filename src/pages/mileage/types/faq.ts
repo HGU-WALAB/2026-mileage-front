@@ -7,3 +7,7 @@ export interface FAQItem {
   category: string;
   list: FAQListItem[];
 }
+
+export interface ContactInfoResponse {
+  contactInfo: string;
+}

@@ -1,4 +1,8 @@
 export interface MileageResponse {
+  /** GET /api/mileage/search 응답의 행 단위 고유 ID. PUT /api/portfolio/mileage 시 mileage_id 로 전달 */
+  recordId?: number;
+  mileage_id?: number;
+
   // 역량
   capabilityId: number;
   capabilityName: string;

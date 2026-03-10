@@ -1,0 +1,248 @@
+import { Flex, Text } from '@/components';
+import { boxShadow } from '@/styles/common';
+import { palette } from '@/styles/palette';
+import EditIcon from '@mui/icons-material/Edit';
+import { useCallback, useState } from 'react';
+import { styled, useTheme } from '@mui/material';
+import { toast } from 'react-toastify';
+
+import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
+import { putPortfolioMileageItem } from '../../apis/portfolio';
+import {
+  type MileageItem,
+  useSummaryContext,
+} from '../context/SummaryContext';
+
+interface MileageSectionContentProps {
+  readOnly?: boolean;
+}
+
+const MileageSectionContent = ({
+  readOnly = false,
+}: MileageSectionContentProps) => {
+  const theme = useTheme();
+  const { mileageItems, setMileageItems } = useSummaryContext();
+  const [editingItem, setEditingItem] = useState<MileageItem | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+
+  const displayItems = mileageItems;
+
+  const handleStartEdit = useCallback((item: MileageItem) => {
+    setEditingItem(item);
+    setEditDraft(item.additional_info);
+  }, []);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (editingItem == null) return;
+    const next = editDraft.trim();
+    const portfolioId = editingItem.id;
+    if (portfolioId != null) {
+      try {
+        await putPortfolioMileageItem(portfolioId, { additional_info: next });
+      } catch {
+        toast.error('추가 설명 저장에 실패했습니다.');
+        return;
+      }
+    }
+    setMileageItems(prev =>
+      prev.map(m =>
+        m.mileage_id === editingItem.mileage_id
+          ? { ...m, additional_info: next }
+          : m,
+      ),
+    );
+    setEditingItem(null);
+    setEditDraft('');
+  }, [editingItem, editDraft, setMileageItems]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingItem(null);
+    setEditDraft('');
+  }, []);
+
+  return (
+    <S.List>
+      {displayItems.map(row => (
+        <S.Row key={row.mileage_id}>
+          {/* 메타 행: 학기 + 카테고리 + 제목 */}
+          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
+            <Text
+              as="span"
+              style={{
+                ...theme.typography.body2,
+                color: theme.palette.grey[600],
+                flexShrink: 0,
+                margin: 0,
+              }}
+            >
+              {row.semester}
+            </Text>
+            <S.CategoryTag>{row.category}</S.CategoryTag>
+            <Text
+              as="span"
+              style={{
+                ...theme.typography.body2,
+                fontWeight: 600,
+                margin: 0,
+                wordBreak: 'break-word',
+              }}
+            >
+              {row.item}
+            </Text>
+          </Flex.Row>
+          {/* 내용 행: 추가 설명 + 편집 버튼 */}
+          {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
+            <Flex.Row gap="0.5rem" align="flex-start" style={{ width: '100%' }}>
+              <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
+                <S.EditTextarea
+                  value={editDraft}
+                  onChange={e => setEditDraft(e.target.value)}
+                  placeholder="마일리지 활동의 상세 내용을 입력해 주세요."
+                  autoFocus
+                  rows={2}
+                  maxLength={INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                />
+                <S.CharCount warn={editDraft.length >= INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO - 20}>
+                  {editDraft.length} / {INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
+                </S.CharCount>
+              </Flex.Column>
+              <Flex.Column gap="0.25rem" style={{ flexShrink: 0 }}>
+                <S.SmallButton type="button" onClick={handleSaveEdit}>
+                  저장
+                </S.SmallButton>
+                <S.SmallButton
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                >
+                  취소
+                </S.SmallButton>
+              </Flex.Column>
+            </Flex.Row>
+          ) : (
+            <Flex.Row align="center" justify="space-between" gap="0.5rem" style={{ width: '100%' }}>
+              <Text
+                as="span"
+                style={{
+                  ...theme.typography.body2,
+                  color: theme.palette.grey[600],
+                  margin: 0,
+                  wordBreak: 'break-word',
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {row.additional_info ? (
+                  <>{row.additional_info}</>
+                ) : (
+                  <span style={{ color: theme.palette.grey[400] }}>
+                    추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
+                  </span>
+                )}
+              </Text>
+              {!readOnly && (
+                <S.EditButton
+                  type="button"
+                  onClick={() => handleStartEdit(row)}
+                  aria-label="내용 수정"
+                  style={{ flexShrink: 0 }}
+                >
+                  <EditIcon sx={{ fontSize: 16 }} />
+                </S.EditButton>
+              )}
+            </Flex.Row>
+          )}
+        </S.Row>
+      ))}
+    </S.List>
+  );
+};
+
+export default MileageSectionContent;
+
+const S = {
+  List: styled(Flex.Column)`
+    gap: 0.5rem;
+  `,
+  Row: styled(Flex.Column)`
+    padding: 0.75rem 1rem;
+    gap: 0.375rem;
+    border-radius: 0.5rem;
+    background-color: ${({ theme }) => theme.palette.background.paper};
+    border-left: 3px solid ${palette.blue400};
+    ${boxShadow};
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    &:hover {
+      box-shadow: 0 2px 8px rgba(83, 127, 241, 0.1);
+    }
+  `,
+  CategoryTag: styled('span')`
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.625rem;
+    border-radius: 999px;
+    background-color: ${palette.white};
+    color: ${palette.blue500};
+    border: 1.5px solid ${palette.blue400};
+    font-size: 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(83, 127, 241, 0.08);
+  `,
+  EditButton: styled('button')`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: ${palette.grey500};
+    border-radius: 0.25rem;
+    &:hover {
+      color: ${palette.blue500};
+      background-color: ${palette.blue300};
+    }
+  `,
+  EditTextarea: styled('textarea')`
+    width: 100%;
+    min-width: 8rem;
+    min-height: 4rem;
+    padding: 0.4rem 0.625rem;
+    border-radius: 0.375rem;
+    border: 1.5px solid ${palette.blue400};
+    font-size: 0.875rem;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    &:focus {
+      border-color: ${palette.blue500};
+      box-shadow: 0 0 0 2px ${palette.blue300};
+    }
+  `,
+  CharCount: styled('span')<{ warn?: boolean }>`
+    font-size: 0.75rem;
+    color: ${({ warn }) => (warn ? palette.pink500 : palette.grey400)};
+    flex-shrink: 0;
+  `,
+  SmallButton: styled('button')<{ variant?: 'outline' }>`
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid
+      ${({ variant }) =>
+        variant === 'outline' ? palette.grey300 : 'transparent'};
+    background-color: ${({ variant }) =>
+      variant === 'outline' ? 'transparent' : palette.blue500};
+    color: ${({ variant }) =>
+      variant === 'outline' ? palette.grey600 : palette.white};
+    &:hover {
+      opacity: 0.9;
+    }
+  `,
+};
