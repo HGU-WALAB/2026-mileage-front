@@ -8,7 +8,7 @@ import useAuthStore from '@/stores/useAuthStore';
 export const useMaintenanceCheck = () => {
   const [maintenanceStatus, setMaintenanceStatus] =
     useState<MaintenanceStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { isLogin } = useAuthStore();
   const { data: userInfo, isLoading: userInfoLoading } = useGetUserInfoQuery();
@@ -17,7 +17,7 @@ export const useMaintenanceCheck = () => {
     // 로그인하지 않았거나 사용자 정보가 로딩 중이면 점검 상태 체크 안 함
     if (!isLogin || userInfoLoading) {
       setMaintenanceStatus(null);
-      setIsLoading(false);
+      setIsLoading(userInfoLoading);
       return;
     }
 
