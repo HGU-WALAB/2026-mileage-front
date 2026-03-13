@@ -1,76 +1,13 @@
 import { MaintenanceStatus } from '@/types/maintenance';
-import { Typography, CircularProgress, useTheme } from '@mui/material';
+import { Typography, useTheme } from '@mui/material';
 import { Flex } from '@/components';
 import { getOpacityColor } from '@/utils/getOpacityColor';
-import { keyframes } from '@emotion/react';
 import { BackgroundImg } from '@/assets';
 
 interface MaintenancePageProps {
   status: MaintenanceStatus;
 }
 
-// 애니메이션 정의
-const pulse = keyframes`
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-`;
-
-const float = keyframes`
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-`;
-
-const rotate = keyframes`
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-`;
-
-const drift = keyframes`
-  0%, 100% {
-    transform: translateY(-8px);
-  }
-  50% {
-    transform: translateY(10px);
-  }
-`;
-
-const spin = keyframes`
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-`;
-
-const blink = keyframes`
-  0%, 100% {
-    transform: translateY(0);
-    opacity: 0.35;
-  }
-  50% {
-    transform: translateY(-2px);
-    opacity: 1;
-  }
-`;
 
 const MaintenancePage = ({ status }: MaintenancePageProps) => {
   const theme = useTheme();
@@ -114,7 +51,6 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
             theme.palette.white,
             0.2,
           )}, ${getOpacityColor(theme.palette.primary.light, 0.3)})`,
-          animation: `${float} 3s ease-in-out infinite`,
           backdropFilter: 'blur(10px)',
         }}
       />
@@ -130,7 +66,6 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
             theme.palette.secondary.light,
             0.2,
           )}, ${getOpacityColor(theme.palette.white, 0.3)})`,
-          animation: `${float} 2.5s ease-in-out infinite reverse`,
           backdropFilter: 'blur(10px)',
         }}
       />
@@ -146,7 +81,6 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
             theme.palette.primary.main,
             0.2,
           )}, ${getOpacityColor(theme.palette.secondary.main, 0.3)})`,
-          animation: `${float} 4s ease-in-out infinite`,
           backdropFilter: 'blur(10px)',
         }}
       />
@@ -190,7 +124,6 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
               )}, transparent 55%)`,
               filter: 'blur(10px)',
               opacity: 0.9,
-              animation: `${drift} 10s ease-in-out infinite`,
               pointerEvents: 'none',
             }}
           />
@@ -382,7 +315,6 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                       'conic-gradient(from 210deg, rgba(47,107,255,0) 0deg, rgba(47,107,255,0.18) 70deg, rgba(41,211,255,0.16) 140deg, rgba(123,97,255,0.10) 210deg, rgba(47,107,255,0) 360deg)',
                     filter: 'blur(22px)',
                     opacity: 0.65,
-                    animation: `${spin} 16s linear infinite`,
                     pointerEvents: 'none',
                   }}
                 />
@@ -576,7 +508,6 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
             theme.palette.white,
             0.1,
           )}, transparent)`,
-          animation: `${float} 6s ease-in-out infinite`,
           backdropFilter: 'blur(10px)',
         }}
       />
