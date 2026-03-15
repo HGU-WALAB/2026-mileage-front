@@ -24,6 +24,7 @@ export { default as Input } from './Input/Input';
 export { default as AuthGuard } from './Layout/AuthGuard';
 export { default as DrawerLayout } from './Layout/DrawerLayout';
 export { default as Layout } from './Layout/Layout';
+export { default as MaintenanceGate } from './Layout/MaintenanceGate';
 export { default as Main } from './Main/Main';
 export { default as AlertModal } from './Modal/AlertModal';
 export { default as Modal } from './Modal/Modal';

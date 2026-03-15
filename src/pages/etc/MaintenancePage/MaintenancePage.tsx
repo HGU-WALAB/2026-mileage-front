@@ -1,5 +1,5 @@
 import { MaintenanceStatus } from '@/types/maintenance';
-import { Typography, useTheme } from '@mui/material';
+import { Typography, useTheme, useMediaQuery } from '@mui/material';
 import { Flex } from '@/components';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { BackgroundImg } from '@/assets';
@@ -8,9 +8,11 @@ interface MaintenancePageProps {
   status: MaintenanceStatus;
 }
 
+const MAINTENANCE_MOBILE_BREAKPOINT = 768;
 
 const MaintenancePage = ({ status }: MaintenancePageProps) => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(`(max-width:${MAINTENANCE_MOBILE_BREAKPOINT}px)`);
   const year = new Date().getFullYear();
 
   // 서버에서 받은 데이터 로그 출력
@@ -25,9 +27,11 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
     <Flex.Column
       justify="center"
       align="center"
-      width="100vw"
+      width="100%"
       height="100vh"
       style={{
+        minWidth: 0,
+        maxWidth: '100vw',
         backgroundImage: `url(${BackgroundImg})`,
         backgroundPosition: 'center center',
         backgroundRepeat: 'no-repeat',
@@ -35,7 +39,9 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
         backdropFilter: 'blur(1.875rem)',
         backgroundColor: getOpacityColor(theme.palette.white, 0.1),
         position: 'relative',
-        overflow: 'hidden',
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        boxSizing: 'border-box',
       }}
     >
       {/* 배경 장식 요소들 */}
@@ -89,12 +95,14 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
       <Flex.Column
         align="center"
         justify="center"
-        padding="1.75rem"
+        padding={isMobile ? '1rem' : '1.75rem'}
         style={{
           position: 'relative',
           zIndex: 10,
           width: '100%',
           maxWidth: '980px',
+          minWidth: 0,
+          boxSizing: 'border-box',
         }}
       >
         <section
@@ -102,12 +110,14 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
           aria-label="시스템 점검 안내"
           style={{
             width: '100%',
-            borderRadius: 22,
+            minWidth: 0,
+            borderRadius: isMobile ? 16 : 22,
             backgroundColor: theme.palette.white,
             border: `1px solid ${getOpacityColor(theme.palette.grey300, 0.8)}`,
             boxShadow: `0 18px 50px ${getOpacityColor(theme.palette.black, 0.18)}`,
             position: 'relative',
-            overflow: 'hidden',
+            overflow: 'visible',
+            boxSizing: 'border-box',
           }}
         >
           {/* subtle moving highlight */}
@@ -132,13 +142,14 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
             style={{
               position: 'relative',
               display: 'grid',
-              gridTemplateColumns: '1.1fr 0.9fr',
-              gap: 22,
-              padding: 34,
+              gridTemplateColumns: isMobile ? '1fr' : '1.1fr 0.9fr',
+              gap: isMobile ? 20 : 22,
+              padding: isMobile ? 20 : 34,
+              minWidth: 0,
             }}
           >
             {/* 왼쪽 영역 */}
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div
                 aria-label="안내 배지"
                 style={{
@@ -175,10 +186,12 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
               <h1
                 style={{
                   margin: '14px 0 10px',
-                  fontSize: 'clamp(24px, 3.2vw, 38px)',
-                  lineHeight: 1.15,
+                  fontSize: isMobile ? 'clamp(18px, 4.5vw, 22px)' : 'clamp(24px, 3.2vw, 38px)',
+                  lineHeight: 1.25,
                   letterSpacing: '-0.02em',
                   color: theme.palette.text.primary,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
                 }}
               >
                 한동대 SW마일리지 장학금 신청 시스템 일시 중단
@@ -187,10 +200,12 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
               <p
                 style={{
                   margin: '10px 0 0',
-                  fontSize: 'clamp(15px, 1.6vw, 17px)',
+                  fontSize: isMobile ? 14 : 'clamp(15px, 1.6vw, 17px)',
                   lineHeight: 1.75,
                   color: theme.palette.text.secondary,
                   whiteSpace: 'pre-line',
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
                 }}
               >
                 한동대 SW마일리지 장학금 신청기간 전까지{'\n'}
@@ -291,7 +306,8 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: 8,
+                padding: isMobile ? 0 : 8,
+                minWidth: 0,
               }}
             >
               <div
@@ -299,12 +315,14 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                 style={{
                   width: '100%',
                   maxWidth: 360,
-                  borderRadius: 20,
+                  minWidth: 0,
+                  borderRadius: isMobile ? 16 : 20,
                   border: `1px solid ${getOpacityColor(theme.palette.grey300, 0.9)}`,
                   backgroundColor: theme.palette.grey100,
-                  padding: '18px 16px',
+                  padding: isMobile ? '16px 12px' : '18px 16px',
                   position: 'relative',
-                  overflow: 'hidden',
+                  overflow: 'visible',
+                  boxSizing: 'border-box',
                 }}
               >
                 <div
@@ -414,16 +432,20 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                     gap="0.5rem"
                     style={{
                       marginTop: '0.75rem',
-                      padding: '0.55rem 1.2rem',
+                      padding: isMobile ? '0.5rem 0.75rem' : '0.55rem 1.2rem',
                       borderRadius: 999,
                       backgroundColor: getOpacityColor(theme.palette.primary.light, 0.12),
                       border: `1px solid ${getOpacityColor(theme.palette.primary.main, 0.25)}`,
+                      width: '100%',
+                      minWidth: 0,
+                      flexWrap: 'wrap',
                     }}
                   >
                     <span
                       aria-hidden="true"
                       style={{
                         fontSize: 16,
+                        flexShrink: 0,
                       }}
                     >
                       ⏰
@@ -431,9 +453,11 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                     <Typography
                       component="span"
                       style={{
-                        fontSize: 13,
+                        fontSize: isMobile ? 12 : 13,
                         color: theme.palette.primary.dark,
                         fontWeight: 600,
+                        wordBreak: 'keep-all',
+                        overflowWrap: 'break-word',
                       }}
                     >
                       예상 완료 시간: {status.estimatedTime || '30분 후'}
@@ -452,9 +476,11 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                       color: theme.palette.text.secondary,
                       fontSize: 12,
                       width: '100%',
+                      minWidth: 0,
+                      boxSizing: 'border-box',
                     }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
                       <circle cx="12" cy="12" r="9" stroke={getOpacityColor(theme.palette.grey400, 0.9)} strokeWidth="2" />
                       <path d="M12 10v7" stroke={theme.palette.secondary.main} strokeWidth="2" strokeLinecap="round" />
                       <path d="M12 7.2h.01" stroke={theme.palette.secondary.main} strokeWidth="3" strokeLinecap="round" />
@@ -462,9 +488,11 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
                     <span
                       style={{
                         flex: 1,
+                        minWidth: 0,
                         textAlign: 'left',
                         lineHeight: 1.5,
                         wordBreak: 'keep-all',
+                        overflowWrap: 'break-word',
                       }}
                     >
                       문의: 히즈넷-AI컴퓨터전자 공지사항의 SW중심대 마일리지 공지를 확인해주세요
@@ -483,13 +511,17 @@ const MaintenancePage = ({ status }: MaintenancePageProps) => {
               justifyContent: 'space-between',
               alignItems: 'center',
               gap: 12,
-              padding: '14px 20px 18px',
+              padding: isMobile ? '12px 16px 14px' : '14px 20px 18px',
               borderTop: `1px solid ${getOpacityColor(theme.palette.grey200, 1)}`,
               color: theme.palette.text.secondary,
-              fontSize: 12,
+              fontSize: isMobile ? 11 : 12,
+              flexWrap: 'wrap',
+              minWidth: 0,
             }}
           >
-            <div>© {year} Handong Global University · SW중심대학 사업단</div>
+            <div style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+              © {year} Handong Global University · SW중심대학 사업단
+            </div>
           </div>
         </section>
       </Flex.Column>

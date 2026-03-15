@@ -1,4 +1,4 @@
-import { AuthGuard, DrawerLayout, Layout } from '@/components';
+import { AuthGuard, DrawerLayout, Layout, MaintenanceGate } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
@@ -33,57 +33,54 @@ const NotFoundPage = React.lazy(() => import('@/pages/etc/NotFoundPage'));
 const router = createBrowserRouter(
   [
     {
-      element: (
-        <AuthGuard>
-          <DrawerLayout />
-        </AuthGuard>
-      ),
-      errorElement: <ErrorPage />,
+      element: <MaintenanceGate />,
       children: [
         {
-          path: ROUTE_PATH.dashboard,
-          element: <DashboardPage />,
+          element: (
+            <AuthGuard>
+              <DrawerLayout />
+            </AuthGuard>
+          ),
+          errorElement: <ErrorPage />,
+          children: [
+            {
+              path: ROUTE_PATH.dashboard,
+              element: <DashboardPage />,
+            },
+            {
+              path: ROUTE_PATH.mileageList,
+              element: <MileageListPage />,
+            },
+            {
+              path: ROUTE_PATH.newMileage,
+              element: <AddMileagePage />,
+            },
+            {
+              path: ROUTE_PATH.scholarship,
+              element: <ScholarshipApplyPage />,
+            },
+            {
+              path: ROUTE_PATH.myPage,
+              element: <MyPage />,
+            },
+            {
+              path: '*',
+              element: <NotFoundPage />,
+            },
+          ],
         },
         {
-          path: ROUTE_PATH.mileageList,
-          element: <MileageListPage />,
-        },
-        {
-          path: ROUTE_PATH.newMileage,
-          element: <AddMileagePage />,
-        },
-        {
-          path: ROUTE_PATH.scholarship,
-          element: <ScholarshipApplyPage />,
-        },
-        // {
-        //   path: ROUTE_PATH.summary,
-        //   element: <SummaryLayout />,
-        //   children: [
-        //     { index: true, element: <SummaryEditPage /> },
-        //     { path: 'preview', element: <SummaryPreviewPage /> },
-        //   ],
-        // },
-        {
-          path: ROUTE_PATH.myPage,
-          element: <MyPage />,
-        },
-        {
-          path: '*',
-          element: <NotFoundPage />,
-        },
-      ],
-    },
-    {
-      element: <Layout />,
-      children: [
-        {
-          path: ROUTE_PATH.login,
-          element: <LoginPage />,
-        },
-        {
-          path: ROUTE_PATH.githubCallback,
-          element: <GitHubCallbackPage />,
+          element: <Layout />,
+          children: [
+            {
+              path: ROUTE_PATH.login,
+              element: <LoginPage />,
+            },
+            {
+              path: ROUTE_PATH.githubCallback,
+              element: <GitHubCallbackPage />,
+            },
+          ],
         },
       ],
     },
