@@ -7,7 +7,7 @@ export const MaintenanceHandlers = [
   http.get(BASE_URL + ENDPOINT.MAINTENANCE, () =>
     HttpResponse.json(
       {
-        maintenanceMode: false,
+        maintenanceMode: true,
         message: '',
         estimatedTime: '',
         // 점검 중에도 접속 허용 여부
