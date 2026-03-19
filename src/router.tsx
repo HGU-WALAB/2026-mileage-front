@@ -14,15 +14,15 @@ const ScholarshipApplyPage = React.lazy(
   () => import('@/pages/mileage/ScholarshipApplyPage'),
 );
 const MyPage = React.lazy(() => import('@/pages/profile/MyPage'));
-// const SummaryLayout = React.lazy(
-//   () => import('@/pages/summary/SummaryPage/SummaryLayout'),
-// );
-// const SummaryEditPage = React.lazy(
-//   () => import('@/pages/summary/SummaryPage/SummaryEditPage'),
-// );
-// const SummaryPreviewPage = React.lazy(
-//   () => import('@/pages/summary/SummaryPage/SummaryPreviewPage'),
-// );
+const SummaryLayout = React.lazy(
+  () => import('@/pages/summary/SummaryPage/SummaryLayout'),
+);
+const SummaryEditPage = React.lazy(
+  () => import('@/pages/summary/SummaryPage/SummaryEditPage'),
+);
+const SummaryPreviewPage = React.lazy(
+  () => import('@/pages/summary/SummaryPage/SummaryPreviewPage'),
+);
 const GitHubCallbackPage = React.lazy(
   () => import('@/pages/profile/GitHubCallbackPage'),
 );
@@ -58,6 +58,19 @@ const router = createBrowserRouter(
             {
               path: ROUTE_PATH.scholarship,
               element: <ScholarshipApplyPage />,
+            },
+            {
+              element: <SummaryLayout />,
+              children: [
+                {
+                  path: ROUTE_PATH.summary,
+                  element: <SummaryEditPage />,
+                },
+                {
+                  path: ROUTE_PATH.summaryPreview,
+                  element: <SummaryPreviewPage />,
+                },
+              ],
             },
             {
               path: ROUTE_PATH.myPage,
