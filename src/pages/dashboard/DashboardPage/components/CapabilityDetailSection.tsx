@@ -17,7 +17,7 @@ const CapabilityDetailSection = () => {
     <S.Container height="300px" width="100%" padding="1rem" gap=".5rem">
       <Heading as="h3">나의 역량 세부사항</Heading>
 
-      <S.ContentWrapper>
+      <S.ContentWrapper $isLoading={isLoading}>
         {isLoading && <LoadingIcon width={100} height={100} />}
         {isError && (
           <ErrorBox error={(capabilityQuery.error ?? detailQuery.error) as any} />
@@ -37,11 +37,11 @@ const S = {
     ${boxShadow}
     position: relative;
   `,
-  ContentWrapper: styled(Flex.Row)`
+  ContentWrapper: styled(Flex.Row)<{ $isLoading: boolean }>`
     height: 90%;
     width: 100%;
     justify-content: center;
-    align-items: flex-start;
+    align-items: ${({ $isLoading }) => ($isLoading ? 'center' : 'flex-start')};
     position: relative;
     overflow: visible;
   `,

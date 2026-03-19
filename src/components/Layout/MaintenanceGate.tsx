@@ -1,8 +1,10 @@
 import { useMaintenanceCheck } from '@/hooks';
+import { ROUTE_PATH } from '@/constants/routePath';
 import { MaintenancePage } from '@/pages/etc/MaintenancePage';
+import { useAuthStore } from '@/stores';
 import { palette } from '@/styles/palette';
 import LinearProgress from '@mui/material/LinearProgress';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 
 /**
  * 모든 경로(로그인 페이지 포함)에서 점검 상태를 먼저 확인합니다.
@@ -10,6 +12,8 @@ import { Outlet } from 'react-router-dom';
  */
 const MaintenanceGate = () => {
   const { maintenanceStatus, isLoading } = useMaintenanceCheck();
+  const location = useLocation();
+  const { isLogin } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -36,10 +40,19 @@ const MaintenanceGate = () => {
     );
   }
 
+  const isAuthRoute =
+    location.pathname === ROUTE_PATH.login ||
+    location.pathname === ROUTE_PATH.githubCallback;
+
   if (
     maintenanceStatus?.maintenanceMode &&
     !maintenanceStatus.isAllowedUser
   ) {
+    // 로그인 전에는 로그인/콜백 경로는 허용해서,
+    // 로그인 후 "허용 유저" 판정이 반영되면 통과할 수 있게 합니다.
+    if (!isLogin && isAuthRoute) {
+      return <Outlet />;
+    }
     return <MaintenancePage status={maintenanceStatus} />;
   }
 
