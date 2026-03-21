@@ -15,7 +15,7 @@ const DashboardPage = () => {
 
   return (
     <Flex.Column margin="1rem 1rem 2rem" gap="1rem">
-      <Flex.Row justify="space-between" align="flex-end" wrap="wrap" gap="1rem">
+      <Flex.Row justify="space-between" align="stretch" wrap="wrap" gap="1rem">
         <ScholarshipDurationSection />
         <ScholarshipStudentTypeSection />
       </Flex.Row>

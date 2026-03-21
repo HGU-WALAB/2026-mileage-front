@@ -9,9 +9,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 /** 모바일 하단 네비 순서 (shortText 기준) */
 const MOBILE_NAV_ORDER: string[] = [
   '대시보드',
-  '조회',
-  '장학신청',
-  '포폴생성',
+  '마일리지',
+  '활동관리',
   '프로필',
 ];
 

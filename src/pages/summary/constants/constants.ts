@@ -26,7 +26,7 @@ export const SECTION_TITLES: Record<SectionOrderKey, string> = {
   user_info: '유저정보',
   tech: '기술 스택',
   repo: '깃허브 레포지토리',
-  mileage: '마일리지 정보',
+  mileage: '마일리지 활동 기록 ( SW중심대학 인증 )',
   activities: '활동',
   certificates: '자격증',
 };
