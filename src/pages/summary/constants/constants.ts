@@ -7,8 +7,7 @@ export type SectionOrderKey =
   | 'tech'
   | 'repo'
   | 'mileage'
-  | 'activities'
-  | 'certificates';
+  | 'activities';
 
 /** 드래그 대상 섹션 (user_info 제외) */
 export type DraggableSectionKey = Exclude<SectionOrderKey, 'user_info'>;
@@ -19,7 +18,6 @@ export const DRAGGABLE_SECTION_ORDER: DraggableSectionKey[] = [
   'repo',
   'activities',
   'mileage',
-  'certificates',
 ];
 
 export const SECTION_TITLES: Record<SectionOrderKey, string> = {
@@ -28,5 +26,4 @@ export const SECTION_TITLES: Record<SectionOrderKey, string> = {
   repo: '깃허브 레포지토리',
   mileage: '마일리지 활동 기록 ( SW중심대학 인증 )',
   activities: '활동',
-  certificates: '자격증',
 };

@@ -86,7 +86,6 @@ export interface ActivityItem {
 }
 
 const ACTIVITY_SECTION_CATEGORY = 0;
-const CERTIFICATE_SECTION_CATEGORY = 1;
 
 function apiActivityToItem(
   a: import('../../apis/portfolio').ActivityApiItem,
@@ -173,16 +172,6 @@ export interface SummaryState {
   saveExistingActivity: (item: ActivityItem) => Promise<void>;
   activitiesNextId: number;
   setActivitiesNextId: (v: number | ((p: number) => number)) => void;
-  /** 자격증 섹션 (동일 activities API, category 1) */
-  certificates: ActivityItem[];
-  setCertificates: (v: ActivityItem[] | ((p: ActivityItem[]) => ActivityItem[])) => void;
-  deleteCertificate: (id: number) => void;
-  /** 새 자격증(id<0) 저장 버튼 클릭 시 POST. 실패 시 throw */
-  postNewCertificate: (item: ActivityItem) => Promise<void>;
-  /** 기존 자격증(id>0) 저장 버튼 클릭 시 PUT. 실패 시 throw */
-  saveExistingCertificate: (item: ActivityItem) => Promise<void>;
-  certificatesNextId: number;
-  setCertificatesNextId: (v: number | ((p: number) => number)) => void;
 }
 
 const SummaryContext = createContext<SummaryState | null>(null);
@@ -210,8 +199,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   const [mileageItems, setMileageItems] = useState<MileageItem[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [activitiesNextId, setActivitiesNextId] = useState(-1);
-  const [certificates, setCertificates] = useState<ActivityItem[]>([]);
-  const [certificatesNextId, setCertificatesNextId] = useState(-1);
 
   const queryClient = useQueryClient();
   const repoQueryKey = useMemo(() => [QUERY_KEYS.portfolioRepositories], []);
@@ -272,19 +259,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     setActivities(prev => prev.filter(a => a.id !== id));
   }, []);
 
-  /** 자격증 삭제 (즉시 DELETE API 호출) */
-  const deleteCertificate = useCallback(async (id: number) => {
-    if (id > 0) {
-      try {
-        await deleteActivityApi(id);
-      } catch {
-        toast.error('자격증 삭제에 실패했습니다.');
-        return;
-      }
-    }
-    setCertificates(prev => prev.filter(a => a.id !== id));
-  }, []);
-
   /** 새 활동(id<0) 저장 버튼 클릭 시에만 POST. 성공 시 목록에 서버 응답으로 교체, 실패 시 throw */
   const postNewActivity = useCallback(async (item: ActivityItem) => {
     if (item.id >= 0) return;
@@ -302,26 +276,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     } catch {
       toast.error('활동 추가에 실패했습니다.');
       throw new Error('활동 추가 실패');
-    }
-  }, []);
-
-  /** 새 자격증(id<0) 저장 버튼 클릭 시에만 POST. 성공 시 목록에 서버 응답으로 교체, 실패 시 throw */
-  const postNewCertificate = useCallback(async (item: ActivityItem) => {
-    if (item.id >= 0) return;
-    try {
-      const posted = await postActivity({
-        title: item.title,
-        description: item.description,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        category: CERTIFICATE_SECTION_CATEGORY,
-      });
-      setCertificates(prev =>
-        prev.map(a => (a.id === item.id ? apiActivityToItem(posted) : a)),
-      );
-    } catch {
-      toast.error('자격증 추가에 실패했습니다.');
-      throw new Error('자격증 추가 실패');
     }
   }, []);
 
@@ -343,27 +297,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     } catch {
       toast.error('활동 수정에 실패했습니다.');
       throw new Error('활동 수정 실패');
-    }
-  }, []);
-
-  /** 기존 자격증(id>0) 저장 버튼 클릭 시 즉시 PUT. 실패 시 throw */
-  const saveExistingCertificate = useCallback(async (item: ActivityItem) => {
-    if (item.id <= 0) return;
-    try {
-      const updated = await putActivity(item.id, {
-        title: item.title,
-        description: item.description,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        category: CERTIFICATE_SECTION_CATEGORY,
-      });
-      setCertificates(prev =>
-        prev.map(a => (a.id === item.id ? apiActivityToItem(updated) : a)),
-      );
-      toast.success('변경사항이 저장되었습니다.', SAVED_TOAST_OPTIONS);
-    } catch {
-      toast.error('자격증 수정에 실패했습니다.');
-      throw new Error('자격증 수정 실패');
     }
   }, []);
 
@@ -404,20 +337,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       })
       .catch(() => {
         toast.error('활동 목록을 불러오지 못했습니다.');
-      });
-
-    getActivities({ category: [CERTIFICATE_SECTION_CATEGORY] })
-      .then(res => {
-        const list = (res.activities ?? []).filter(
-          a => a.category === CERTIFICATE_SECTION_CATEGORY,
-        );
-        const sorted = [...list].sort(
-          (a, b) => a.display_order - b.display_order,
-        );
-        setCertificates(sorted.map(apiActivityToItem));
-      })
-      .catch(() => {
-        toast.error('자격증 목록을 불러오지 못했습니다.');
       });
 
     getUserInfo()
@@ -481,13 +400,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       saveExistingActivity,
       activitiesNextId,
       setActivitiesNextId,
-      certificates,
-      setCertificates,
-      deleteCertificate,
-      postNewCertificate,
-      saveExistingCertificate,
-      certificatesNextId,
-      setCertificatesNextId,
     }),
     [
       userInfo,
@@ -502,11 +414,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       postNewActivity,
       saveExistingActivity,
       activitiesNextId,
-      certificates,
-      deleteCertificate,
-      postNewCertificate,
-      saveExistingCertificate,
-      certificatesNextId,
     ],
   );
 

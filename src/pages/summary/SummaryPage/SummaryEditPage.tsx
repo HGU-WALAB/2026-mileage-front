@@ -3,7 +3,6 @@ import { Button, Flex, Footer, Text } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import CodeIcon from '@mui/icons-material/Code';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -22,7 +21,6 @@ import {
 import { useSummaryContext } from './context/SummaryContext';
 import {
   ActivitiesSectionContent,
-  CertificatesSectionContent,
   DraggableSection,
   MileageSectionContent,
   MileageSelectModal,
@@ -56,7 +54,6 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   repo: <FolderIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   mileage: <MenuBookIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   activities: <EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
-  certificates: <CardMembershipIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
 };
 
 const SummaryEditPage = () => {
@@ -130,8 +127,6 @@ const SummaryEditPage = () => {
         return <MileageSectionContent />;
       case 'activities':
         return <ActivitiesSectionContent />;
-      case 'certificates':
-        return <CertificatesSectionContent />;
       default:
         return null;
     }
@@ -223,9 +218,7 @@ const SummaryEditPage = () => {
                 ? '교내·외 수상 경력, 동아리, 대외활동 등을 추가하면 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
                 : key === 'mileage'
                   ? '해당 마일리지 활동의 구체적인 내용을 입력하면 더욱 완성도 높은 포트폴리오 설명을 생성할 수 있습니다.'
-                  : key === 'certificates'
-                    ? '운전면허증, 정보처리기사, SQLD 등 보유 자격증을 추가하여 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
-                    : undefined
+                  : undefined
             }
             icon={SECTION_ICONS[key]}
             headerRight={
