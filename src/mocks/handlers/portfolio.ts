@@ -10,6 +10,7 @@ import type {
   PutRepositoryItem,
   UserInfoResponse,
 } from '@/pages/summary/apis/portfolio';
+import type { TechStackItem } from '@/pages/summary/apis/portfolio';
 import type { PatchRepositoryBody } from '@/pages/summary/apis/repositories';
 import { DRAGGABLE_SECTION_ORDER } from '@/pages/summary/constants/constants';
 import { mockActivitiesResponse } from '@/mocks/fixtures/portfolioActivities';
@@ -77,10 +78,13 @@ export const PortfolioHandlers = [
   }),
 
   http.put(BASE_URL + ENDPOINT.PORTFOLIO_TECH_STACK, async ({ request }) => {
-    const body = (await request.json()) as { tech_stack: string[] };
-    techStackStore.tech_stack = body.tech_stack ?? [];
+    const body = (await request.json()) as { tech_stack: TechStackItem[] };
+    techStackStore.tech_stack = [...(body.tech_stack ?? [])];
 
-    return HttpResponse.json({}, { status: 200 });
+    return HttpResponse.json(
+      { tech_stack: [...techStackStore.tech_stack] },
+      { status: 200 },
+    );
   }),
 
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_SETTINGS, () => {

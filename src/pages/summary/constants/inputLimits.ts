@@ -13,6 +13,8 @@ export const INPUT_MAX_LENGTH = {
   MILEAGE_ADDITIONAL_INFO: 300,
   /** 기술 스택 태그 (짧은 키워드이므로 별도 제한) */
   TECH_STACK_TAG: 30,
+  TECH_STACK_DOMAIN: 40,
+  TECH_STACK_NAME: 40,
   /** 레포지토리 제목 (custom_title) */
   REPO_TITLE: 100,
   /** 레포지토리 설명 */

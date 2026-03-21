@@ -41,7 +41,7 @@ const SummaryPreviewPage = () => {
   const {
     userInfo,
     sectionOrder,
-    techStackTags,
+    techStackItems,
     repos,
     mileageItems,
     activities,
@@ -52,7 +52,7 @@ const SummaryPreviewPage = () => {
     const markdown = buildSummaryMarkdown({
       userInfo,
       sectionOrder,
-      techStackTags,
+      techStackItems,
       repos,
       mileageItems,
       activities,
@@ -64,7 +64,7 @@ const SummaryPreviewPage = () => {
     } catch {
       toast.error('클립보드 복사에 실패했습니다.');
     }
-  }, [userInfo, sectionOrder, techStackTags, repos, mileageItems, activities, certificates]);
+  }, [userInfo, sectionOrder, techStackItems, repos, mileageItems, activities, certificates]);
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {

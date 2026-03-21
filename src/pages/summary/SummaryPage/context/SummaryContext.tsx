@@ -26,8 +26,10 @@ import {
 import type {
   PortfolioRepositoryLanguage,
   PortfolioRepositoryItem,
+  TechStackItem,
   UserInfoResponse,
 } from '../../apis/portfolio';
+import { clampTechLevel } from '../../utils/techStackLevel';
 import {
   DRAGGABLE_SECTION_ORDER,
   type DraggableSectionKey,
@@ -153,8 +155,10 @@ export interface SummaryState {
   setUserInfo: (v: UserInfo | null | ((p: UserInfo | null) => UserInfo | null)) => void;
   sectionOrder: DraggableSectionKey[];
   setSectionOrder: (v: DraggableSectionKey[] | ((p: DraggableSectionKey[]) => DraggableSectionKey[])) => void;
-  techStackTags: string[];
-  setTechStackTags: (v: string[] | ((p: string[]) => string[])) => void;
+  techStackItems: TechStackItem[];
+  setTechStackItems: (
+    v: TechStackItem[] | ((p: TechStackItem[]) => TechStackItem[]),
+  ) => void;
   repos: RepoItem[];
   setRepos: (v: RepoItem[] | ((p: RepoItem[]) => RepoItem[])) => void;
   mileageItems: MileageItem[];
@@ -200,7 +204,9 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   const [sectionOrder, setSectionOrder] = useState<DraggableSectionKey[]>(
     DRAGGABLE_SECTION_ORDER,
   );
-  const [techStackTags, setTechStackTagsState] = useState<string[]>([]);
+  const [techStackItems, setTechStackItemsState] = useState<TechStackItem[]>(
+    [],
+  );
   const [mileageItems, setMileageItems] = useState<MileageItem[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [activitiesNextId, setActivitiesNextId] = useState(-1);
@@ -233,13 +239,25 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
 
   const techStackUserModifiedRef = useRef(false);
 
-  const setTechStackTags = useCallback(
-    (v: string[] | ((p: string[]) => string[])) => {
+  const setTechStackItems = useCallback(
+    (
+      v: TechStackItem[] | ((p: TechStackItem[]) => TechStackItem[]),
+    ) => {
       techStackUserModifiedRef.current = true;
-      setTechStackTagsState(v);
+      setTechStackItemsState(v);
     },
     [],
   );
+
+  const normalizeTechStackList = useCallback((list: TechStackItem[]) => {
+    return list
+      .map(item => ({
+        name: (item.name ?? '').trim(),
+        domain: (item.domain ?? '').trim() || '기타',
+        level: clampTechLevel(item.level ?? 0),
+      }))
+      .filter(item => item.name !== '');
+  }, []);
 
   /** 활동 삭제 (즉시 DELETE API 호출) */
   const deleteActivity = useCallback(async (id: number) => {
@@ -368,7 +386,7 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
 
     getTechStack()
       .then(res => {
-        setTechStackTagsState(res.tech_stack ?? []);
+        setTechStackItemsState(normalizeTechStackList(res.tech_stack ?? []));
       })
       .catch(() => {
         toast.error('기술 스택을 불러오지 못했습니다.');
@@ -429,20 +447,20 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       .catch(() => {
         toast.error('마일리지 목록을 불러오지 못했습니다.');
       });
-  }, []);
+  }, [normalizeTechStackList]);
 
   /** 기술 스택 변경 시 즉시 PUT */
   useEffect(() => {
     if (!techStackUserModifiedRef.current) return;
 
-    putTechStack({ tech_stack: techStackTags })
+    putTechStack({ tech_stack: normalizeTechStackList(techStackItems) })
       .then(() => {
         toast.success('변경사항이 저장되었습니다.', SAVED_TOAST_OPTIONS);
       })
       .catch(() => {
         toast.error('기술 스택 저장에 실패했습니다.');
       });
-  }, [techStackTags]);
+  }, [techStackItems, normalizeTechStackList]);
 
   const value = useMemo<SummaryState>(
     () => ({
@@ -450,8 +468,8 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       setUserInfo,
       sectionOrder,
       setSectionOrder,
-      techStackTags,
-      setTechStackTags,
+      techStackItems,
+      setTechStackItems,
       repos: reposQuery.data ?? [],
       setRepos,
       mileageItems,
@@ -474,8 +492,8 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     [
       userInfo,
       sectionOrder,
-      techStackTags,
-      setTechStackTags,
+      techStackItems,
+      setTechStackItems,
       reposQuery.data,
       setRepos,
       mileageItems,
