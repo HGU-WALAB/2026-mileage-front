@@ -255,14 +255,6 @@ const TechStackSectionContent = ({
                   {domain}
                 </S.HeadLabel>
               </S.MobileHead>
-              <S.MobileSubHead>
-                <FormatListBulletedIcon
-                  sx={{ fontSize: 16, color: headerIconColor }}
-                />
-                <S.HeadLabel style={{ color: headerLabelColor }}>
-                  다중 선택
-                </S.HeadLabel>
-              </S.MobileSubHead>
               <S.TagCloud>
                 {entries.map(({ item, flatIndex }) => (
                   <NotionTag
@@ -607,13 +599,7 @@ const S = {
     flex-direction: row;
     align-items: center;
     gap: 8px;
-  `,
-  MobileSubHead: styled('div')`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    padding-bottom: 4px;
+    padding-bottom: 8px;
     border-bottom: 1px solid ${palette.grey200};
   `,
   EmptyNote: styled('p')`
