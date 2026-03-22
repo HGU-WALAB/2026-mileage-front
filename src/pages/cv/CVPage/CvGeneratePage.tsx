@@ -1,5 +1,6 @@
 import { BASE_URL } from '@/apis/config';
 import { ENDPOINT } from '@/apis/endPoint';
+import { LoadingIcon } from '@/assets';
 import { Button, Flex, Heading, Text } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
@@ -344,7 +345,14 @@ const CvGeneratePage = () => {
         </Text>
       </Flex.Column>
 
-      <S.Card>
+      <S.Card
+        aria-busy={buildPromptMutation.isPending}
+        style={
+          buildPromptMutation.isPending
+            ? { minHeight: 'min(60vh, 28rem)' }
+            : undefined
+        }
+      >
         <S.StepperRow role="list" aria-label="진행 단계">
           {STEPS.map((step, idx) => {
             const vs = stepVisual(step.n, wizardStep);
@@ -377,6 +385,33 @@ const CvGeneratePage = () => {
           })}
         </S.StepperRow>
 
+        {buildPromptMutation.isPending ? (
+        <Flex.Column
+          role="status"
+          aria-live="polite"
+          align="center"
+          justify="center"
+          gap="0.75rem"
+          width="100%"
+          style={{
+            marginTop: '1.5rem',
+            minHeight: 'min(50vh, 20rem)',
+            flex: '1 1 auto',
+          }}
+        >
+          <LoadingIcon width={100} height={100} aria-hidden />
+          <Text
+            margin="0"
+            style={{
+              ...theme.typography.body2,
+              color: theme.palette.grey[600],
+            }}
+          >
+            프롬프트를 생성하는 중입니다…
+          </Text>
+        </Flex.Column>
+        ) : (
+        <>
         {wizardStep === 1 ? (
         <Flex.Column gap="1.25rem" width="100%" style={{ marginTop: '1.5rem' }} key="step1">
           <Flex.Column gap="0.35rem" width="100%">
@@ -685,6 +720,8 @@ const CvGeneratePage = () => {
           />
         </Flex.Row>
         ) : null}
+        </>
+        )}
       </S.Card>
     </Flex.Column>
   );
@@ -1065,12 +1102,15 @@ const S = {
   CountPill: styled('span')(({ theme }) => ({
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '0.125rem 0.5rem',
-    borderRadius: '1rem',
+    padding: '0.2rem 0.65rem',
+    borderRadius: '999px',
+    boxSizing: 'border-box',
+    border: `1px solid ${palette.blue500}`,
     ...theme.typography.caption,
     fontWeight: 600,
-    color: theme.palette.grey[600],
-    backgroundColor: palette.grey200,
+    color: palette.blue500,
+    backgroundColor: palette.white,
+    flexShrink: 0,
   })),
   JdFieldRow: styled(Flex.Row)`
     flex-wrap: wrap;

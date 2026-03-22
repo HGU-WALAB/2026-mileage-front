@@ -1,7 +1,9 @@
 import { Suspense } from 'react';
 
+import FullViewportLoading from './FullViewportLoading';
+
 const GlobalSuspense = ({ children }: { children: JSX.Element }) => (
-  <Suspense fallback={<div style={{ height: '100vh' }}></div>}>
+  <Suspense fallback={<FullViewportLoading />}>
     {children}
   </Suspense>
 );
