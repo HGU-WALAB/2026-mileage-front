@@ -5,7 +5,7 @@ import {
   SubmittedMileageModal,
 } from '.';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
-import { useGetSubmittedMileageQuery } from '@/hooks/queries';
+import { useGetSubmittedMileageQuery } from '@/pages/mileage/hooks';
 import { THeader } from '@/types/table';
 import { getDate } from '@/utils/getDate';
 import { useMediaQuery } from '@mui/material';

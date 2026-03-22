@@ -1,7 +1,7 @@
 import { Button, Flex } from '@/components';
 import { drawerWidth, globalHeight } from '@/constants/layoutSize';
 import { ROUTE_PATH } from '@/constants/routePath';
-import { useScholarshipDuration } from '@/hooks';
+import { useScholarshipDuration } from '@/pages/mileage/hooks';
 import { useDrawerStore } from '@/stores';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { Drawer as MuiDrawer, useTheme } from '@mui/material';

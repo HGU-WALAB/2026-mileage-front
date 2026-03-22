@@ -1,7 +1,7 @@
 import { DeleteIcon, LogoIcon } from '@/assets';
 import { Button, Flex, Heading, Modal, Text } from '@/components';
-import { useOpenModal } from '@/hooks';
-import { useDeleteSubmittedMileageMutation } from '@/hooks/queries';
+import { useDeleteSubmittedMileageMutation } from '@/pages/mileage/hooks';
+import { useOpenModal } from '@/shared/hooks';
 import { trackSubmittedMileageModalDeleteButton } from '@/service/amplitude/trackEvent';
 import { useAuthStore } from '@/stores';
 import { SubmittedMileageResponse } from '@/pages/mileage/types/mileage';

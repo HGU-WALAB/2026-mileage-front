@@ -9,7 +9,8 @@ import {
 } from '@/components';
 import { GuideDescSection } from '.';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
-import { useNewMileageForm, useOpenModal } from '@/hooks';
+import { useNewMileageForm } from '@/pages/mileage/hooks';
+import { useOpenModal } from '@/shared/hooks';
 import {
   trackAddNewMileageButton,
   trackAddNewMileageModalButton,

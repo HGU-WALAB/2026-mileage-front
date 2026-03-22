@@ -2,7 +2,7 @@ import { LogoutIcon } from '@/assets';
 import { Text } from '@/components';
 import Flex from '@/components/Flex/Flex';
 import { ROUTE_PATH } from '@/constants/routePath';
-import { usePostLogoutMutation } from '@/hooks/queries';
+import { usePostLogoutMutation } from '@/pages/auth/hooks';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { styled, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';

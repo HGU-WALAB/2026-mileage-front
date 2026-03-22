@@ -1,5 +1,5 @@
 import { Flex, Heading, Text } from '@/components';
-import { useGetUserInfoQuery } from '@/hooks/queries';
+import { useGetUserInfoQuery } from '@/pages/auth/hooks';
 import { useAuthStore } from '@/stores';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { styled, useTheme } from '@mui/material';

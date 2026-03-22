@@ -1,4 +1,4 @@
-import { useMaintenanceCheck } from '@/hooks';
+import { useMaintenanceCheck } from '@/pages/auth/hooks';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { MaintenancePage } from '@/pages/etc/MaintenancePage';
 import { useAuthStore } from '@/stores';

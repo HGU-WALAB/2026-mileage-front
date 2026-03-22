@@ -1,6 +1,6 @@
 import { BoxSkeleton, Table } from '@/components';
 import { AddMileageModal } from '.';
-import { useGetEtcMileageQuery } from '@/hooks/queries';
+import { useGetEtcMileageQuery } from '@/pages/mileage/hooks';
 import { THeader } from '@/types/table';
 import { useMemo } from 'react';
 

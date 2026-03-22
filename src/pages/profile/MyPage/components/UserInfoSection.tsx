@@ -1,7 +1,6 @@
 import { BoxSkeleton, Flex, Heading, Text } from '@/components';
 import { boxShadow } from '@/styles/common';
-import { useGetUserInfoQuery } from '@/hooks/queries';
-import { useLogin } from '@/hooks';
+import { useGetUserInfoQuery, useLogin } from '@/pages/auth/hooks';
 import { getDate } from '@/utils/getDate';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { styled, useTheme, useMediaQuery } from '@mui/material';

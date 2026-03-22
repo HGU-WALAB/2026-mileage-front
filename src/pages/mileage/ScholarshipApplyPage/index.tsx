@@ -7,8 +7,10 @@ import {
   NotScholarshipDurationSection,
   ProcessSection,
 } from './components';
-import { useScholarshipDuration } from '@/hooks';
-import { useGetIsAppliedScholarshipQuery } from '@/hooks/queries';
+import {
+  useGetIsAppliedScholarshipQuery,
+  useScholarshipDuration,
+} from '@/pages/mileage/hooks';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
 import { useState } from 'react';
 

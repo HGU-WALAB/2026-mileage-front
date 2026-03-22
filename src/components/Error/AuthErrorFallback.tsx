@@ -1,8 +1,8 @@
 import { LogoIcon } from '@/assets';
 import { Button, Heading, Modal } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
-import { useOpenModal } from '@/hooks';
-import { usePostLogoutMutation } from '@/hooks/queries';
+import { usePostLogoutMutation } from '@/pages/auth/hooks';
+import { useOpenModal } from '@/shared/hooks';
 import { useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 

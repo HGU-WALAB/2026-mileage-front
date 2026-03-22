@@ -1,7 +1,7 @@
 import { Flex } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
-import { useGetMileageQuery } from '@/hooks/queries';
+import { useGetMileageQuery } from '@/pages/mileage/hooks';
 import { useAuthStore } from '@/stores';
 import { boxShadow } from '@/styles/common';
 import { styled, useMediaQuery } from '@mui/material';

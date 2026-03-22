@@ -1,6 +1,6 @@
 import { LoadingIcon } from '@/assets';
 import { ErrorBox, Flex, Heading, LineChart } from '@/components';
-import { useGetSemesterCapabilityQuery } from '@/hooks/queries';
+import { useGetSemesterCapabilityQuery } from '@/pages/dashboard/hooks';
 import { boxShadow } from '@/styles/common';
 import { SemesterCapabilityResponse } from '@/pages/dashboard/types/capability';
 import { styled } from '@mui/material';

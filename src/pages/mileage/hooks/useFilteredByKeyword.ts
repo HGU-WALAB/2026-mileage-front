@@ -1,5 +1,6 @@
-import { useQueryParams } from '.';
 import { useCallback } from 'react';
+
+import useQueryParams from './useQueryParams';
 
 const useFilteredByKeyword = () => {
   const { queryParams, updateQueryParams } = useQueryParams();

@@ -1,7 +1,7 @@
 import { AlertBoxIcon, CheckBoxIcon } from '@/assets';
 import { Text } from '@/components';
 import Flex from '@/components/Flex/Flex';
-import { useGetIsAppliedScholarshipQuery } from '@/hooks/queries';
+import { useGetIsAppliedScholarshipQuery } from '@/pages/mileage/hooks';
 import { useAuthStore } from '@/stores';
 import { styled } from '@mui/material';
 

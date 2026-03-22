@@ -1,5 +1,5 @@
 import { Button } from '@/components';
-import { useLogin } from '@/hooks';
+import { useLogin } from '@/pages/auth/hooks';
 import { styled } from '@mui/material';
 
 const HisnetLoginButton = () => {

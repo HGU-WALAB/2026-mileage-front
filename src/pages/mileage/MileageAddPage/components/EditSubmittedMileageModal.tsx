@@ -10,7 +10,8 @@ import {
 } from '@/components';
 import { GuideDescSection } from '.';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
-import { useEditMileageForm, useOpenModal } from '@/hooks';
+import { useEditMileageForm } from '@/pages/mileage/hooks';
+import { useOpenModal } from '@/shared/hooks';
 import { trackSubmittedMileageModalEditButton } from '@/service/amplitude/trackEvent';
 import { SubmittedMileageResponse } from '@/pages/mileage/types/mileage';
 import { styled, useMediaQuery, useTheme } from '@mui/material';

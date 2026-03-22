@@ -1,6 +1,6 @@
 import { LogoIcon } from '@/assets';
 import { Button, Heading, Modal } from '@/components';
-import { useOpenModal } from '@/hooks';
+import { useOpenModal } from '@/shared/hooks';
 import { styled, useTheme } from '@mui/material';
 import { useEffect } from 'react';
 

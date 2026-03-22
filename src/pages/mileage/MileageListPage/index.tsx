@@ -10,7 +10,7 @@ import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
 import { useMediaQuery } from '@mui/material';
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useQueryParams } from '@/hooks';
+import { useQueryParams } from '@/pages/mileage/hooks';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 

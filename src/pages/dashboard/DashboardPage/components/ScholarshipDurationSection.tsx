@@ -1,7 +1,7 @@
 import { Flex, Text } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
-import { useScholarshipDuration } from '@/hooks';
+import { useScholarshipDuration } from '@/pages/mileage/hooks';
 import { useAuthStore } from '@/stores';
 import { boxShadow } from '@/styles/common';
 import { getFormattedDate } from '@/utils/getDate';

@@ -1,6 +1,6 @@
 import { Tabs } from '@/components';
 import { filterJoinedItems } from '@/pages/mileage/constants/filterItems';
-import { useFilteredByJoined } from '@/hooks';
+import { useFilteredByJoined } from '@/pages/mileage/hooks';
 import { TabItem } from '@/types/tab';
 
 const JoinedTabs = () => {

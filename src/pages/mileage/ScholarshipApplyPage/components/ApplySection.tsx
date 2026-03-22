@@ -1,11 +1,11 @@
 import { Button, Flex } from '@/components';
 import { ApplySucceedModal } from '.';
 import { TOAST_MESSAGES } from '@/constants/toastMessage';
-import { useOpenModal } from '@/hooks';
 import {
   useGetIsAppliedScholarshipQuery,
   usePostScholarshipApplyMutation,
-} from '@/hooks/queries';
+} from '@/pages/mileage/hooks';
+import { useOpenModal } from '@/shared/hooks';
 import { trackScholarshipApplyButton } from '@/service/amplitude/trackEvent';
 import { useAuthStore } from '@/stores';
 import { styled } from '@mui/material';

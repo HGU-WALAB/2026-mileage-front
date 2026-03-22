@@ -1,7 +1,8 @@
 import { ALL_SEMESTER } from '@/constants/system';
-import { useQueryParams } from '.';
 import { useMemo } from 'react';
+
 import useGetMileageQuery from './useGetMileageQuery';
+import useQueryParams from './useQueryParams';
 
 const useFilteredBySemester = () => {
   const { queryParams, updateQueryParams } = useQueryParams();
