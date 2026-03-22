@@ -140,10 +140,6 @@ const CvGeneratePage = () => {
   const majorLine = [major1, major2].filter(Boolean).join(' / ') || '-';
   const departmentMajorLine =
     department.trim() !== '' ? `${department} ${majorLine}` : majorLine;
-  const gradeLine =
-    userInfo != null
-      ? `${userInfo.grade}학년 ${userInfo.semester}학기`
-      : '';
 
   const profileImageUrl = getProfileImageUrl(userInfo?.profile_image_url ?? null);
 
@@ -234,15 +230,6 @@ const CvGeneratePage = () => {
                 프로필 (자동 포함)
               </Heading>
             </Flex.Row>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-              }}
-            >
-              My Info에서 프로필을 먼저 작성해 두면 CV 프롬프트에 반영됩니다.
-            </Text>
             <S.ProfileInner align="flex-start" gap="1rem" wrap="wrap">
               <S.AvatarBox>
                 {profileImageUrl ? (
@@ -271,17 +258,6 @@ const CvGeneratePage = () => {
                 >
                   {departmentMajorLine}
                 </Text>
-                {gradeLine ? (
-                  <Text
-                    margin="0"
-                    style={{
-                      ...theme.typography.body2,
-                      color: theme.palette.grey[500],
-                    }}
-                  >
-                    {gradeLine}
-                  </Text>
-                ) : null}
               </Flex.Column>
             </S.ProfileInner>
           </S.HighlightSection>
@@ -369,7 +345,7 @@ const CvGeneratePage = () => {
             label="다음: JD 입력"
             variant="contained"
             color="blue"
-            size="medium"
+            size="large"
             icon={() => <ArrowForwardIcon sx={{ fontSize: 20 }} />}
             iconPosition="end"
             onClick={handleNext}
