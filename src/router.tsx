@@ -23,6 +23,7 @@ const SummaryEditPage = React.lazy(
 const SummaryPreviewPage = React.lazy(
   () => import('@/pages/summary/SummaryPage/SummaryPreviewPage'),
 );
+const CvGeneratePage = React.lazy(() => import('@/pages/cv/CvGeneratePage'));
 const GitHubCallbackPage = React.lazy(
   () => import('@/pages/profile/GitHubCallbackPage'),
 );
@@ -69,6 +70,10 @@ const router = createBrowserRouter(
                 {
                   path: ROUTE_PATH.summaryPreview,
                   element: <SummaryPreviewPage />,
+                },
+                {
+                  path: ROUTE_PATH.cv,
+                  element: <CvGeneratePage />,
                 },
               ],
             },

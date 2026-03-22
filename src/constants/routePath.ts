@@ -7,6 +7,7 @@ export const ROUTE_PATH = {
   awardArchive: '/mileage/award',
   summary: '/summary',
   summaryPreview: '/summary/preview',
+  cv: '/cv',
   myPage: '/my',
   githubCallback: '/auth/github/callback',
 };

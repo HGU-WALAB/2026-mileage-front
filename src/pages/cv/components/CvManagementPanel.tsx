@@ -11,6 +11,9 @@ import { IconButton, LinearProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, type FunctionComponent, type SVGProps } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+import { ROUTE_PATH } from '@/constants/routePath';
 
 import { formatDateOnly } from '@/pages/summary/utils/date';
 import {
@@ -48,6 +51,7 @@ function keywordCount(notes: string): number {
 }
 
 const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
+  const navigate = useNavigate();
   const [previewId, setPreviewId] = useState<number | null>(null);
 
   const listQuery = useQuery({
@@ -99,6 +103,10 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
             size="medium"
             icon={AddIconWrap}
             iconPosition="start"
+            onClick={() => {
+              onClose();
+              navigate(ROUTE_PATH.cv);
+            }}
           />
           <IconButton
             type="button"
