@@ -19,11 +19,16 @@ import { buildSummaryMarkdown } from './utils/buildSummaryMarkdown';
 import {
   ActivitiesSectionContent,
   MileageSectionContent,
+  PortfolioPromptQualityDashboard,
   RepoSectionContent,
   StaticSection,
   TechStackSectionContent,
   UserInfoSectionContent,
 } from './components';
+import {
+  PROMPT_QUALITY_SECTION_HINTS,
+  usePortfolioPromptProgress,
+} from './utils/portfolioPromptProgress';
 
 const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   tech: <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
@@ -43,6 +48,7 @@ const SummaryPreviewPage = () => {
     mileageItems,
     activities,
   } = useSummaryContext();
+  const promptProgress = usePortfolioPromptProgress();
 
   const handleCopyMarkdown = useCallback(async () => {
     const markdown = buildSummaryMarkdown({
@@ -96,6 +102,7 @@ const SummaryPreviewPage = () => {
           onClick={handleCopyMarkdown}
         />
       </S.ButtonRow>
+      <PortfolioPromptQualityDashboard progress={promptProgress} />
       <UserInfoSectionContent readOnly />
       <Flex.Column gap="1rem">
         {sectionOrder.map(key => (
@@ -110,6 +117,10 @@ const SummaryPreviewPage = () => {
                   : undefined
             }
             icon={SECTION_ICONS[key]}
+            promptFooter={{
+              percent: promptProgress[key],
+              hint: PROMPT_QUALITY_SECTION_HINTS[key],
+            }}
           >
             {renderSectionContent(key)}
           </StaticSection>

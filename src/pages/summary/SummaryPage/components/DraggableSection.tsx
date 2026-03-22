@@ -10,6 +10,8 @@ import {
 
 import type { DraggableSectionKey } from '../../constants/constants';
 
+import SectionPromptQualityFooter from './SectionPromptQualityFooter';
+
 interface DraggableSectionProps {
   sectionId: DraggableSectionKey;
   title: string;
@@ -24,6 +26,8 @@ interface DraggableSectionProps {
   onDragLeave: (e: DragEvent<HTMLElement>) => void;
   onDrop: (targetId: DraggableSectionKey) => void;
   isDragOver?: boolean;
+  /** 포트폴리오 프롬프트 품질 진행도 (카드 하단 오른쪽 정렬 바) */
+  promptFooter?: { percent: number; hint: string };
   children: ReactNode;
 }
 
@@ -39,6 +43,7 @@ const DraggableSection = ({
   onDragLeave,
   onDrop,
   isDragOver = false,
+  promptFooter,
   children,
 }: DraggableSectionProps) => {
   const theme = useTheme();
@@ -111,6 +116,12 @@ const DraggableSection = ({
         )}
       </S.Header>
       <S.Content>{children}</S.Content>
+      {promptFooter != null && (
+        <SectionPromptQualityFooter
+          hint={promptFooter.hint}
+          percent={promptFooter.percent}
+        />
+      )}
     </S.Section>
   );
 };

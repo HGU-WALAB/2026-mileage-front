@@ -26,12 +26,17 @@ import {
   DraggableSection,
   MileageSectionContent,
   MileageSelectModal,
+  PortfolioPromptQualityDashboard,
   RepoSelectModal,
   RepoSectionContent,
   TechStackSectionContent,
   type TechStackSectionContentHandle,
   UserInfoSectionContent,
 } from './components';
+import {
+  PROMPT_QUALITY_SECTION_HINTS,
+  usePortfolioPromptProgress,
+} from './utils/portfolioPromptProgress';
 
 const GITHUB_STORAGE_KEY = 'github-storage';
 function getGithubUsernameFromStorage(): string | null {
@@ -74,6 +79,7 @@ const SummaryEditPage = () => {
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const techStackRef = useRef<TechStackSectionContentHandle>(null);
   const activitiesRef = useRef<ActivitiesSectionContentHandle>(null);
+  const promptProgress = usePortfolioPromptProgress();
 
   const handleDragStart = useCallback((id: DraggableSectionKey) => {
     setDraggedId(id);
@@ -212,6 +218,7 @@ const SummaryEditPage = () => {
           />
         </S.ButtonGroup>
       </S.TopRow>
+      <PortfolioPromptQualityDashboard progress={promptProgress} />
       <UserInfoSectionContent />
       <Flex.Column gap="1rem">
         {sectionOrder.map(key => (
@@ -262,6 +269,10 @@ const SummaryEditPage = () => {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             isDragOver={dragOverId === key}
+            promptFooter={{
+              percent: promptProgress[key],
+              hint: PROMPT_QUALITY_SECTION_HINTS[key],
+            }}
           >
             {renderSectionContent(key)}
           </DraggableSection> 

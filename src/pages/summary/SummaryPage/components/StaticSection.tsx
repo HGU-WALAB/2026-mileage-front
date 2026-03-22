@@ -3,15 +3,24 @@ import { boxShadow } from '@/styles/common';
 import { styled, useTheme } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import SectionPromptQualityFooter from './SectionPromptQualityFooter';
+
 interface StaticSectionProps {
   title: string;
   /** 섹션 타이틀 옆 회색 가이드 텍스트 (미리보기에서도 사용 가능) */
   subtitle?: string;
   icon?: ReactNode;
+  promptFooter?: { percent: number; hint: string };
   children: ReactNode;
 }
 
-const StaticSection = ({ title, subtitle, icon, children }: StaticSectionProps) => {
+const StaticSection = ({
+  title,
+  subtitle,
+  icon,
+  promptFooter,
+  children,
+}: StaticSectionProps) => {
   const theme = useTheme();
 
   return (
@@ -37,6 +46,12 @@ const StaticSection = ({ title, subtitle, icon, children }: StaticSectionProps) 
         </Flex.Column>
       </S.Header>
       <S.Content>{children}</S.Content>
+      {promptFooter != null && (
+        <SectionPromptQualityFooter
+          hint={promptFooter.hint}
+          percent={promptFooter.percent}
+        />
+      )}
     </S.Section>
   );
 };
