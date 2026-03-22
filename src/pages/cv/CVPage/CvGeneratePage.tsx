@@ -49,7 +49,6 @@ import {
 
 import CvGenerateStep3 from './components/CvGenerateStep3';
 import {
-  clearCvWizardPendingPrompt,
   readCvWizardPendingPrompt,
   readCvWizardStep1Selection,
   readCvWizardStep2Draft,
@@ -224,8 +223,6 @@ const CvGeneratePage = () => {
   ]);
 
   const handleBack = useCallback(() => {
-    clearCvWizardPendingPrompt();
-    writeCvWizardUiStep(1);
     navigate(ROUTE_PATH.summary);
   }, [navigate]);
 
@@ -612,7 +609,7 @@ const CvGeneratePage = () => {
             aria-label="항목 선택 단계로 돌아가기"
             startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
           >
-            이전
+            이전 단계
           </S.BackButton>
           <Button
             label="프롬프트 생성"
@@ -643,7 +640,7 @@ const CvGeneratePage = () => {
             aria-label="JD 입력 단계로 돌아가기"
             startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
           >
-            이전
+            이전 단계
           </S.BackButton>
           <Button
             label="AI 결과 붙여넣기"

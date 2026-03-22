@@ -129,3 +129,16 @@ export function clearCvWizardPendingPrompt(): void {
     // ignore
   }
 }
+
+/** CV 마법사 관련 sessionStorage 전부 제거 (/cv 이탈 시 등) */
+export function clearAllCvWizardSession(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(CV_WIZARD_STEP1_STORAGE_KEY);
+    sessionStorage.removeItem(CV_WIZARD_STEP2_STORAGE_KEY);
+    sessionStorage.removeItem(CV_WIZARD_PENDING_PROMPT_KEY);
+    sessionStorage.removeItem(CV_WIZARD_UI_STEP_KEY);
+  } catch {
+    // ignore
+  }
+}
