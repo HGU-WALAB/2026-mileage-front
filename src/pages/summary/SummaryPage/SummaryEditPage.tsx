@@ -20,6 +20,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
+import { CvManagementPanel } from '@/pages/cv';
 import { putPortfolioSettings } from '../apis/portfolio';
 import {
   SECTION_TITLES,
@@ -86,6 +87,7 @@ const SummaryEditPage = () => {
   const [dragOverId, setDragOverId] = useState<DraggableSectionKey | null>(null);
   const [repoModalOpen, setRepoModalOpen] = useState(false);
   const [mileageModalOpen, setMileageModalOpen] = useState(false);
+  const [cvPanelOpen, setCvPanelOpen] = useState(false);
   const hasGithub = getGithubUsernameFromStorage() != null;
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const techStackRef = useRef<TechStackSectionContentHandle>(null);
@@ -198,12 +200,21 @@ const SummaryEditPage = () => {
             size="large"
             icon={ResumePaperIcon}
             iconPosition="start"
+            onClick={() => setCvPanelOpen(open => !open)}
           />
         </S.ButtonGroup>
       </S.TopRow>
-      <PortfolioPromptQualityDashboard progress={promptProgress} />
-      <UserInfoSectionContent />
-      <Flex.Column gap="1rem">
+      <S.ContentSplit
+        $panelOpen={cvPanelOpen}
+        align="stretch"
+        gap="1rem"
+        width="100%"
+        style={{ minWidth: 0 }}
+      >
+        <S.MainSplit $narrow={cvPanelOpen} gap="1.5rem" width="100%" style={{ minWidth: 0 }}>
+          <PortfolioPromptQualityDashboard progress={promptProgress} />
+          <UserInfoSectionContent />
+          <Flex.Column gap="1rem" width="100%" style={{ minWidth: 0 }}>
         {sectionOrder.map(key => (
           <DraggableSection
             key={key}
@@ -261,7 +272,14 @@ const SummaryEditPage = () => {
           </DraggableSection> 
 
         ))}
-      </Flex.Column> 
+          </Flex.Column>
+        </S.MainSplit>
+        {cvPanelOpen ? (
+          <S.CvPane width="100%" style={{ minWidth: 0 }}>
+            <CvManagementPanel onClose={() => setCvPanelOpen(false)} />
+          </S.CvPane>
+        ) : null}
+      </S.ContentSplit>
       <RepoSelectModal
         open={repoModalOpen}
         onClose={() => setRepoModalOpen(false)}
@@ -278,6 +296,32 @@ const SummaryEditPage = () => {
 export default SummaryEditPage;
 
 const S = {
+  ContentSplit: styled(Flex.Row)<{ $panelOpen: boolean }>`
+    flex-wrap: nowrap;
+    @media ${MAX_RESPONSIVE_WIDTH} {
+      flex-direction: ${({ $panelOpen }) => ($panelOpen ? 'column' : 'row')};
+      flex-wrap: ${({ $panelOpen }) => ($panelOpen ? 'wrap' : 'nowrap')};
+    }
+  `,
+  MainSplit: styled(Flex.Column)<{ $narrow: boolean }>`
+    flex: ${({ $narrow }) => ($narrow ? '1 1 50%' : '1 1 100%')};
+    max-width: 100%;
+    min-width: 0;
+    @media ${MAX_RESPONSIVE_WIDTH} {
+      flex: 1 1 auto;
+      width: 100%;
+    }
+  `,
+  CvPane: styled(Flex.Column)`
+    flex: 1 1 50%;
+    min-width: 0;
+    min-height: min(70vh, 42rem);
+    @media ${MAX_RESPONSIVE_WIDTH} {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: min(55vh, 28rem);
+    }
+  `,
   TopRow: styled(Flex.Row)`
     margin-bottom: 0.5rem;
     width: 100%;

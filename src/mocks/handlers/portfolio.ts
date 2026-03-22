@@ -18,7 +18,9 @@ import { mockMileageList } from '@/mocks/fixtures/mileageList';
 import { mockPortfolioMileage } from '@/mocks/fixtures/portfolioMileage';
 import { mockPortfolioRepositories } from '@/mocks/fixtures/portfolioRepositories';
 import { mockTechStackResponse } from '@/mocks/fixtures/portfolioTechStack';
+import { mockPortfolioCvDetails } from '@/mocks/fixtures/portfolioCv';
 import { mockUserInfoResponse } from '@/mocks/fixtures/portfolioUserInfo';
+import type { PortfolioCvDetail } from '@/pages/cv/apis/cv';
 
 const techStackStore = {
   tech_stack: [...mockTechStackResponse.tech_stack],
@@ -44,6 +46,8 @@ const mileageStore: PortfolioMileageItem[] = mockPortfolioMileage.map(m => ({
   ...m,
 }));
 let nextMileageId = Math.max(0, ...mileageStore.map(m => m.id)) + 1;
+
+const cvStore: PortfolioCvDetail[] = mockPortfolioCvDetails.map(c => ({ ...c }));
 
 function buildPortfolioMileageItem(
   id: number,
@@ -262,6 +266,32 @@ export const PortfolioHandlers = [
       }
     }
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
+  }),
+
+  http.get(BASE_URL + ENDPOINT.PORTFOLIO_CV, () => {
+    return HttpResponse.json(
+      {
+        cvs: cvStore.map(c => ({
+          id: c.id,
+          title: c.title,
+          job_posting: c.job_posting,
+          target_position: c.target_position,
+          additional_notes: c.additional_notes,
+          created_at: c.created_at,
+          updated_at: c.updated_at,
+        })),
+      },
+      { status: 200 },
+    );
+  }),
+
+  http.get(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/:id`, ({ params }) => {
+    const id = Number(params.id);
+    const item = cvStore.find(c => c.id === id);
+    if (!item || Number.isNaN(id)) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    return HttpResponse.json({ ...item }, { status: 200 });
   }),
 
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, ({ request }) => {

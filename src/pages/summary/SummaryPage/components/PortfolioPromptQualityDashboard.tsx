@@ -1,4 +1,5 @@
 import { Flex, Text } from '@/components';
+import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import CodeIcon from '@mui/icons-material/Code';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -166,12 +167,21 @@ const S = {
     padding: 0.125rem 0.125rem 0.25rem;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
+    @media ${MAX_RESPONSIVE_WIDTH} {
+      overflow-x: visible;
+      scrollbar-gutter: auto;
+      margin: 0;
+      padding: 0;
+    }
   `,
   Grid: styled('div')`
     display: grid;
     grid-template-columns: repeat(5, minmax(10rem, 1fr));
     gap: 0.625rem;
     width: 100%;
+    @media ${MAX_RESPONSIVE_WIDTH} {
+      grid-template-columns: 1fr;
+    }
   `,
   Card: styled('div')`
     display: flex;

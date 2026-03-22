@@ -1,8 +1,4 @@
-import {
-  drawerWidth,
-  globalHeight,
-  globalMobileHeight,
-} from '@/constants/layoutSize';
+import { drawerWidth, globalHeight } from '@/constants/layoutSize';
 import { styled } from '@mui/material/styles';
 
 const Main = styled('main', {
@@ -16,11 +12,20 @@ const Main = styled('main', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  height: isMobile ? globalMobileHeight : globalHeight,
+  ...(isMobile
+    ? {
+        flex: '1 1 0%',
+        minHeight: 0,
+        alignSelf: 'stretch',
+        height: 'auto',
+      }
+    : {
+        height: globalHeight,
+      }),
   maxWidth: `100%`,
   margin: `.5rem`,
   backgroundColor: theme.palette.background.default,
-  overflowY: 'scroll',
+  overflowY: 'auto',
   position: 'relative',
   borderRadius: '.5rem',
   variants: [

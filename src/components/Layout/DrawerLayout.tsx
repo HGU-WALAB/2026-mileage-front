@@ -34,12 +34,24 @@ export default DrawerLayout;
 const MobileDrawerLayout = () => {
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   return (
-    <Flex.Column>
-      <HeaderMobile />
+    <Flex.Column
+      width="100%"
+      style={{
+        height: '100dvh',
+        minHeight: 0,
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+      }}
+    >
+      <Flex.Column style={{ flexShrink: 0 }} width="100%">
+        <HeaderMobile />
+      </Flex.Column>
       <Main open={false} isMobile={isMobile}>
         <ErrorResetBoundary />
       </Main>
-      <NavigationBar />
+      <Flex.Column style={{ flexShrink: 0 }} width="100%">
+        <NavigationBar />
+      </Flex.Column>
     </Flex.Column>
   );
 };
