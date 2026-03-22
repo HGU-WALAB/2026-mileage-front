@@ -298,6 +298,36 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ ...item }, { status: 200 });
   }),
 
+  http.patch(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/:id`, async ({ params, request }) => {
+    const id = Number(params.id);
+    const idx = cvStore.findIndex(c => c.id === id);
+    if (idx === -1 || Number.isNaN(id)) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    try {
+      const body = (await request.json()) as {
+        title?: string;
+        html_content?: string;
+      };
+      const now = new Date().toISOString();
+      const prev = cvStore[idx];
+      const next: PortfolioCvDetail = {
+        ...prev,
+        title:
+          body.title != null && String(body.title).trim() !== ''
+            ? String(body.title).trim()
+            : prev.title,
+        html_content:
+          body.html_content !== undefined ? String(body.html_content) : prev.html_content,
+        updated_at: now,
+      };
+      cvStore[idx] = next;
+      return HttpResponse.json({ ...next }, { status: 200 });
+    } catch {
+      return new HttpResponse(null, { status: 400 });
+    }
+  }),
+
   http.post(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/build-prompt`, async ({ request }) => {
     try {
       const body = (await request.json()) as PortfolioCvBuildPromptRequest;

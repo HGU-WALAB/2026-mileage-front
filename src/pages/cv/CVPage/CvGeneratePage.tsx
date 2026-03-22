@@ -1,68 +1,53 @@
 import { BASE_URL } from '@/apis/config';
 import { ENDPOINT } from '@/apis/endPoint';
 import { LoadingIcon } from '@/assets';
-import { Button, Flex, Heading, Text } from '@/components';
-import { ROUTE_PATH } from '@/constants/routePath';
+import { Flex, Heading, Text } from '@/components';
+import {
+  ROUTE_PATH,
+  SUMMARY_CV_PANEL_QUERY_KEY,
+  SUMMARY_CV_PANEL_QUERY_VALUE,
+} from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
-import { boxShadow } from '@/styles/common';
-import { palette } from '@/styles/palette';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CheckIcon from '@mui/icons-material/Check';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
-import FolderIcon from '@mui/icons-material/Folder';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
-import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
-import {
-  Button as MuiButton,
-  Checkbox,
-  TextField,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { useMediaQuery, useTheme } from '@mui/material';
 import {
   Fragment,
   useCallback,
   useEffect,
   useMemo,
   useState,
-  type FunctionComponent,
-  type ReactNode,
-  type SVGProps,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { INPUT_MAX_LENGTH } from '@/pages/summary/constants/inputLimits';
-import { TechStackSectionContent } from '@/pages/summary/SummaryPage/components';
-import { formatDateRange } from '@/pages/summary/utils/date';
-import {
-  type ActivityItem,
-  type MileageItem,
-  type RepoItem,
-  useSummaryContext,
-} from '@/pages/summary/SummaryPage/context/SummaryContext';
+import { useSummaryContext } from '@/pages/summary/SummaryPage/context/SummaryContext';
 
-import CvGenerateStep3 from './components/CvGenerateStep3';
 import {
+  readCvWizardPendingCvId,
   readCvWizardPendingPrompt,
   readCvWizardStep1Selection,
   readCvWizardStep2Draft,
+  readCvWizardStep4Html,
   readCvWizardUiStep,
   writeCvWizardPendingCvId,
   writeCvWizardPendingPrompt,
   writeCvWizardStep1Selection,
   writeCvWizardStep2Draft,
+  writeCvWizardStep4Html,
   writeCvWizardUiStep,
 } from '../constants/cvWizardStorage';
+import usePatchPortfolioCvMutation from '../hooks/usePatchPortfolioCvMutation';
 import usePostPortfolioCvBuildPromptMutation from '../hooks/usePostPortfolioCvBuildPromptMutation';
+import { repoSelectionId } from '../utils/cvWizardSelection';
+import { sanitizeCvHtml } from '../utils/sanitizeCvHtml';
+
+import { CvGeneratePageS as S } from './cvGeneratePageStyles';
+import CvGenerateStep1 from './components/CvGenerateStep1';
+import CvGenerateStep2 from './components/CvGenerateStep2';
+import CvGenerateStep3 from './components/CvGenerateStep3';
+import CvGenerateStep4 from './components/CvGenerateStep4';
 
 const STEPS = [
   { n: 1, label: '항목 선택' },
@@ -71,26 +56,19 @@ const STEPS = [
   { n: 4, label: '결과 저장' },
 ] as const;
 
-const TITLE_PLACEHOLDER = '예) 네이버 2026 상반기 백엔드 신입';
-
-const JOB_POSTING_PLACEHOLDER = `예) 회사: 카카오
-포지션: 백엔드 개발자 (인턴)
-자격요건: Java/Spring 경험, 알고리즘 실력
-우대사항: AWS 경험, 오픈소스 기여
-...`;
-
-const TARGET_POSITION_PLACEHOLDER =
-  '예) 백엔드 개발자, AI 엔지니어, 프론트엔드 인턴 등';
-
-const ADDITIONAL_NOTES_PLACEHOLDER =
-  '예) 프로젝트 경험 위주로 강조해줘, 간결하게 작성해줘 등';
-
-type WizardStep = 1 | 2 | 3;
+type WizardStep = 1 | 2 | 3 | 4;
 
 type StepVisualState = 'completed' | 'active' | 'upcoming';
 
 function readInitialWizardStep(): WizardStep {
   const s = readCvWizardUiStep();
+  if (s === 4) {
+    const cvId = readCvWizardPendingCvId();
+    const hasPrompt = Boolean(readCvWizardPendingPrompt()?.trim());
+    if (cvId !== null && hasPrompt) return 4;
+    if (hasPrompt) return 3;
+    return 2;
+  }
   if (s === 3) return readCvWizardPendingPrompt()?.trim() ? 3 : 2;
   if (s === 2) return 2;
   return 1;
@@ -103,27 +81,19 @@ function stepVisual(stepN: number, wizardStep: WizardStep): StepVisualState {
     if (stepN === 2) return 'active';
     return 'upcoming';
   }
-  if (stepN <= 2) return 'completed';
-  if (stepN === 3) return 'active';
-  return 'upcoming';
+  if (wizardStep === 3) {
+    if (stepN <= 2) return 'completed';
+    if (stepN === 3) return 'active';
+    return 'upcoming';
+  }
+  if (stepN <= 3) return 'completed';
+  return stepN === 4 ? 'active' : 'upcoming';
 }
 
 const getProfileImageUrl = (filename: string | null | undefined): string | null =>
   filename?.trim()
     ? `${BASE_URL}${ENDPOINT.PORTFOLIO_USER_INFO_IMAGE}/${encodeURIComponent(filename.trim())}`
     : null;
-
-function repoSelectionId(r: RepoItem): number {
-  return r.id ?? r.repo_id;
-}
-
-function toggleInList(ids: number[], id: number): number[] {
-  return ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id];
-}
-
-const AutoAwesomeIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
-  <AutoAwesomeIcon sx={{ fontSize: 20 }} />
-);
 
 const CvGeneratePage = () => {
   useTrackPageView({ eventName: '[View] CV 생성기' });
@@ -132,11 +102,13 @@ const CvGeneratePage = () => {
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const { userInfo, repos, mileageItems, activities } = useSummaryContext();
   const buildPromptMutation = usePostPortfolioCvBuildPromptMutation();
+  const patchCvMutation = usePatchPortfolioCvMutation();
 
   const [wizardStep, setWizardStep] = useState<WizardStep>(readInitialWizardStep);
   const [generatedPrompt, setGeneratedPrompt] = useState(
     () => readCvWizardPendingPrompt() ?? '',
   );
+  const [htmlResultDraft, setHtmlResultDraft] = useState(() => readCvWizardStep4Html());
 
   const [selectedMileageIds, setSelectedMileageIds] = useState<number[]>(
     () => readCvWizardStep1Selection()?.selected_mileage_ids ?? [],
@@ -202,14 +174,26 @@ const CvGeneratePage = () => {
   }, [wizardStep]);
 
   useEffect(() => {
+    writeCvWizardStep4Html(htmlResultDraft);
+  }, [htmlResultDraft]);
+
+  useEffect(() => {
     if (wizardStep !== 3) return;
     if (!generatedPrompt.trim()) setWizardStep(2);
   }, [wizardStep, generatedPrompt]);
 
+  useEffect(() => {
+    if (wizardStep !== 4) return;
+    if (readCvWizardPendingCvId() === null) {
+      toast.warn('CV 정보가 없습니다. 프롬프트 생성 단계부터 다시 진행해 주세요.');
+      setWizardStep(3);
+    }
+  }, [wizardStep]);
+
   const getCommittedSelection = useCallback(() => {
     const mileageIds = mileageItems
-      .filter(m => m.id != null && selectedMileageIds.includes(m.id!))
-      .map(m => m.id!);
+      .filter(m => typeof m.id === 'number' && selectedMileageIds.includes(m.id))
+      .map(m => m.id as number);
     const activityIds = activities
       .filter(a => selectedActivityIds.includes(a.id))
       .map(a => a.id);
@@ -247,9 +231,48 @@ const CvGeneratePage = () => {
     setWizardStep(2);
   }, []);
 
-  const handleStep4Placeholder = useCallback(() => {
-    toast.info('4단계는 준비 중입니다.');
+  const handleGoToStep4 = useCallback(() => {
+    if (readCvWizardPendingCvId() === null) {
+      toast.warn('먼저 프롬프트를 생성해 주세요.');
+      return;
+    }
+    setWizardStep(4);
   }, []);
+
+  const handlePrevFromStep4 = useCallback(() => {
+    setWizardStep(3);
+  }, []);
+
+  const handleSaveHistory = useCallback(() => {
+    const id = readCvWizardPendingCvId();
+    if (id === null) {
+      toast.error('저장할 CV를 찾을 수 없습니다.');
+      return;
+    }
+    const raw = htmlResultDraft.trim();
+    if (!raw) {
+      toast.warn('저장할 HTML을 입력해 주세요.');
+      return;
+    }
+    const html_content = sanitizeCvHtml(raw);
+    patchCvMutation.mutate(
+      { id, body: { html_content } },
+      {
+        onSuccess: () => {
+          toast.success('히스토리에 저장되었습니다.');
+          navigate({
+            pathname: ROUTE_PATH.summary,
+            search: new URLSearchParams({
+              [SUMMARY_CV_PANEL_QUERY_KEY]: SUMMARY_CV_PANEL_QUERY_VALUE,
+            }).toString(),
+          });
+        },
+        onError: () => {
+          toast.error('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+        },
+      },
+    );
+  }, [htmlResultDraft, navigate, patchCvMutation]);
 
   const handleBuildPrompt = useCallback(() => {
     const tt = draftTitle.trim();
@@ -386,341 +409,90 @@ const CvGeneratePage = () => {
         </S.StepperRow>
 
         {buildPromptMutation.isPending ? (
-        <Flex.Column
-          role="status"
-          aria-live="polite"
-          align="center"
-          justify="center"
-          gap="0.75rem"
-          width="100%"
-          style={{
-            marginTop: '1.5rem',
-            minHeight: 'min(50vh, 20rem)',
-            flex: '1 1 auto',
-          }}
-        >
-          <LoadingIcon width={100} height={100} aria-hidden />
-          <Text
-            margin="0"
+          <Flex.Column
+            role="status"
+            aria-live="polite"
+            align="center"
+            justify="center"
+            gap="0.75rem"
+            width="100%"
             style={{
-              ...theme.typography.body2,
-              color: theme.palette.grey[600],
+              marginTop: '1.5rem',
+              minHeight: 'min(50vh, 20rem)',
+              flex: '1 1 auto',
             }}
           >
-            프롬프트를 생성하는 중입니다…
-          </Text>
-        </Flex.Column>
+            <LoadingIcon width={100} height={100} aria-hidden />
+            <Text
+              margin="0"
+              style={{
+                ...theme.typography.body2,
+                color: theme.palette.grey[600],
+              }}
+            >
+              프롬프트를 생성하는 중입니다…
+            </Text>
+          </Flex.Column>
         ) : (
-        <>
-        {wizardStep === 1 ? (
-        <Flex.Column gap="1.25rem" width="100%" style={{ marginTop: '1.5rem' }} key="step1">
-          <Flex.Column gap="0.35rem" width="100%">
-            <Heading as="h3" margin="0" color={theme.palette.text.primary}>
-              어떤 항목을 포함할까요?
-            </Heading>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-              }}
-            >
-              CV에 넣을 마일리지·레포지토리·활동을 선택하세요. 프로필과 기술 스택은 자동으로 포함됩니다.
-            </Text>
-          </Flex.Column>
-
-          <S.HighlightSection>
-            <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-              <PersonOutlineIcon sx={{ fontSize: 22, color: palette.blue500 }} />
-              <Heading as="h4" margin="0" color={theme.palette.text.primary}>
-                프로필 (자동 포함)
-              </Heading>
-            </Flex.Row>
-            <S.ProfileInner align="flex-start" gap="1rem" wrap="wrap">
-              <S.AvatarBox>
-                {profileImageUrl ? (
-                  <S.AvatarImg src={profileImageUrl} alt="" />
-                ) : null}
-              </S.AvatarBox>
-              <Flex.Column gap="0.35rem" style={{ flex: '1 1 12rem', minWidth: 0 }}>
-                <Heading as="h2" margin="0" color={theme.palette.text.primary}>
-                  {name}
-                </Heading>
-                <Text
-                  margin="0"
-                  style={{
-                    ...theme.typography.body1,
-                    color: theme.palette.grey[600],
-                  }}
-                >
-                  {bio || '-'}
-                </Text>
-                <Text
-                  margin="0"
-                  style={{
-                    ...theme.typography.body1,
-                    color: theme.palette.grey[600],
-                  }}
-                >
-                  {departmentMajorLine}
-                </Text>
-              </Flex.Column>
-            </S.ProfileInner>
-          </S.HighlightSection>
-
-          <S.SectionBlock>
-            <Flex.Row align="center" gap="0.5rem" wrap="wrap" style={{ marginBottom: '0.65rem' }}>
-              <MenuBookIcon sx={{ fontSize: 20, color: palette.grey600 }} />
-              <Heading as="h4" margin="0" color={theme.palette.text.primary}>
-                기술 스택 (자동 포함)
-              </Heading>
-            </Flex.Row>
-            <TechStackSectionContent readOnly />
-          </S.SectionBlock>
-
-          <SelectableSection
-            title="마일리지 항목"
-            countLabel={`${selectedMileageIds.length}개 선택`}
-            itemCount={mileageItems.length}
-            icon={<MenuBookIcon sx={{ fontSize: 20, color: palette.grey600 }} />}
-            emptyText="포트폴리오에 등록된 마일리지가 없습니다. 내 활동 관리에서 마일리지를 추가하세요."
-          >
-            {mileageItems.map(m => (
-              <MileageSelectableRow
-                key={m.mileage_id}
-                item={m}
-                selected={m.id != null && selectedMileageIds.includes(m.id)}
-                disabled={m.id == null}
-                onToggle={() => {
-                  if (m.id == null) return;
-                  setSelectedMileageIds(prev => toggleInList(prev, m.id!));
-                }}
+          <>
+            {wizardStep === 1 ? (
+              <CvGenerateStep1
+                name={name}
+                bio={bio}
+                departmentMajorLine={departmentMajorLine}
+                profileImageUrl={profileImageUrl}
+                mileageItems={mileageItems}
+                activities={activities}
+                visibleRepos={visibleRepos}
+                selectedMileageIds={selectedMileageIds}
+                selectedActivityIds={selectedActivityIds}
+                selectedRepoIds={selectedRepoIds}
+                onSelectedMileageIdsChange={setSelectedMileageIds}
+                onSelectedActivityIdsChange={setSelectedActivityIds}
+                onSelectedRepoIdsChange={setSelectedRepoIds}
+                onNext={handleNextFromStep1}
               />
-            ))}
-          </SelectableSection>
+            ) : null}
 
-          <SelectableSection
-            title="레포지토리"
-            countLabel={`${selectedRepoIds.filter(id => visibleRepos.some(r => repoSelectionId(r) === id)).length}개 선택`}
-            itemCount={visibleRepos.length}
-            icon={<FolderIcon sx={{ fontSize: 20, color: palette.grey600 }} />}
-            emptyText="표시 중인 레포지토리가 없습니다. 내 활동 관리에서 레포를 선택·노출하세요."
-          >
-            {visibleRepos.map(r => {
-              const sid = repoSelectionId(r);
-              return (
-                <RepoSelectableRow
-                  key={`${r.repo_id}-${sid}`}
-                  repo={r}
-                  selected={selectedRepoIds.includes(sid)}
-                  onToggle={() => setSelectedRepoIds(prev => toggleInList(prev, sid))}
-                />
-              );
-            })}
-          </SelectableSection>
-
-          <SelectableSection
-            title="활동"
-            countLabel={`${selectedActivityIds.length}개 선택`}
-            itemCount={activities.length}
-            icon={<EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey600 }} />}
-            emptyText="등록된 활동이 없습니다. 내 활동 관리에서 활동을 추가하세요."
-          >
-            {activities.map(a => (
-              <ActivitySelectableRow
-                key={a.id}
-                activity={a}
-                selected={selectedActivityIds.includes(a.id)}
-                onToggle={() =>
-                  setSelectedActivityIds(prev => toggleInList(prev, a.id))
-                }
+            {wizardStep === 2 ? (
+              <CvGenerateStep2
+                isMobile={isMobile}
+                draftTitle={draftTitle}
+                onDraftTitleChange={setDraftTitle}
+                jobPosting={jobPosting}
+                onJobPostingChange={setJobPosting}
+                targetPosition={targetPosition}
+                onTargetPositionChange={setTargetPosition}
+                additionalNotes={additionalNotes}
+                onAdditionalNotesChange={setAdditionalNotes}
+                onPrev={handlePrevFromStep2}
+                onBuildPrompt={handleBuildPrompt}
+                buildPromptPending={buildPromptMutation.isPending}
               />
-            ))}
-          </SelectableSection>
-        </Flex.Column>
-        ) : null}
+            ) : null}
 
-        {wizardStep === 2 ? (
-        <Flex.Column gap="1.25rem" width="100%" style={{ marginTop: '1.5rem' }} key="step2">
-          <Flex.Column gap="0.35rem" width="100%">
-            <Heading as="h3" margin="0" color={theme.palette.text.primary}>
-              채용 공고를 입력하세요
-            </Heading>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-              }}
-            >
-              제목·공고 정보·지원 직무는 필수입니다. 추가 요청사항은 선택입니다.
-            </Text>
-          </Flex.Column>
-
-          <S.JdFieldRow align="flex-start" gap="0.65rem" width="100%">
-            <S.FieldLeadIcon aria-hidden>
-              <SubtitlesOutlinedIcon sx={{ fontSize: 22, color: palette.grey600 }} />
-            </S.FieldLeadIcon>
-            <Flex.Column gap="0.35rem" style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
-              <TextField
-                required
-                fullWidth
-                label="제목"
-                helperText="이력서 히스토리에서 구분할 이름을 짧게 입력하세요."
-                placeholder={TITLE_PLACEHOLDER}
-                value={draftTitle}
-                onChange={e => setDraftTitle(e.target.value)}
-                inputProps={{
-                  maxLength: INPUT_MAX_LENGTH.REPO_TITLE,
-                  'aria-label': '이력서 제목',
-                }}
+            {wizardStep === 3 ? (
+              <CvGenerateStep3
+                value={generatedPrompt}
+                onChange={setGeneratedPrompt}
+                onPrev={handlePrevFromStep3}
+                onNextToStep4={handleGoToStep4}
               />
-            </Flex.Column>
-          </S.JdFieldRow>
+            ) : null}
 
-          <S.JdFieldRow align="flex-start" gap="0.65rem" width="100%">
-            <S.FieldLeadIcon aria-hidden>
-              <ArticleOutlinedIcon sx={{ fontSize: 22, color: palette.grey600 }} />
-            </S.FieldLeadIcon>
-            <Flex.Column gap="0.35rem" style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
-              <TextField
-                required
-                fullWidth
-                label="공고 정보"
-                helperText="회사명, 공고 제목, 우대사항, 자격요건 등"
-                placeholder={JOB_POSTING_PLACEHOLDER}
-                value={jobPosting}
-                onChange={e => setJobPosting(e.target.value)}
-                multiline
-                minRows={isMobile ? 6 : 8}
-                inputProps={{ maxLength: 12000, 'aria-label': '공고 정보' }}
+            {wizardStep === 4 ? (
+              <CvGenerateStep4
+                htmlInput={htmlResultDraft}
+                onHtmlChange={setHtmlResultDraft}
+                draftTitle={draftTitle}
+                jobPosting={jobPosting}
+                targetPosition={targetPosition}
+                onPrev={handlePrevFromStep4}
+                onSave={handleSaveHistory}
+                saveDisabled={patchCvMutation.isPending}
               />
-            </Flex.Column>
-          </S.JdFieldRow>
-
-          <S.JdFieldRow align="flex-start" gap="0.65rem" width="100%">
-            <S.FieldLeadIcon aria-hidden>
-              <FlagOutlinedIcon sx={{ fontSize: 22, color: palette.grey600 }} />
-            </S.FieldLeadIcon>
-            <Flex.Column gap="0.35rem" style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
-              <TextField
-                required
-                fullWidth
-                label="지원 직무"
-                placeholder={TARGET_POSITION_PLACEHOLDER}
-                value={targetPosition}
-                onChange={e => setTargetPosition(e.target.value)}
-                inputProps={{ maxLength: 200, 'aria-label': '지원 직무' }}
-              />
-            </Flex.Column>
-          </S.JdFieldRow>
-
-          <S.JdFieldRow align="flex-start" gap="0.65rem" width="100%">
-            <S.FieldLeadIcon aria-hidden>
-              <ChatBubbleOutlineIcon sx={{ fontSize: 22, color: palette.grey600 }} />
-            </S.FieldLeadIcon>
-            <Flex.Column gap="0.35rem" style={{ flex: '1 1 0', minWidth: 0, width: '100%' }}>
-              <TextField
-                fullWidth
-                label="추가 요청사항 (선택)"
-                placeholder={ADDITIONAL_NOTES_PLACEHOLDER}
-                value={additionalNotes}
-                onChange={e => setAdditionalNotes(e.target.value)}
-                multiline
-                minRows={3}
-                inputProps={{ maxLength: 4000, 'aria-label': '추가 요청사항' }}
-              />
-            </Flex.Column>
-          </S.JdFieldRow>
-        </Flex.Column>
-        ) : null}
-
-        {wizardStep === 3 ? (
-          <CvGenerateStep3 value={generatedPrompt} onChange={setGeneratedPrompt} />
-        ) : null}
-
-        {wizardStep === 1 ? (
-        <Flex.Row
-          align="center"
-          justify="flex-end"
-          gap="0.75rem"
-          wrap="wrap"
-          width="100%"
-          style={{ marginTop: '1.75rem', paddingTop: '1rem', borderTop: `1px solid ${palette.grey200}` }}
-        >
-          <Button
-            label="다음: JD 입력"
-            variant="contained"
-            color="blue"
-            size="large"
-            icon={() => <ArrowForwardIcon sx={{ fontSize: 20 }} />}
-            iconPosition="end"
-            onClick={handleNextFromStep1}
-          />
-        </Flex.Row>
-        ) : null}
-
-        {wizardStep === 2 ? (
-        <Flex.Row
-          align="center"
-          justify="space-between"
-          gap="0.75rem"
-          wrap="wrap"
-          width="100%"
-          style={{ marginTop: '1.75rem', paddingTop: '1rem', borderTop: `1px solid ${palette.grey200}` }}
-        >
-          <S.BackButton
-            type="button"
-            variant="outlined"
-            onClick={handlePrevFromStep2}
-            aria-label="항목 선택 단계로 돌아가기"
-            startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
-          >
-            이전 단계
-          </S.BackButton>
-          <Button
-            label="프롬프트 생성"
-            variant="contained"
-            color="blue"
-            size="large"
-            icon={AutoAwesomeIconWrap}
-            iconPosition="start"
-            disabled={buildPromptMutation.isPending}
-            onClick={handleBuildPrompt}
-          />
-        </Flex.Row>
-        ) : null}
-
-        {wizardStep === 3 ? (
-        <Flex.Row
-          align="center"
-          justify="space-between"
-          gap="0.75rem"
-          wrap="wrap"
-          width="100%"
-          style={{ marginTop: '1.75rem', paddingTop: '1rem', borderTop: `1px solid ${palette.grey200}` }}
-        >
-          <S.BackButton
-            type="button"
-            variant="outlined"
-            onClick={handlePrevFromStep3}
-            aria-label="JD 입력 단계로 돌아가기"
-            startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
-          >
-            이전 단계
-          </S.BackButton>
-          <Button
-            label="AI 결과 붙여넣기"
-            variant="contained"
-            color="blue"
-            size="large"
-            icon={() => <ArrowForwardIcon sx={{ fontSize: 20 }} />}
-            iconPosition="end"
-            onClick={handleStep4Placeholder}
-          />
-        </Flex.Row>
-        ) : null}
-        </>
+            ) : null}
+          </>
         )}
       </S.Card>
     </Flex.Column>
@@ -728,419 +500,3 @@ const CvGeneratePage = () => {
 };
 
 export default CvGeneratePage;
-
-function SelectableSection({
-  title,
-  countLabel,
-  itemCount,
-  icon,
-  emptyText,
-  children,
-}: {
-  title: string;
-  countLabel: string;
-  itemCount: number;
-  icon: ReactNode;
-  emptyText: string;
-  children: ReactNode;
-}) {
-  const theme = useTheme();
-  const isEmpty = itemCount === 0;
-
-  return (
-    <S.SectionBlock>
-      <Flex.Row align="center" justify="space-between" gap="0.75rem" wrap="wrap" style={{ marginBottom: '0.65rem' }}>
-        <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-          {icon}
-          <Heading as="h4" margin="0" color={theme.palette.text.primary}>
-            {title}
-          </Heading>
-          <S.CountPill>{countLabel}</S.CountPill>
-        </Flex.Row>
-      </Flex.Row>
-      {isEmpty ? (
-        <Text
-          margin="0"
-          style={{
-            ...theme.typography.body2,
-            color: theme.palette.grey[500],
-          }}
-        >
-          {emptyText}
-        </Text>
-      ) : (
-        <S.ScrollList role="list">{children}</S.ScrollList>
-      )}
-    </S.SectionBlock>
-  );
-}
-
-function MileageSelectableRow({
-  item,
-  selected,
-  disabled,
-  onToggle,
-}: {
-  item: MileageItem;
-  selected: boolean;
-  disabled: boolean;
-  onToggle: () => void;
-}) {
-  const theme = useTheme();
-  return (
-    <S.SelectRow $disabled={disabled} style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <Flex.Row align="flex-start" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
-        <Checkbox
-          checked={selected}
-          disabled={disabled}
-          onChange={onToggle}
-          size="small"
-          sx={{ padding: '4px', marginTop: '2px' }}
-          inputProps={{ 'aria-label': `${item.item} 선택` }}
-        />
-        <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
-          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-            <S.CategoryTag>{item.category}</S.CategoryTag>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                fontWeight: 600,
-                wordBreak: 'break-word',
-              }}
-            >
-              {item.item}
-            </Text>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[500],
-              }}
-            >
-              {item.semester}
-            </Text>
-          </Flex.Row>
-          {item.additional_info?.trim() ? (
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-                lineHeight: 1.45,
-              }}
-            >
-              {item.additional_info}
-            </Text>
-          ) : null}
-          {disabled ? (
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.caption,
-                color: palette.pink500,
-              }}
-            >
-              포트폴리오에 연결된 항목만 선택할 수 있습니다.
-            </Text>
-          ) : null}
-        </Flex.Column>
-      </Flex.Row>
-    </S.SelectRow>
-  );
-}
-
-function RepoSelectableRow({
-  repo,
-  selected,
-  onToggle,
-}: {
-  repo: RepoItem;
-  selected: boolean;
-  onToggle: () => void;
-}) {
-  const theme = useTheme();
-  const title =
-    repo.custom_title != null && repo.custom_title.trim() !== ''
-      ? repo.custom_title.trim()
-      : repo.name;
-  return (
-    <S.SelectRow style={{ cursor: 'pointer' }}>
-      <Flex.Row align="flex-start" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
-        <Checkbox
-          checked={selected}
-          onChange={onToggle}
-          size="small"
-          sx={{ padding: '4px', marginTop: '2px' }}
-          inputProps={{ 'aria-label': `${title} 선택` }}
-        />
-        <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
-          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                fontWeight: 600,
-                wordBreak: 'break-word',
-              }}
-            >
-              {title}
-            </Text>
-          </Flex.Row>
-          {repo.description?.trim() ? (
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-                lineHeight: 1.45,
-              }}
-            >
-              {repo.description}
-            </Text>
-          ) : null}
-        </Flex.Column>
-      </Flex.Row>
-    </S.SelectRow>
-  );
-}
-
-function ActivitySelectableRow({
-  activity,
-  selected,
-  onToggle,
-}: {
-  activity: ActivityItem;
-  selected: boolean;
-  onToggle: () => void;
-}) {
-  const theme = useTheme();
-  const range = formatDateRange(activity.start_date, activity.end_date);
-  return (
-    <S.SelectRow style={{ cursor: 'pointer' }}>
-      <Flex.Row align="flex-start" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
-        <Checkbox
-          checked={selected}
-          onChange={onToggle}
-          size="small"
-          sx={{ padding: '4px', marginTop: '2px' }}
-          inputProps={{ 'aria-label': `${activity.title} 선택` }}
-        />
-        <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
-          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-            <S.CategoryTag>{activity.category}</S.CategoryTag>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                fontWeight: 600,
-                wordBreak: 'break-word',
-              }}
-            >
-              {activity.title}
-            </Text>
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[500],
-              }}
-            >
-              {range}
-            </Text>
-          </Flex.Row>
-          {activity.description?.trim() ? (
-            <Text
-              margin="0"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-                lineHeight: 1.45,
-              }}
-            >
-              {activity.description}
-            </Text>
-          ) : null}
-        </Flex.Column>
-      </Flex.Row>
-    </S.SelectRow>
-  );
-}
-
-const S = {
-  Card: styled('section')`
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    min-width: 0;
-    padding: 1.25rem 1.25rem 1.5rem;
-    border-radius: 0.75rem;
-    background-color: ${palette.white};
-    ${boxShadow};
-    box-sizing: border-box;
-  `,
-  StepperRow: styled('div')`
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.25rem;
-    width: 100%;
-    flex-wrap: nowrap;
-  `,
-  StepCircle: styled('span', {
-    shouldForwardProp: p => p !== '$active' && p !== '$muted' && p !== '$completed',
-  })<{ $active?: boolean; $muted?: boolean; $completed?: boolean }>(
-    ({ theme, $active, $muted, $completed }) => {
-      const filled = $active || $completed;
-      return {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '2rem',
-        height: '2rem',
-        borderRadius: '50%',
-        ...theme.typography.body2,
-        fontWeight: 700,
-        flexShrink: 0,
-        boxSizing: 'border-box',
-        border: `2px solid ${filled ? palette.blue500 : palette.grey300}`,
-        backgroundColor: filled ? palette.blue500 : palette.white,
-        color: filled ? palette.white : theme.palette.grey[600],
-        ...($muted && !filled ? { opacity: 0.85 } : {}),
-      };
-    },
-  ),
-  StepLabel: styled('span', {
-    shouldForwardProp: p => p !== '$active' && p !== '$completed',
-  })<{ $active?: boolean; $completed?: boolean }>(({ theme, $active, $completed }) => ({
-    ...theme.typography.caption,
-    fontWeight: $active ? 700 : $completed ? 600 : 500,
-    color: $active || $completed ? palette.blue600 : theme.palette.text.secondary,
-    textAlign: 'center',
-    lineHeight: 1.25,
-    wordBreak: 'keep-all',
-  })),
-  StepConnector: styled('div')`
-    flex: 1 1 0;
-    min-width: 0.5rem;
-    height: 2px;
-    margin-top: 1rem;
-    align-self: flex-start;
-    background-color: ${palette.grey200};
-  `,
-  HighlightSection: styled('div')`
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-    padding: 1rem 1.1rem;
-    border-radius: 0.75rem;
-    border: 1px solid ${palette.blue300};
-    background-color: ${palette.blue300};
-    box-sizing: border-box;
-  `,
-  ProfileInner: styled(Flex.Row)`
-    width: 100%;
-  `,
-  AvatarBox: styled('div')`
-    width: 5rem;
-    height: 5rem;
-    border-radius: 0.5rem;
-    background-color: ${palette.grey200};
-    flex-shrink: 0;
-    overflow: hidden;
-    display: flex;
-  `,
-  AvatarImg: styled('img')`
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  `,
-  SectionBlock: styled('div')`
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    min-width: 0;
-    padding: 1rem 1.1rem;
-    border-radius: 0.75rem;
-    border: 1px solid ${palette.grey200};
-    background-color: ${palette.white};
-    box-sizing: border-box;
-  `,
-  ScrollList: styled('div')`
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    max-height: 17.5rem;
-    overflow-y: auto;
-    width: 100%;
-    min-width: 0;
-    padding-right: 0.25rem;
-  `,
-  SelectRow: styled('div')<{ $disabled?: boolean }>`
-    display: flex;
-    flex-direction: column;
-    padding: 0.65rem 0.75rem;
-    border-radius: 0.5rem;
-    border: 1px solid ${palette.grey200};
-    background-color: ${palette.grey100};
-    opacity: ${({ $disabled }) => ($disabled ? 0.75 : 1)};
-    box-sizing: border-box;
-  `,
-  CategoryTag: styled('span')(({ theme }) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '0.125rem 0.45rem',
-    borderRadius: '0.375rem',
-    ...theme.typography.caption,
-    fontWeight: 600,
-    color: palette.blue600,
-    backgroundColor: palette.blue300,
-    flexShrink: 0,
-  })),
-  CountPill: styled('span')(({ theme }) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '0.2rem 0.65rem',
-    borderRadius: '999px',
-    boxSizing: 'border-box',
-    border: `1px solid ${palette.blue500}`,
-    ...theme.typography.caption,
-    fontWeight: 600,
-    color: palette.blue500,
-    backgroundColor: palette.white,
-    flexShrink: 0,
-  })),
-  JdFieldRow: styled(Flex.Row)`
-    flex-wrap: wrap;
-    @media (min-width: 901px) {
-      flex-wrap: nowrap;
-    }
-  `,
-  FieldLeadIcon: styled('span')`
-    display: flex;
-    flex-shrink: 0;
-    width: 2rem;
-    justify-content: center;
-    padding-top: 0.35rem;
-    box-sizing: border-box;
-  `,
-  /** 내 활동 요약 `미리보기` 버튼과 동일한 아웃라인 톤 (뒤로가기·이전 공통) */
-  BackButton: styled(MuiButton)(({ theme }) => ({
-    minWidth: '7.5rem',
-    padding: '0.5rem 1rem 0.5rem 0.75rem',
-    borderColor: palette.blue400,
-    color: palette.blue400,
-    borderRadius: '0.75rem',
-    textTransform: 'none',
-    fontWeight: 600,
-    fontSize: theme.typography.body1.fontSize,
-    lineHeight: 1.2,
-    '&:hover': {
-      borderColor: palette.blue600,
-      color: palette.blue600,
-      backgroundColor: 'rgba(91, 140, 241, 0.08)',
-    },
-  })),
-};

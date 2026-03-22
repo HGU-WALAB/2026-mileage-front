@@ -131,16 +131,49 @@ export function writeCvWizardPendingPrompt(prompt: string): void {
   }
 }
 
-/** 현재 마법사 단계 (새로고침 후 복원용, 1·2·3만 사용) */
+/** 4단계 HTML 초안 (sessionStorage) */
+export const CV_WIZARD_STEP4_HTML_KEY = 'cv-wizard-step4-html-v1';
+
+export function readCvWizardStep4Html(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const t = sessionStorage.getItem(CV_WIZARD_STEP4_HTML_KEY);
+    return typeof t === 'string' ? t : '';
+  } catch {
+    return '';
+  }
+}
+
+export function writeCvWizardStep4Html(html: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(CV_WIZARD_STEP4_HTML_KEY, html);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearCvWizardStep4Html(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(CV_WIZARD_STEP4_HTML_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** 현재 마법사 단계 (새로고침 후 복원용) */
 export const CV_WIZARD_UI_STEP_KEY = 'cv-wizard-ui-step-v1';
 
-export type CvWizardUiStep = 1 | 2 | 3;
+export type CvWizardUiStep = 1 | 2 | 3 | 4;
 
 export function readCvWizardUiStep(): CvWizardUiStep | null {
   if (typeof window === 'undefined') return null;
   try {
     const v = sessionStorage.getItem(CV_WIZARD_UI_STEP_KEY);
-    if (v === '1' || v === '2' || v === '3') return Number(v) as CvWizardUiStep;
+    if (v === '1' || v === '2' || v === '3' || v === '4') {
+      return Number(v) as CvWizardUiStep;
+    }
     return null;
   } catch {
     return null;
@@ -174,6 +207,7 @@ export function clearAllCvWizardSession(): void {
     sessionStorage.removeItem(CV_WIZARD_PENDING_PROMPT_KEY);
     sessionStorage.removeItem(CV_WIZARD_PENDING_CV_ID_KEY);
     sessionStorage.removeItem(CV_WIZARD_UI_STEP_KEY);
+    sessionStorage.removeItem(CV_WIZARD_STEP4_HTML_KEY);
   } catch {
     // ignore
   }

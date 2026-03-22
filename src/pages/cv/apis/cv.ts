@@ -52,3 +52,16 @@ export const postPortfolioCvBuildPrompt = async (body: PortfolioCvBuildPromptReq
     body,
   );
 };
+
+/** PATCH /api/portfolio/cv/{id} — 서버 스키마상 title은 선택, 4단계에서는 html_content만 전송 */
+export interface PortfolioCvPatchRequest {
+  title?: string;
+  html_content: string;
+}
+
+export const patchPortfolioCv = async (id: number, body: PortfolioCvPatchRequest) => {
+  return http.patch<PortfolioCvPatchRequest, PortfolioCvDetail>(
+    `${ENDPOINT.PORTFOLIO_CV}/${id}`,
+    body,
+  );
+};

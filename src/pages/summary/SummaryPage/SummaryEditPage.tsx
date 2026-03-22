@@ -1,5 +1,9 @@
 import { Button, Flex, Footer, Text } from '@/components';
-import { ROUTE_PATH } from '@/constants/routePath';
+import {
+  ROUTE_PATH,
+  SUMMARY_CV_PANEL_QUERY_KEY,
+  SUMMARY_CV_PANEL_QUERY_VALUE,
+} from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
@@ -12,12 +16,13 @@ import { Button as MuiButton, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type FunctionComponent,
   type SVGProps,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 import { CvManagementPanel } from '@/pages/cv';
@@ -79,6 +84,7 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
 const SummaryEditPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약' });
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     sectionOrder,
     setSectionOrder,
@@ -88,6 +94,16 @@ const SummaryEditPage = () => {
   const [repoModalOpen, setRepoModalOpen] = useState(false);
   const [mileageModalOpen, setMileageModalOpen] = useState(false);
   const [cvPanelOpen, setCvPanelOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get(SUMMARY_CV_PANEL_QUERY_KEY) !== SUMMARY_CV_PANEL_QUERY_VALUE) {
+      return;
+    }
+    setCvPanelOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete(SUMMARY_CV_PANEL_QUERY_KEY);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   const hasGithub = getGithubUsernameFromStorage() != null;
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const techStackRef = useRef<TechStackSectionContentHandle>(null);

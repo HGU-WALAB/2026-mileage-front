@@ -1,5 +1,7 @@
 import { Button, Flex, Heading, Text } from '@/components';
 import { palette } from '@/styles/palette';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Button as MuiButton, TextField, useTheme } from '@mui/material';
@@ -8,6 +10,8 @@ import { useCallback, type FunctionComponent, type SVGProps } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'react-toastify';
+
+import { CvGeneratePageS as WizS } from '../cvGeneratePageStyles';
 
 /** 편집·미리보기 패널 공통 높이 (뷰포트에 맞추되 최소·최대 제한) */
 const PROMPT_PANE_HEIGHT = 'clamp(12rem, 50vh, 28rem)';
@@ -25,9 +29,11 @@ const CopyIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
 export interface CvGenerateStep3Props {
   value: string;
   onChange: (next: string) => void;
+  onPrev: () => void;
+  onNextToStep4: () => void;
 }
 
-const CvGenerateStep3 = ({ value, onChange }: CvGenerateStep3Props) => {
+const CvGenerateStep3 = ({ value, onChange, onPrev, onNextToStep4 }: CvGenerateStep3Props) => {
   const theme = useTheme();
 
   const handleCopy = useCallback(async () => {
@@ -168,6 +174,38 @@ const CvGenerateStep3 = ({ value, onChange }: CvGenerateStep3Props) => {
           ))}
         </Flex.Row>
       </S.ExternalZone>
+
+      <Flex.Row
+        align="center"
+        justify="space-between"
+        gap="0.75rem"
+        wrap="wrap"
+        width="100%"
+        style={{
+          marginTop: '1.75rem',
+          paddingTop: '1rem',
+          borderTop: `1px solid ${palette.grey200}`,
+        }}
+      >
+        <WizS.BackButton
+          type="button"
+          variant="outlined"
+          onClick={onPrev}
+          aria-label="JD 입력 단계로 돌아가기"
+          startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
+        >
+          이전 단계
+        </WizS.BackButton>
+        <Button
+          label="AI 결과 붙여넣기"
+          variant="contained"
+          color="blue"
+          size="large"
+          icon={() => <ArrowForwardIcon sx={{ fontSize: 20 }} />}
+          iconPosition="end"
+          onClick={onNextToStep4}
+        />
+      </Flex.Row>
     </Flex.Column>
   );
 };
