@@ -273,13 +273,13 @@ function MileageSelectableRow({
   const theme = useTheme();
   return (
     <S.SelectRow $disabled={disabled} style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}>
-      <Flex.Row align="flex-start" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
+      <Flex.Row align="center" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
         <Checkbox
           checked={selected}
           disabled={disabled}
           onChange={onToggle}
           size="small"
-          sx={{ padding: '4px', marginTop: '2px' }}
+          sx={{ padding: '4px', flexShrink: 0 }}
           inputProps={{ 'aria-label': `${item.item} 선택` }}
         />
         <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
@@ -352,12 +352,12 @@ function RepoSelectableRow({
       : repo.name;
   return (
     <S.SelectRow style={{ cursor: 'pointer' }}>
-      <Flex.Row align="flex-start" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
+      <Flex.Row align="center" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
         <Checkbox
           checked={selected}
           onChange={onToggle}
           size="small"
-          sx={{ padding: '4px', marginTop: '2px' }}
+          sx={{ padding: '4px', flexShrink: 0 }}
           inputProps={{ 'aria-label': `${rowTitle} 선택` }}
         />
         <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
@@ -404,12 +404,12 @@ function ActivitySelectableRow({
   const range = formatDateRange(activity.start_date, activity.end_date);
   return (
     <S.SelectRow style={{ cursor: 'pointer' }}>
-      <Flex.Row align="flex-start" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
+      <Flex.Row align="center" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
         <Checkbox
           checked={selected}
           onChange={onToggle}
           size="small"
-          sx={{ padding: '4px', marginTop: '2px' }}
+          sx={{ padding: '4px', flexShrink: 0 }}
           inputProps={{ 'aria-label': `${activity.title} 선택` }}
         />
         <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>

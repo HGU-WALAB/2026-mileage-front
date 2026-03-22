@@ -11,6 +11,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { toast } from 'react-toastify';
 
+import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
+
 import { CvGeneratePageS as WizS } from '../cvGeneratePageStyles';
 
 /** 편집·미리보기 패널 공통 높이 (뷰포트에 맞추되 최소·최대 제한) */
@@ -42,11 +44,14 @@ const CvGenerateStep3 = ({ value, onChange, onPrev, onNextToStep4 }: CvGenerateS
       toast.info('복사할 프롬프트가 없습니다.', { position: 'top-center' });
       return;
     }
-    try {
-      await navigator.clipboard.writeText(value);
+    const ok = await copyTextToClipboard(value);
+    if (ok) {
       toast.success('프롬프트가 복사되었습니다.', { position: 'top-center' });
-    } catch {
-      toast.error('복사에 실패했습니다.', { position: 'top-center' });
+    } else {
+      toast.error(
+        '복사에 실패했습니다. HTTPS 접속인지 확인하거나, 편집 영역에서 직접 선택해 복사해 주세요.',
+        { position: 'top-center' },
+      );
     }
   }, [value]);
 

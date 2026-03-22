@@ -1,3 +1,4 @@
+import { LoadingIcon } from '@/assets';
 import { Button, Flex, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -6,17 +7,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CodeIcon from '@mui/icons-material/Code';
 import HtmlIcon from '@mui/icons-material/Html';
-import {
-  Dialog,
-  DialogContent,
-  IconButton,
-  LinearProgress,
-} from '@mui/material';
+import { Dialog, DialogContent, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useEffect, useState, type FunctionComponent, type SVGProps } from 'react';
 import { toast } from 'react-toastify';
 
 import { formatDateOnly } from '@/pages/summary/utils/date';
+import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import type { PortfolioCvDetail } from '../../apis/cv';
 
 export interface CvPreviewModalProps {
@@ -67,11 +64,14 @@ const CvPreviewModal = ({
       toast.info('복사할 프롬프트가 없습니다.', { position: 'top-center' });
       return;
     }
-    try {
-      await navigator.clipboard.writeText(data.prompt);
+    const ok = await copyTextToClipboard(data.prompt);
+    if (ok) {
       toast.success('프롬프트가 복사되었습니다.', { position: 'top-center' });
-    } catch {
-      toast.error('복사에 실패했습니다.', { position: 'top-center' });
+    } else {
+      toast.error(
+        '복사에 실패했습니다. HTTPS 접속인지 확인하거나 텍스트를 직접 선택해 복사해 주세요.',
+        { position: 'top-center' },
+      );
     }
   };
 
@@ -88,13 +88,24 @@ const CvPreviewModal = ({
       PaperProps={{
         sx: {
           borderRadius: '0.75rem',
+          minHeight: isPending ? 'min(58vh, 440px)' : undefined,
           maxHeight: 'min(90dvh, 680px)',
           overflow: 'hidden',
           boxShadow: '0 4px 24px rgba(83, 127, 241, 0.15)',
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
-      <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
+      <DialogContent
+        sx={{
+          p: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          flex: '1 1 auto',
+          minHeight: 0,
+        }}
+      >
         <S.HeaderBar direction="column" gap="0.5rem" padding="1rem 1.25rem">
           <Flex.Row align="flex-start" justify="space-between" gap="0.75rem" wrap="wrap">
             <Flex.Row align="center" gap="0.5rem" style={{ flex: '1 1 auto', minWidth: 0 }}>
@@ -139,14 +150,33 @@ const CvPreviewModal = ({
           ) : null}
         </S.HeaderBar>
 
-        <S.ScrollBody direction="column" gap="1.25rem" padding="1.25rem 1.25rem 1.5rem">
-          {isPending ? <LinearProgress /> : null}
+        <S.ScrollBody
+          direction="column"
+          gap="1.25rem"
+          padding={isPending ? '0' : '1.25rem 1.25rem 1.5rem'}
+          $loading={isPending}
+        >
+          {isPending ? (
+            <S.LoadingArea
+              align="center"
+              justify="center"
+              gap="0.75rem"
+              width="100%"
+              role="status"
+              aria-live="polite"
+            >
+              <LoadingIcon width={88} height={88} aria-hidden />
+              <Text margin="0" color={palette.grey600} style={{ fontSize: '0.875rem' }}>
+                이력서 정보를 불러오는 중입니다…
+              </Text>
+            </S.LoadingArea>
+          ) : null}
           {isError ? (
             <Text margin="0" color={palette.pink500} style={{ fontSize: '0.875rem' }}>
               불러오지 못했습니다.
             </Text>
           ) : null}
-          {data ? (
+          {!isPending && data ? (
             <>
               <S.Section direction="column" gap="0.5rem">
                 <S.SectionTitle>공고 정보</S.SectionTitle>
@@ -185,7 +215,7 @@ const CvPreviewModal = ({
                     disabled={!data.prompt?.trim()}
                   />
                 </Flex.Row>
-                <S.PreWrap>{data.prompt || '—'}</S.PreWrap>
+                <S.PreWrapScrollable>{data.prompt || '—'}</S.PreWrapScrollable>
               </S.Section>
 
               <S.Section direction="column" gap="0.5rem">
@@ -207,7 +237,9 @@ const CvPreviewModal = ({
                     dangerouslySetInnerHTML={{ __html: htmlRaw }}
                   />
                 ) : (
-                  <S.PreWrap>{htmlRaw.trim() ? htmlRaw : '—'}</S.PreWrap>
+                  <S.PreWrapScrollable>
+                    {htmlRaw.trim() ? htmlRaw : '—'}
+                  </S.PreWrapScrollable>
                 )}
               </S.Section>
             </>
@@ -226,11 +258,20 @@ const S = {
     background-color: ${palette.blue300};
     border-bottom: 1px solid ${palette.grey200};
   `,
-  ScrollBody: styled(Flex.Column)`
+  ScrollBody: styled(Flex.Column, {
+    shouldForwardProp: p => p !== '$loading',
+  })<{ $loading?: boolean }>`
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
+    overflow-y: ${({ $loading }) => ($loading ? 'hidden' : 'auto')};
     background-color: ${palette.white};
+  `,
+  LoadingArea: styled(Flex.Column)`
+    flex: 1 1 auto;
+    min-height: min(52vh, 380px);
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1.5rem 1.25rem;
   `,
   Section: styled(Flex.Column)`
     width: 100%;
@@ -261,9 +302,11 @@ const S = {
     white-space: pre-wrap;
     word-break: break-word;
   `,
-  PreWrap: styled('pre')`
+  PreWrapScrollable: styled('pre')`
     margin: 0;
     padding: 0.75rem 1rem;
+    max-height: min(42vh, 400px);
+    overflow: auto;
     font-size: 0.8125rem;
     line-height: 1.5;
     white-space: pre-wrap;
