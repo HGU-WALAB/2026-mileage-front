@@ -1,6 +1,6 @@
 import { Button, Flex } from '@/components';
 import { UpdateConfirmModal, UpdateSucceedModal } from '.';
-import { useLogin } from '@/hooks';
+import { useLogin } from '@/pages/auth/hooks';
 import { styled } from '@mui/material';
 import { useState } from 'react';
 

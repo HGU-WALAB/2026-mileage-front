@@ -3,9 +3,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { toast } from 'react-toastify';
@@ -19,14 +17,17 @@ import {
   getPortfolioSettings,
   getTechStack,
   getUserInfo,
+  patchActivityById,
   postActivity,
-  putActivity,
   putTechStack,
 } from '../../apis/portfolio';
 import type {
+  PortfolioRepositoryLanguage,
   PortfolioRepositoryItem,
+  TechStackItem,
   UserInfoResponse,
 } from '../../apis/portfolio';
+import { clampTechLevel } from '../../utils/techStackLevel';
 import {
   DRAGGABLE_SECTION_ORDER,
   type DraggableSectionKey,
@@ -48,7 +49,13 @@ export interface RepoItem {
   description: string;
   created_at: string;
   updated_at: string;
+  /** 마크다운 등에 쓰는 언어 이름 목록 */
   languages: string[];
+  /** 카드 UI: 언어별 비율 표시용 */
+  languageBreakdown?: PortfolioRepositoryLanguage[];
+  commit_count?: number;
+  stargazers_count?: number;
+  forks_count?: number;
   /** GitHub 레포 페이지 URL (제목 클릭 시 이동) */
   html_url?: string;
 }
@@ -70,14 +77,11 @@ export interface ActivityItem {
   description: string;
   start_date: string;
   end_date: string;
-  /** 활동 섹션에는 category === 0 인 것만 표시 */
-  category?: number;
+  /** 사용자 정의 카테고리 문자열 */
+  category: string;
   /** API 응답용. 0이 맨 위. 로컬 추가분은 없을 수 있음 */
   display_order?: number;
 }
-
-const ACTIVITY_SECTION_CATEGORY = 0;
-const CERTIFICATE_SECTION_CATEGORY = 1;
 
 function apiActivityToItem(
   a: import('../../apis/portfolio').ActivityApiItem,
@@ -88,7 +92,7 @@ function apiActivityToItem(
     description: a.description,
     start_date: a.start_date,
     end_date: a.end_date,
-    category: a.category,
+    category: (a.category ?? '').trim() || '기타',
     display_order: a.display_order,
   };
 }
@@ -99,6 +103,12 @@ function nonEmpty(s: string | null | undefined): string | null {
 }
 
 export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
+  const breakdown =
+    p.languages && p.languages.length > 0 ? [...p.languages] : undefined;
+  const languageNames =
+    breakdown?.map(l => l.name) ??
+    (p.language ? [p.language] : []);
+
   return {
     id: p.id ?? undefined,
     repo_id: p.repo_id,
@@ -109,7 +119,11 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
     description: p.description ?? '',
     created_at: p.created_at ?? '',
     updated_at: p.updated_at ?? '',
-    languages: p.language ? [p.language] : [],
+    languages: languageNames,
+    languageBreakdown: breakdown,
+    commit_count: p.commit_count,
+    stargazers_count: p.stargazers_count,
+    forks_count: p.forks_count,
     html_url: p.html_url ?? '',
     owner: p.owner ?? '',
   };
@@ -136,8 +150,10 @@ export interface SummaryState {
   setUserInfo: (v: UserInfo | null | ((p: UserInfo | null) => UserInfo | null)) => void;
   sectionOrder: DraggableSectionKey[];
   setSectionOrder: (v: DraggableSectionKey[] | ((p: DraggableSectionKey[]) => DraggableSectionKey[])) => void;
-  techStackTags: string[];
-  setTechStackTags: (v: string[] | ((p: string[]) => string[])) => void;
+  techStackItems: TechStackItem[];
+  setTechStackItems: (
+    v: TechStackItem[] | ((p: TechStackItem[]) => TechStackItem[]),
+  ) => void;
   repos: RepoItem[];
   setRepos: (v: RepoItem[] | ((p: RepoItem[]) => RepoItem[])) => void;
   mileageItems: MileageItem[];
@@ -152,16 +168,6 @@ export interface SummaryState {
   saveExistingActivity: (item: ActivityItem) => Promise<void>;
   activitiesNextId: number;
   setActivitiesNextId: (v: number | ((p: number) => number)) => void;
-  /** 자격증 섹션 (동일 activities API, category 1) */
-  certificates: ActivityItem[];
-  setCertificates: (v: ActivityItem[] | ((p: ActivityItem[]) => ActivityItem[])) => void;
-  deleteCertificate: (id: number) => void;
-  /** 새 자격증(id<0) 저장 버튼 클릭 시 POST. 실패 시 throw */
-  postNewCertificate: (item: ActivityItem) => Promise<void>;
-  /** 기존 자격증(id>0) 저장 버튼 클릭 시 PUT. 실패 시 throw */
-  saveExistingCertificate: (item: ActivityItem) => Promise<void>;
-  certificatesNextId: number;
-  setCertificatesNextId: (v: number | ((p: number) => number)) => void;
 }
 
 const SummaryContext = createContext<SummaryState | null>(null);
@@ -178,19 +184,94 @@ interface SummaryProviderProps {
   children: ReactNode;
 }
 
-export const SummaryProvider = ({ children }: SummaryProviderProps) => {
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [sectionOrder, setSectionOrder] = useState<DraggableSectionKey[]>(
-    DRAGGABLE_SECTION_ORDER,
-  );
-  const [techStackTags, setTechStackTagsState] = useState<string[]>([]);
-  const [mileageItems, setMileageItems] = useState<MileageItem[]>([]);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [activitiesNextId, setActivitiesNextId] = useState(-1);
-  const [certificates, setCertificates] = useState<ActivityItem[]>([]);
-  const [certificatesNextId, setCertificatesNextId] = useState(-1);
+const normalizeTechStackList = (list: TechStackItem[]) =>
+  list
+    .map(item => ({
+      name: (item.name ?? '').trim(),
+      domain: (item.domain ?? '').trim() || '기타',
+      level: clampTechLevel(item.level ?? 0),
+    }))
+    .filter(item => item.name !== '');
 
+const QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
+
+export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   const queryClient = useQueryClient();
+  const [activitiesNextId, setActivitiesNextId] = useState(-1);
+
+  // ── 유저 정보 ──────────────────────────────────────────────────────────────
+  const userInfoQuery = useQuery<UserInfo | null>({
+    queryKey: [QUERY_KEYS.portfolioUserInfo],
+    queryFn: async () => {
+      const res = await getUserInfo();
+      try {
+        localStorage.setItem('portfolio-user-info', JSON.stringify(res));
+      } catch {
+        // ignore
+      }
+      return res;
+    },
+    ...QUERY_CONFIG,
+  });
+
+  const setUserInfo = useCallback(
+    (v: UserInfo | null | ((p: UserInfo | null) => UserInfo | null)) => {
+      queryClient.setQueryData<UserInfo | null>(
+        [QUERY_KEYS.portfolioUserInfo],
+        prev => (typeof v === 'function' ? v(prev ?? null) : v),
+      );
+    },
+    [queryClient],
+  );
+
+  // ── 섹션 순서 ──────────────────────────────────────────────────────────────
+  const settingsQuery = useQuery<DraggableSectionKey[]>({
+    queryKey: [QUERY_KEYS.portfolioSettings],
+    queryFn: async () => {
+      const res = await getPortfolioSettings();
+      const order = res.section_order ?? [];
+      const validKeys = order.filter((k): k is DraggableSectionKey =>
+        DRAGGABLE_SECTION_ORDER.includes(k as DraggableSectionKey),
+      );
+      const missing = DRAGGABLE_SECTION_ORDER.filter(k => !validKeys.includes(k));
+      return validKeys.length > 0 ? [...validKeys, ...missing] : DRAGGABLE_SECTION_ORDER;
+    },
+    ...QUERY_CONFIG,
+  });
+
+  const setSectionOrder = useCallback(
+    (v: DraggableSectionKey[] | ((p: DraggableSectionKey[]) => DraggableSectionKey[])) => {
+      queryClient.setQueryData<DraggableSectionKey[]>(
+        [QUERY_KEYS.portfolioSettings],
+        prev => (typeof v === 'function' ? v(prev ?? DRAGGABLE_SECTION_ORDER) : v),
+      );
+    },
+    [queryClient],
+  );
+
+  // ── 기술 스택 ──────────────────────────────────────────────────────────────
+  const techStackQuery = useQuery<TechStackItem[]>({
+    queryKey: [QUERY_KEYS.portfolioTechStack],
+    queryFn: async () => {
+      const res = await getTechStack();
+      return normalizeTechStackList(res.tech_stack ?? []);
+    },
+    ...QUERY_CONFIG,
+  });
+
+  const setTechStackItems = useCallback(
+    (v: TechStackItem[] | ((p: TechStackItem[]) => TechStackItem[])) => {
+      const prev = queryClient.getQueryData<TechStackItem[]>([QUERY_KEYS.portfolioTechStack]) ?? [];
+      const next = typeof v === 'function' ? v(prev) : v;
+      queryClient.setQueryData<TechStackItem[]>([QUERY_KEYS.portfolioTechStack], next);
+      putTechStack({ tech_stack: normalizeTechStackList(next) })
+        .then(() => toast.success('변경사항이 저장되었습니다.', SAVED_TOAST_OPTIONS))
+        .catch(() => toast.error('기술 스택 저장에 실패했습니다.'));
+    },
+    [queryClient],
+  );
+
+  // ── 레포지토리 ─────────────────────────────────────────────────────────────
   const repoQueryKey = useMemo(() => [QUERY_KEYS.portfolioRepositories], []);
 
   const reposQuery = useQuery<RepoItem[]>({
@@ -200,8 +281,7 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       const list = await getAllRepositories();
       return (list ?? []).map(portfolioRepoToRepoItem);
     },
-    retry: 1,
-    refetchOnWindowFocus: false,
+    ...QUERY_CONFIG,
   });
 
   const setRepos = useCallback(
@@ -214,17 +294,51 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
     [queryClient, repoQueryKey],
   );
 
-  const techStackUserModifiedRef = useRef(false);
-
-  const setTechStackTags = useCallback(
-    (v: string[] | ((p: string[]) => string[])) => {
-      techStackUserModifiedRef.current = true;
-      setTechStackTagsState(v);
+  // ── 마일리지 ───────────────────────────────────────────────────────────────
+  const mileageQuery = useQuery<MileageItem[]>({
+    queryKey: [QUERY_KEYS.portfolioMileage],
+    queryFn: async () => {
+      const res = await getPortfolioMileage();
+      const list = res.mileage ?? [];
+      const sorted = [...list].sort((a, b) => a.display_order - b.display_order);
+      return sorted.map(portfolioMileageToItem);
     },
-    [],
+    ...QUERY_CONFIG,
+  });
+
+  const setMileageItems = useCallback(
+    (v: MileageItem[] | ((p: MileageItem[]) => MileageItem[])) => {
+      queryClient.setQueryData<MileageItem[]>(
+        [QUERY_KEYS.portfolioMileage],
+        prev => (typeof v === 'function' ? v(prev ?? []) : v),
+      );
+    },
+    [queryClient],
   );
 
-  /** 활동 삭제 (즉시 DELETE API 호출) */
+  // ── 활동 ───────────────────────────────────────────────────────────────────
+  const activitiesQuery = useQuery<ActivityItem[]>({
+    queryKey: [QUERY_KEYS.portfolioActivities],
+    queryFn: async () => {
+      const res = await getActivities();
+      const list = res.activities ?? [];
+      const sorted = [...list].sort((a, b) => a.display_order - b.display_order);
+      return sorted.map(apiActivityToItem);
+    },
+    ...QUERY_CONFIG,
+  });
+
+  const setActivities = useCallback(
+    (v: ActivityItem[] | ((p: ActivityItem[]) => ActivityItem[])) => {
+      queryClient.setQueryData<ActivityItem[]>(
+        [QUERY_KEYS.portfolioActivities],
+        prev => (typeof v === 'function' ? v(prev ?? []) : v),
+      );
+    },
+    [queryClient],
+  );
+
+  // ── 활동 CRUD ──────────────────────────────────────────────────────────────
   const deleteActivity = useCallback(async (id: number) => {
     if (id > 0) {
       try {
@@ -235,22 +349,8 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       }
     }
     setActivities(prev => prev.filter(a => a.id !== id));
-  }, []);
+  }, [setActivities]);
 
-  /** 자격증 삭제 (즉시 DELETE API 호출) */
-  const deleteCertificate = useCallback(async (id: number) => {
-    if (id > 0) {
-      try {
-        await deleteActivityApi(id);
-      } catch {
-        toast.error('자격증 삭제에 실패했습니다.');
-        return;
-      }
-    }
-    setCertificates(prev => prev.filter(a => a.id !== id));
-  }, []);
-
-  /** 새 활동(id<0) 저장 버튼 클릭 시에만 POST. 성공 시 목록에 서버 응답으로 교체, 실패 시 throw */
   const postNewActivity = useCallback(async (item: ActivityItem) => {
     if (item.id >= 0) return;
     try {
@@ -259,7 +359,7 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
         description: item.description,
         start_date: item.start_date,
         end_date: item.end_date,
-        category: ACTIVITY_SECTION_CATEGORY,
+        category: item.category.trim() || '기타',
       });
       setActivities(prev =>
         prev.map(a => (a.id === item.id ? apiActivityToItem(posted) : a)),
@@ -268,38 +368,17 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       toast.error('활동 추가에 실패했습니다.');
       throw new Error('활동 추가 실패');
     }
-  }, []);
+  }, [setActivities]);
 
-  /** 새 자격증(id<0) 저장 버튼 클릭 시에만 POST. 성공 시 목록에 서버 응답으로 교체, 실패 시 throw */
-  const postNewCertificate = useCallback(async (item: ActivityItem) => {
-    if (item.id >= 0) return;
-    try {
-      const posted = await postActivity({
-        title: item.title,
-        description: item.description,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        category: CERTIFICATE_SECTION_CATEGORY,
-      });
-      setCertificates(prev =>
-        prev.map(a => (a.id === item.id ? apiActivityToItem(posted) : a)),
-      );
-    } catch {
-      toast.error('자격증 추가에 실패했습니다.');
-      throw new Error('자격증 추가 실패');
-    }
-  }, []);
-
-  /** 기존 활동(id>0) 저장 버튼 클릭 시 즉시 PUT. 실패 시 throw */
   const saveExistingActivity = useCallback(async (item: ActivityItem) => {
     if (item.id <= 0) return;
     try {
-      const updated = await putActivity(item.id, {
+      const updated = await patchActivityById(item.id, {
         title: item.title,
         description: item.description,
         start_date: item.start_date,
         end_date: item.end_date,
-        category: ACTIVITY_SECTION_CATEGORY,
+        category: item.category.trim() || '기타',
       });
       setActivities(prev =>
         prev.map(a => (a.id === item.id ? apiActivityToItem(updated) : a)),
@@ -309,169 +388,46 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
       toast.error('활동 수정에 실패했습니다.');
       throw new Error('활동 수정 실패');
     }
-  }, []);
+  }, [setActivities]);
 
-  /** 기존 자격증(id>0) 저장 버튼 클릭 시 즉시 PUT. 실패 시 throw */
-  const saveExistingCertificate = useCallback(async (item: ActivityItem) => {
-    if (item.id <= 0) return;
-    try {
-      const updated = await putActivity(item.id, {
-        title: item.title,
-        description: item.description,
-        start_date: item.start_date,
-        end_date: item.end_date,
-        category: CERTIFICATE_SECTION_CATEGORY,
-      });
-      setCertificates(prev =>
-        prev.map(a => (a.id === item.id ? apiActivityToItem(updated) : a)),
-      );
-      toast.success('변경사항이 저장되었습니다.', SAVED_TOAST_OPTIONS);
-    } catch {
-      toast.error('자격증 수정에 실패했습니다.');
-      throw new Error('자격증 수정 실패');
-    }
-  }, []);
-
-  /** 활동 요약 페이지 진입 시 GET 1회 */
-  useEffect(() => {
-    getPortfolioSettings()
-      .then(res => {
-        const order = res.section_order ?? [];
-        const validKeys = order.filter((k): k is DraggableSectionKey =>
-          DRAGGABLE_SECTION_ORDER.includes(k as DraggableSectionKey),
-        );
-        const missing = DRAGGABLE_SECTION_ORDER.filter(k => !validKeys.includes(k));
-        if (validKeys.length > 0) {
-          setSectionOrder([...validKeys, ...missing]);
-        }
-      })
-      .catch(() => {
-        // 설정 조회 실패 시 기본 순서 유지
-      });
-
-    getTechStack()
-      .then(res => {
-        setTechStackTagsState(res.tech_stack ?? []);
-      })
-      .catch(() => {
-        toast.error('기술 스택을 불러오지 못했습니다.');
-      });
-
-    getActivities({ category: [ACTIVITY_SECTION_CATEGORY] })
-      .then(res => {
-        const list = (res.activities ?? []).filter(
-          a => a.category === ACTIVITY_SECTION_CATEGORY,
-        );
-        const sorted = [...list].sort(
-          (a, b) => a.display_order - b.display_order,
-        );
-        setActivities(sorted.map(apiActivityToItem));
-      })
-      .catch(() => {
-        toast.error('활동 목록을 불러오지 못했습니다.');
-      });
-
-    getActivities({ category: [CERTIFICATE_SECTION_CATEGORY] })
-      .then(res => {
-        const list = (res.activities ?? []).filter(
-          a => a.category === CERTIFICATE_SECTION_CATEGORY,
-        );
-        const sorted = [...list].sort(
-          (a, b) => a.display_order - b.display_order,
-        );
-        setCertificates(sorted.map(apiActivityToItem));
-      })
-      .catch(() => {
-        toast.error('자격증 목록을 불러오지 못했습니다.');
-      });
-
-    getUserInfo()
-      .then(res => {
-        setUserInfo(res);
-        try {
-          localStorage.setItem(
-            'portfolio-user-info',
-            JSON.stringify(res),
-          );
-        } catch {
-          // ignore
-        }
-      })
-      .catch(() => {
-        toast.error('유저 정보를 불러오지 못했습니다.');
-      });
-
-    getPortfolioMileage()
-      .then(res => {
-        const list = res.mileage ?? [];
-        const sorted = [...list].sort(
-          (a, b) => a.display_order - b.display_order,
-        );
-        setMileageItems(sorted.map(portfolioMileageToItem));
-      })
-      .catch(() => {
-        toast.error('마일리지 목록을 불러오지 못했습니다.');
-      });
-  }, []);
-
-  /** 기술 스택 변경 시 즉시 PUT */
-  useEffect(() => {
-    if (!techStackUserModifiedRef.current) return;
-
-    putTechStack({ tech_stack: techStackTags })
-      .then(() => {
-        toast.success('변경사항이 저장되었습니다.', SAVED_TOAST_OPTIONS);
-      })
-      .catch(() => {
-        toast.error('기술 스택 저장에 실패했습니다.');
-      });
-  }, [techStackTags]);
-
+  // ── Context value ──────────────────────────────────────────────────────────
   const value = useMemo<SummaryState>(
     () => ({
-      userInfo,
+      userInfo: userInfoQuery.data ?? null,
       setUserInfo,
-      sectionOrder,
+      sectionOrder: settingsQuery.data ?? DRAGGABLE_SECTION_ORDER,
       setSectionOrder,
-      techStackTags,
-      setTechStackTags,
+      techStackItems: techStackQuery.data ?? [],
+      setTechStackItems,
       repos: reposQuery.data ?? [],
       setRepos,
-      mileageItems,
+      mileageItems: mileageQuery.data ?? [],
       setMileageItems,
-      activities,
+      activities: activitiesQuery.data ?? [],
       setActivities,
       deleteActivity,
       postNewActivity,
       saveExistingActivity,
       activitiesNextId,
       setActivitiesNextId,
-      certificates,
-      setCertificates,
-      deleteCertificate,
-      postNewCertificate,
-      saveExistingCertificate,
-      certificatesNextId,
-      setCertificatesNextId,
     }),
     [
-      userInfo,
-      sectionOrder,
-      techStackTags,
-      setTechStackTags,
+      userInfoQuery.data,
+      setUserInfo,
+      settingsQuery.data,
+      setSectionOrder,
+      techStackQuery.data,
+      setTechStackItems,
       reposQuery.data,
       setRepos,
-      mileageItems,
-      activities,
+      mileageQuery.data,
+      setMileageItems,
+      activitiesQuery.data,
+      setActivities,
       deleteActivity,
       postNewActivity,
       saveExistingActivity,
       activitiesNextId,
-      certificates,
-      deleteCertificate,
-      postNewCertificate,
-      saveExistingCertificate,
-      certificatesNextId,
     ],
   );
 

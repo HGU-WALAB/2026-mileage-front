@@ -1,6 +1,7 @@
 import { HISNET_AUTH_URL } from '@/pages/auth/constants/auth';
-import { usePostLoginMutation } from '@/pages/auth/hooks';
 import { useEffect } from 'react';
+
+import usePostLoginMutation from './usePostLoginMutation';
 
 const useLogin = () => {
   const { mutate: postLogin, isSuccess } = usePostLoginMutation();

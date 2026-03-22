@@ -1,6 +1,7 @@
 import { filterJoinedItems } from '@/pages/mileage/constants/filterItems';
-import { useQueryParams } from '.';
 import { TabItem } from '@/types/tab';
+
+import useQueryParams from './useQueryParams';
 
 const useFilteredByJoined = () => {
   const { queryParams, updateQueryParams } = useQueryParams();

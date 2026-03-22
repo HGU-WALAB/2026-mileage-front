@@ -1,14 +1,27 @@
 import { SearchIcon } from '@/assets';
 import { Button, Dropdown, Flex, Input, Modal, Text } from '@/components';
+import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import type { PortfolioRepositoryItem, PutRepositoryItem } from '../../apis/portfolio';
-import { getAllRepositories, putRepositories } from '../../apis/portfolio';
+import { getAllRepositories, getRepositories, putRepositories } from '../../apis/portfolio';
 import { formatDateRange } from '../../utils/date';
 import { portfolioRepoToRepoItem, useSummaryContext } from '../context/SummaryContext';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  formatRepoStat,
+  RepoLanguageBar,
+  RepoStatPills,
+} from './repoCardMeta';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Checkbox from '@mui/material/Checkbox';
 import LinearProgress from '@mui/material/LinearProgress';
-import { styled, useTheme } from '@mui/material';
+import { styled, useMediaQuery, useTheme } from '@mui/material';
 import { toast } from 'react-toastify';
 
 interface RepoSelectModalProps {
@@ -16,7 +29,8 @@ interface RepoSelectModalProps {
   onClose: () => void;
 }
 
-/** 포트폴리오 레포지토리 선택 모달. GET /api/portfolio/repositories 전체 페이지 조회, is_visible true 체크, 확인 시 PUT */
+/** 목록은 페이지당 10건 GET, 확인 시에만 전체 페이지를 순회해 PUT (서버 스키마 유지) */
+const REPOS_PER_PAGE = 10;
 const SORT_OPTIONS = [
   { label: '최근 업데이트순', value: 'updated' },
   { label: '생성일순', value: 'created' },
@@ -38,8 +52,13 @@ const AFFILIATION_OPTIONS = [
 
 const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const theme = useTheme();
-  const { setRepos } = useSummaryContext();
-  const [allRepos, setAllRepos] = useState<PortfolioRepositoryItem[]>([]);
+  const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
+  const { setRepos, repos: portfolioRepos } = useSummaryContext();
+  const [pageRepos, setPageRepos] = useState<PortfolioRepositoryItem[]>([]);
+  const [loadedRepoById, setLoadedRepoById] = useState<
+    Map<number, PortfolioRepositoryItem>
+  >(() => new Map());
+  const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [sortFilter, setSortFilter] = useState<string>(SORT_OPTIONS[0].label);
@@ -52,9 +71,14 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    setLoading(true);
+  const portfolioReposRef = useRef(portfolioRepos);
+  portfolioReposRef.current = portfolioRepos;
+
+  // 모달이 열리자마자 백그라운드에서 전체 레포 프리페치 시작
+  // 확인 클릭 시 이미 완료된 Promise를 재사용해 대기 시간 최소화
+  const allReposPromiseRef = useRef<Promise<PortfolioRepositoryItem[]> | null>(null);
+
+  const queryParams = useMemo(() => {
     const sort =
       SORT_OPTIONS.find(option => option.label === sortFilter)?.value ??
       SORT_OPTIONS[0].value;
@@ -64,26 +88,62 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     const affiliation =
       AFFILIATION_OPTIONS.find(option => option.label === affiliationFilter)
         ?.value ?? AFFILIATION_OPTIONS[0].value;
+    return { sort, visibility, affiliation };
+  }, [sortFilter, visibilityFilter, affiliationFilter]);
 
-    getAllRepositories({
+  useLayoutEffect(() => {
+    if (!open) return;
+    setPage(1);
+    setLoadedRepoById(new Map());
+    setSearchQuery('');
+    setSelectedIds(
+      new Set(
+        portfolioReposRef.current.filter(r => r.is_visible).map(r => r.repo_id),
+      ),
+    );
+  }, [open]);
+
+  // 모달이 열리거나 필터가 바뀌면 백그라운드에서 전체 레포 프리페치
+  useEffect(() => {
+    if (!open) {
+      allReposPromiseRef.current = null;
+      return;
+    }
+    allReposPromiseRef.current = getAllRepositories({
+      ...queryParams,
+      perPage: REPOS_PER_PAGE,
+    });
+  }, [open, queryParams]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    const { sort, visibility, affiliation } = queryParams;
+
+    getRepositories({
+      page,
+      per_page: REPOS_PER_PAGE,
       sort,
       visibility,
       affiliation,
     })
-      .then(list => {
-        setAllRepos(list);
-        setSelectedIds(prev =>
-          prev.size > 0
-            ? prev
-            : new Set(list.filter(r => r.is_visible).map(r => r.repo_id)),
-        );
+      .then(res => {
+        const list = res.repositories ?? [];
+        setPageRepos(list);
+        setLoadedRepoById(prev => {
+          const next = new Map(prev);
+          for (const r of list) {
+            next.set(r.repo_id, r);
+          }
+          return next;
+        });
       })
       .catch(() => {
         toast.error('레포지토리 목록을 불러오지 못했습니다.');
         onClose();
       })
       .finally(() => setLoading(false));
-  }, [open, onClose, sortFilter, visibilityFilter, affiliationFilter]);
+  }, [open, onClose, page, queryParams]);
 
   const toggleRepo = useCallback((repoId: number) => {
     setSelectedIds(prev => {
@@ -95,14 +155,19 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   }, []);
 
   const handleConfirm = useCallback(async () => {
-    const putBody: PutRepositoryItem[] = allRepos.map(p => ({
-      repo_id: p.repo_id,
-      custom_title: p.custom_title != null ? p.custom_title : '',
-      description: p.description != null ? p.description : '',
-      is_visible: selectedIds.has(p.repo_id),
-    }));
     setSubmitting(true);
     try {
+      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용
+      const fullList = await (allReposPromiseRef.current ?? getAllRepositories({
+        ...queryParams,
+        perPage: REPOS_PER_PAGE,
+      }));
+      const putBody: PutRepositoryItem[] = fullList.map(p => ({
+        repo_id: p.repo_id,
+        custom_title: p.custom_title != null ? p.custom_title : '',
+        description: p.description != null ? p.description : '',
+        is_visible: selectedIds.has(p.repo_id),
+      }));
       const res = await putRepositories(putBody);
       setRepos((res.repositories ?? []).map(portfolioRepoToRepoItem));
       toast.success('변경사항이 저장되었습니다.', {
@@ -114,23 +179,77 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedIds, allRepos, setRepos, onClose]);
+  }, [selectedIds, queryParams, setRepos, onClose]);
 
   const filteredRepos = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return allRepos;
-    return allRepos.filter(
+    if (!q) return pageRepos;
+    return pageRepos.filter(
       r =>
         (r.name ?? '').toLowerCase().includes(q) ||
         (r.description?.toLowerCase().includes(q) ?? false) ||
-        (r.language?.toLowerCase().includes(q) ?? false),
+        (r.language?.toLowerCase().includes(q) ?? false) ||
+        (r.languages?.some(l => l.name.toLowerCase().includes(q)) ?? false),
     );
-  }, [allRepos, searchQuery]);
+  }, [pageRepos, searchQuery]);
 
-  const selectedRepos = useMemo(
-    () => allRepos.filter(r => selectedIds.has(r.repo_id)),
-    [allRepos, selectedIds],
-  );
+  const selectedRepos = useMemo(() => {
+    return [...selectedIds]
+      .map(id => {
+        const loaded = loadedRepoById.get(id);
+        if (loaded) return loaded;
+        const pr = portfolioRepos.find(r => r.repo_id === id);
+        if (pr) {
+          return {
+            repo_id: pr.repo_id,
+            custom_title: pr.custom_title,
+            name: pr.name,
+            description: pr.description,
+            is_visible: pr.is_visible,
+            display_order: pr.display_order ?? 0,
+            html_url: pr.html_url ?? '',
+            created_at: pr.created_at,
+            updated_at: pr.updated_at,
+            visibility: '',
+            owner: pr.owner ?? '',
+            id: pr.id ?? 0,
+            language: pr.languages[0],
+            languages: pr.languageBreakdown,
+          } satisfies PortfolioRepositoryItem;
+        }
+        return {
+          repo_id: id,
+          custom_title: null,
+          name: String(id),
+          description: '',
+          is_visible: false,
+          display_order: 0,
+          html_url: '',
+          created_at: '',
+          updated_at: '',
+          visibility: '',
+          owner: '',
+          id: 0,
+        } satisfies PortfolioRepositoryItem;
+      })
+      .sort((a, b) => a.repo_id - b.repo_id);
+  }, [selectedIds, loadedRepoById, portfolioRepos]);
+
+  const hasPrevPage = page > 1;
+  const hasNextPage = pageRepos.length >= REPOS_PER_PAGE;
+
+  const setSortFilterAndResetPage = useCallback((label: string) => {
+    setSortFilter(label);
+    setPage(1);
+  }, []);
+  const setVisibilityFilterAndResetPage = useCallback((label: string) => {
+    setVisibilityFilter(label);
+    setPage(1);
+  }, []);
+  const setAffiliationFilterAndResetPage = useCallback((label: string) => {
+    setAffiliationFilter(label);
+    setPage(1);
+  }, []);
 
   const selectedCount = selectedIds.size;
 
@@ -188,7 +307,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   label="정렬"
                   items={SORT_OPTIONS.map(option => option.label)}
                   selectedItem={sortFilter}
-                  setSelectedItem={setSortFilter}
+                  setSelectedItem={setSortFilterAndResetPage}
                   width="10rem"
                 />
               </S.FilterGroup>
@@ -207,7 +326,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   label="접근 권한"
                   items={VISIBILITY_OPTIONS.map(option => option.label)}
                   selectedItem={visibilityFilter}
-                  setSelectedItem={setVisibilityFilter}
+                  setSelectedItem={setVisibilityFilterAndResetPage}
                   width="5rem"
                 />
               </S.FilterGroup>
@@ -226,7 +345,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   label="소유 유형"
                   items={AFFILIATION_OPTIONS.map(option => option.label)}
                   selectedItem={affiliationFilter}
-                  setSelectedItem={setAffiliationFilter}
+                  setSelectedItem={setAffiliationFilterAndResetPage}
                   width="7rem"
                 />
               </S.FilterGroup>
@@ -268,8 +387,16 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
               />
             </S.LoadingWrap>
           ) : (
+          <>
           <S.List>
-            {filteredRepos.map(repo => (
+            {filteredRepos.length === 0 ? (
+              <S.EmptyHint>
+                {searchQuery.trim()
+                  ? '이 페이지에서 검색 결과가 없습니다.'
+                  : '표시할 레포지토리가 없습니다.'}
+              </S.EmptyHint>
+            ) : (
+            filteredRepos.map(repo => (
               <S.Row
                 key={repo.repo_id}
                 role="button"
@@ -291,7 +418,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                     '&.Mui-checked': { color: palette.blue500 },
                   }}
                 />
-                <Flex.Column gap="0.375rem" style={{ flex: 1, minWidth: 0 }}>
+                <Flex.Column gap="0.5rem" style={{ flex: 1, minWidth: 0 }}>
                   {repo.html_url ? (
                     <S.RepoNameLink
                       href={repo.html_url}
@@ -338,24 +465,77 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                       {repo.description}
                     </Text>
                   )}
-                  <Text
-                    style={{
-                      ...theme.typography.caption,
-                      color: theme.palette.grey[500],
-                      margin: 0,
-                    }}
+                  <Flex.Row
+                    align="center"
+                    justify="space-between"
+                    wrap="wrap"
+                    gap="0.5rem"
+                    style={{ width: '100%' }}
                   >
-                    {formatDateRange(repo.created_at, repo.updated_at)}
-                  </Text>
-                  {repo.language && (
-                    <Flex.Row gap="0.375rem" wrap="wrap">
-                      <S.LangTag>{repo.language}</S.LangTag>
-                    </Flex.Row>
+                    <Text
+                      style={{
+                        ...theme.typography.caption,
+                        color: theme.palette.grey[500],
+                        margin: 0,
+                        flex: '0 1 auto',
+                        minWidth: 0,
+                      }}
+                    >
+                      {formatDateRange(repo.created_at, repo.updated_at)}
+                    </Text>
+                    {(formatRepoStat(repo.commit_count) != null ||
+                      formatRepoStat(repo.stargazers_count) != null ||
+                      formatRepoStat(repo.forks_count) != null) && (
+                      <RepoStatPills
+                        isMobile={isMobile}
+                        stats={{
+                          commit_count: repo.commit_count,
+                          stargazers_count: repo.stargazers_count,
+                          forks_count: repo.forks_count,
+                        }}
+                      />
+                    )}
+                  </Flex.Row>
+                  {repo.languages && repo.languages.length > 0 ? (
+                    <RepoLanguageBar breakdown={repo.languages} />
+                  ) : (
+                    repo.language && (
+                      <Flex.Row gap="0.375rem" wrap="wrap">
+                        <S.LangTag>{repo.language}</S.LangTag>
+                      </Flex.Row>
+                    )
                   )}
                 </Flex.Column>
               </S.Row>
-            ))}
+            ))
+            )}
           </S.List>
+          <S.PaginationBar justify="space-between" align="center" wrap="wrap">
+            <Button
+              label="이전"
+              variant="outlined"
+              size="medium"
+              disabled={!hasPrevPage}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+            />
+            <Text
+              style={{
+                ...theme.typography.body2,
+                color: theme.palette.grey[600],
+                margin: 0,
+              }}
+            >
+              {page}페이지 · 페이지당 {REPOS_PER_PAGE}개
+            </Text>
+            <Button
+              label="다음"
+              variant="outlined"
+              size="medium"
+              disabled={!hasNextPage}
+              onClick={() => setPage(p => p + 1)}
+            />
+          </S.PaginationBar>
+          </>
           )}
         </S.ListWrap>
       </Modal.Body>
@@ -462,8 +642,24 @@ const S = {
     flex-direction: column;
     gap: 0.5rem;
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+  `,
+  EmptyHint: styled(Text)`
+    margin: 0;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: ${({ theme }) => theme.palette.grey[600]};
+    font-size: 0.875rem;
+  `,
+  PaginationBar: styled(Flex.Row)`
+    flex-shrink: 0;
+    width: 100%;
+    padding-top: 0.625rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid ${({ theme }) => theme.palette.grey[200]};
+    gap: 0.5rem;
   `,
   Row: styled(Flex.Row)`
     align-items: flex-start;

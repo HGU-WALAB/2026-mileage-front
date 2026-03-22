@@ -1,6 +1,6 @@
-import { useQueryParams } from '.';
 import { MileageResponse } from '@/pages/mileage/types/mileage';
 import useGetMileageQuery from './useGetMileageQuery';
+import useQueryParams from './useQueryParams';
 
 const useGroupedMileageList = () => {
   const { queryParams } = useQueryParams();

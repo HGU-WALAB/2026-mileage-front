@@ -1,6 +1,6 @@
 import { LoadingIcon } from '@/assets';
 import { ErrorBox, Flex, Heading, RadarChart } from '@/components';
-import { useGetUserInfoQuery } from '@/hooks/queries';
+import { useGetUserInfoQuery } from '@/pages/auth/hooks';
 import { boxShadow } from '@/styles/common';
 import { RadarCapability } from '@/pages/dashboard/types/capability';
 import { styled } from '@mui/material';

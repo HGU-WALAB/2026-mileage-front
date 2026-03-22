@@ -1,7 +1,7 @@
 import { Accordion, Flex, Heading, Text } from '@/components';
 import { FAQ } from '@/pages/mileage/constants/faq';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
-import { useGetFAQContactDescQuery } from '@/hooks/queries';
+import { useGetFAQContactDescQuery } from '@/pages/dashboard/hooks';
 import { boxShadow } from '@/styles/common';
 import { FAQItem, FAQListItem } from '@/pages/mileage/types/faq';
 import { styled, useMediaQuery, useTheme } from '@mui/material';

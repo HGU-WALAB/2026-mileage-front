@@ -1,5 +1,5 @@
 import { Dropdown, Flex, Text } from '@/components';
-import { useFilteredBySemester } from '@/hooks';
+import { useFilteredBySemester } from '@/pages/mileage/hooks';
 import { useAuthStore } from '@/stores';
 
 const SemesterDropdown = () => {

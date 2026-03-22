@@ -1,6 +1,6 @@
 import { Flex, TableListSkeleton, Title } from '@/components';
 import { EmptyMileageTable, MileageTable } from '.';
-import { useGroupedMileageList, useQueryParams } from '@/hooks';
+import { useGroupedMileageList, useQueryParams } from '@/pages/mileage/hooks';
 import { useAuthStore } from '@/stores';
 import { useEffect } from 'react';
 

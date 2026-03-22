@@ -1,5 +1,5 @@
 import { Text } from '@/components';
-import { useGetSubmittedFileQuery } from '@/hooks/queries';
+import { useGetSubmittedFileQuery } from '@/pages/mileage/hooks';
 import { SubmittedMileageResponse } from '@/pages/mileage/types/mileage';
 import { styled } from '@mui/material';
 

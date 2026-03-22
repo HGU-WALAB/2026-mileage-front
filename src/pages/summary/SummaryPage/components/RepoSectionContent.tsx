@@ -16,6 +16,11 @@ import {
   portfolioRepoToRepoItem,
   useSummaryContext,
 } from '../context/SummaryContext';
+import {
+  formatRepoStat,
+  RepoLanguageBar,
+  RepoStatPills,
+} from './repoCardMeta';
 
 const ITEMS_PER_PAGE = 4;
 
@@ -172,7 +177,7 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
                   </Flex.Row>
                 </Flex.Column>
               ) : (
-                <Flex.Column gap="0.5rem">
+                <Flex.Column gap="0.5rem" style={{ width: '100%' }}>
                   <Flex.Row
                     align="center"
                     gap="0.5rem"
@@ -211,19 +216,49 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
                       {repo.description}
                     </Text>
                   )}
-                  <Text
-                    style={{
-                      ...theme.typography.caption,
-                      color: theme.palette.grey[500],
-                    }}
+                  <Flex.Row
+                    align="center"
+                    justify="space-between"
+                    wrap="wrap"
+                    gap="0.5rem"
+                    style={{ width: '100%' }}
                   >
-                    {formatDateRange(repo.created_at, repo.updated_at)}
-                  </Text>
-                  <Flex.Row gap="0.5rem" wrap="wrap">
-                    {repo.languages.map(lang => (
-                      <S.LangTag key={lang}>{lang}</S.LangTag>
-                    ))}
+                    <Text
+                      style={{
+                        ...theme.typography.caption,
+                        color: theme.palette.grey[500],
+                        margin: 0,
+                        flex: '0 1 auto',
+                        minWidth: 0,
+                      }}
+                    >
+                      {formatDateRange(repo.created_at, repo.updated_at)}
+                    </Text>
+                    {(formatRepoStat(repo.commit_count) != null ||
+                      formatRepoStat(repo.stargazers_count) != null ||
+                      formatRepoStat(repo.forks_count) != null) && (
+                      <RepoStatPills
+                        isMobile={isMobile}
+                        stats={{
+                          commit_count: repo.commit_count,
+                          stargazers_count: repo.stargazers_count,
+                          forks_count: repo.forks_count,
+                        }}
+                      />
+                    )}
                   </Flex.Row>
+                  {repo.languageBreakdown &&
+                  repo.languageBreakdown.length > 0 ? (
+                    <RepoLanguageBar breakdown={repo.languageBreakdown} />
+                  ) : (
+                    repo.languages.length > 0 && (
+                      <Flex.Row gap="0.5rem" wrap="wrap">
+                        {repo.languages.map(lang => (
+                          <S.LangTag key={lang}>{lang}</S.LangTag>
+                        ))}
+                      </Flex.Row>
+                    )
+                  )}
                 </Flex.Column>
               )}
             </S.Card>

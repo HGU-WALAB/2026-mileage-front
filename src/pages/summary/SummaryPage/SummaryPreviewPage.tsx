@@ -3,7 +3,6 @@ import { Button, Flex, Footer } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import CodeIcon from '@mui/icons-material/Code';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -19,20 +18,23 @@ import { useSummaryContext } from './context/SummaryContext';
 import { buildSummaryMarkdown } from './utils/buildSummaryMarkdown';
 import {
   ActivitiesSectionContent,
-  CertificatesSectionContent,
   MileageSectionContent,
+  PortfolioPromptQualityDashboard,
   RepoSectionContent,
   StaticSection,
   TechStackSectionContent,
   UserInfoSectionContent,
 } from './components';
+import {
+  PROMPT_QUALITY_SECTION_HINTS,
+  usePortfolioPromptProgress,
+} from './utils/portfolioPromptProgress';
 
 const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   tech: <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   repo: <FolderIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   mileage: <MenuBookIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   activities: <EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
-  certificates: <CardMembershipIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
 };
 
 const SummaryPreviewPage = () => {
@@ -41,22 +43,21 @@ const SummaryPreviewPage = () => {
   const {
     userInfo,
     sectionOrder,
-    techStackTags,
+    techStackItems,
     repos,
     mileageItems,
     activities,
-    certificates,
   } = useSummaryContext();
+  const promptProgress = usePortfolioPromptProgress();
 
   const handleCopyMarkdown = useCallback(async () => {
     const markdown = buildSummaryMarkdown({
       userInfo,
       sectionOrder,
-      techStackTags,
+      techStackItems,
       repos,
       mileageItems,
       activities,
-      certificates,
     });
     try {
       await navigator.clipboard.writeText(markdown);
@@ -64,7 +65,7 @@ const SummaryPreviewPage = () => {
     } catch {
       toast.error('클립보드 복사에 실패했습니다.');
     }
-  }, [userInfo, sectionOrder, techStackTags, repos, mileageItems, activities, certificates]);
+  }, [userInfo, sectionOrder, techStackItems, repos, mileageItems, activities]);
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
@@ -76,8 +77,6 @@ const SummaryPreviewPage = () => {
         return <MileageSectionContent readOnly />;
       case 'activities':
         return <ActivitiesSectionContent readOnly />;
-      case 'certificates':
-        return <CertificatesSectionContent readOnly />;
       default:
         return null;
     }
@@ -103,6 +102,7 @@ const SummaryPreviewPage = () => {
           onClick={handleCopyMarkdown}
         />
       </S.ButtonRow>
+      <PortfolioPromptQualityDashboard progress={promptProgress} />
       <UserInfoSectionContent readOnly />
       <Flex.Column gap="1rem">
         {sectionOrder.map(key => (
@@ -117,6 +117,10 @@ const SummaryPreviewPage = () => {
                   : undefined
             }
             icon={SECTION_ICONS[key]}
+            promptFooter={{
+              percent: promptProgress[key],
+              hint: PROMPT_QUALITY_SECTION_HINTS[key],
+            }}
           >
             {renderSectionContent(key)}
           </StaticSection>

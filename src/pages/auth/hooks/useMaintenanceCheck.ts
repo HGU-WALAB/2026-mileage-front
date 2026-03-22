@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 
 import getMaintenanceStatus from '@/apis/maintenance';
 import { MaintenanceStatus } from '@/types/maintenance';
-import { useGetUserInfoQuery } from '@/hooks/queries';
 import useAuthStore from '@/stores/useAuthStore';
+
+import useGetUserInfoQuery from './useGetUserInfoQuery';
 
 export const useMaintenanceCheck = () => {
   const [maintenanceStatus, setMaintenanceStatus] =
@@ -40,7 +41,7 @@ export const useMaintenanceCheck = () => {
       try {
         const status = await getMaintenanceStatus();
         setMaintenanceStatus(status);
-      } catch (error) {
+      } catch {
         // 로그인 후 점검 확인이 실패하면 안전하게 "점검중"으로 처리 (요구사항 유지)
         setMaintenanceStatus({
           maintenanceMode: true,
@@ -61,5 +62,3 @@ export const useMaintenanceCheck = () => {
 
   return { maintenanceStatus, isLoading };
 };
-
-

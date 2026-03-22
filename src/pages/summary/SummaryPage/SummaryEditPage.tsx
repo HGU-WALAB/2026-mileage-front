@@ -1,16 +1,16 @@
 import { DownloadIcon } from '@/assets';
 import { Button, Flex, Footer, Text } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
+import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
 import CodeIcon from '@mui/icons-material/Code';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import { Button as MuiButton } from '@mui/material';
+import { Button as MuiButton, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -22,15 +22,21 @@ import {
 import { useSummaryContext } from './context/SummaryContext';
 import {
   ActivitiesSectionContent,
-  CertificatesSectionContent,
+  type ActivitiesSectionContentHandle,
   DraggableSection,
   MileageSectionContent,
   MileageSelectModal,
+  PortfolioPromptQualityDashboard,
   RepoSelectModal,
   RepoSectionContent,
   TechStackSectionContent,
+  type TechStackSectionContentHandle,
   UserInfoSectionContent,
 } from './components';
+import {
+  PROMPT_QUALITY_SECTION_HINTS,
+  usePortfolioPromptProgress,
+} from './utils/portfolioPromptProgress';
 
 const GITHUB_STORAGE_KEY = 'github-storage';
 function getGithubUsernameFromStorage(): string | null {
@@ -56,7 +62,6 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   repo: <FolderIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   mileage: <MenuBookIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   activities: <EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
-  certificates: <CardMembershipIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
 };
 
 const SummaryEditPage = () => {
@@ -71,6 +76,10 @@ const SummaryEditPage = () => {
   const [repoModalOpen, setRepoModalOpen] = useState(false);
   const [mileageModalOpen, setMileageModalOpen] = useState(false);
   const hasGithub = getGithubUsernameFromStorage() != null;
+  const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
+  const techStackRef = useRef<TechStackSectionContentHandle>(null);
+  const activitiesRef = useRef<ActivitiesSectionContentHandle>(null);
+  const promptProgress = usePortfolioPromptProgress();
 
   const handleDragStart = useCallback((id: DraggableSectionKey) => {
     setDraggedId(id);
@@ -123,15 +132,13 @@ const SummaryEditPage = () => {
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
       case 'tech':
-        return <TechStackSectionContent />;
+        return <TechStackSectionContent ref={techStackRef} />;
       case 'repo':
         return <RepoSectionContent />;
       case 'mileage':
         return <MileageSectionContent />;
       case 'activities':
-        return <ActivitiesSectionContent />;
-      case 'certificates':
-        return <CertificatesSectionContent />;
+        return <ActivitiesSectionContent ref={activitiesRef} />;
       default:
         return null;
     }
@@ -211,6 +218,7 @@ const SummaryEditPage = () => {
           />
         </S.ButtonGroup>
       </S.TopRow>
+      <PortfolioPromptQualityDashboard progress={promptProgress} />
       <UserInfoSectionContent />
       <Flex.Column gap="1rem">
         {sectionOrder.map(key => (
@@ -223,9 +231,7 @@ const SummaryEditPage = () => {
                 ? '교내·외 수상 경력, 동아리, 대외활동 등을 추가하면 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
                 : key === 'mileage'
                   ? '해당 마일리지 활동의 구체적인 내용을 입력하면 더욱 완성도 높은 포트폴리오 설명을 생성할 수 있습니다.'
-                  : key === 'certificates'
-                    ? '운전면허증, 정보처리기사, SQLD 등 보유 자격증을 추가하여 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
-                    : undefined
+                  : undefined
             }
             icon={SECTION_ICONS[key]}
             headerRight={
@@ -233,13 +239,40 @@ const SummaryEditPage = () => {
                 ? repoHeaderRight
                 : key === 'mileage'
                   ? mileageHeaderRight
+                  : key === 'tech' && isMobile ? (
+                      <Button
+                        label="항목 추가"
+                        variant="outlined"
+                        color="blue"
+                        size="medium"
+                        onClick={() => techStackRef.current?.openAddDialog()}
+                      />
+                    )
+                  : key === 'activities' ? (
+                      <Button
+                        label="활동 추가"
+                        variant="outlined"
+                        color="blue"
+                        size="medium"
+                        onClick={() =>
+                          activitiesRef.current?.openAddActivity()
+                        }
+                      />
+                    )
                   : undefined
+            }
+            compactHeaderRight={
+              (key === 'tech' && isMobile) || key === 'activities'
             }
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             isDragOver={dragOverId === key}
+            promptFooter={{
+              percent: promptProgress[key],
+              hint: PROMPT_QUALITY_SECTION_HINTS[key],
+            }}
           >
             {renderSectionContent(key)}
           </DraggableSection> 

@@ -10,6 +10,7 @@ import type {
   PutRepositoryItem,
   UserInfoResponse,
 } from '@/pages/summary/apis/portfolio';
+import type { TechStackItem } from '@/pages/summary/apis/portfolio';
 import type { PatchRepositoryBody } from '@/pages/summary/apis/repositories';
 import { DRAGGABLE_SECTION_ORDER } from '@/pages/summary/constants/constants';
 import { mockActivitiesResponse } from '@/mocks/fixtures/portfolioActivities';
@@ -77,10 +78,13 @@ export const PortfolioHandlers = [
   }),
 
   http.put(BASE_URL + ENDPOINT.PORTFOLIO_TECH_STACK, async ({ request }) => {
-    const body = (await request.json()) as { tech_stack: string[] };
-    techStackStore.tech_stack = body.tech_stack ?? [];
+    const body = (await request.json()) as { tech_stack: TechStackItem[] };
+    techStackStore.tech_stack = [...(body.tech_stack ?? [])];
 
-    return HttpResponse.json({}, { status: 200 });
+    return HttpResponse.json(
+      { tech_stack: [...techStackStore.tech_stack] },
+      { status: 200 },
+    );
   }),
 
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_SETTINGS, () => {
@@ -104,10 +108,9 @@ export const PortfolioHandlers = [
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_ACTIVITIES, ({ request }) => {
     const url = new URL(request.url);
     const categoryParams = url.searchParams.getAll('category');
-    const categories = categoryParams.map(c => Number(c)).filter(n => !Number.isNaN(n));
     let list = [...activitiesStore];
-    if (categories.length > 0) {
-      list = list.filter(a => categories.includes(a.category));
+    if (categoryParams.length > 0) {
+      list = list.filter(a => categoryParams.includes(String(a.category)));
     }
     const sorted = list.sort((a, b) => a.display_order - b.display_order);
     return HttpResponse.json({ activities: sorted }, { status: 200 });
@@ -119,7 +122,7 @@ export const PortfolioHandlers = [
       description: string;
       start_date: string;
       end_date: string;
-      category?: number;
+      category?: string;
     };
     const newItem: ActivityApiItem = {
       id: nextActivityId++,
@@ -127,7 +130,7 @@ export const PortfolioHandlers = [
       description: body.description ?? '',
       start_date: body.start_date ?? '',
       end_date: body.end_date ?? '',
-      category: body.category ?? 0,
+      category: (body.category ?? '').trim() || '기타',
       display_order: activitiesStore.length,
     };
     activitiesStore.push(newItem);
@@ -141,7 +144,7 @@ export const PortfolioHandlers = [
       description: string;
       start_date: string;
       end_date: string;
-      category?: number;
+      category?: string;
     }>;
     if (!Array.isArray(body)) {
       return HttpResponse.json({ activities: activitiesStore }, { status: 200 });
@@ -155,7 +158,10 @@ export const PortfolioHandlers = [
           description: item.description ?? activitiesStore[idx].description,
           start_date: item.start_date ?? activitiesStore[idx].start_date,
           end_date: item.end_date ?? activitiesStore[idx].end_date,
-          category: item.category ?? activitiesStore[idx].category,
+          category:
+            item.category != null && item.category !== ''
+              ? item.category
+              : activitiesStore[idx].category,
         };
       }
     }
@@ -165,7 +171,7 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ activities: sorted }, { status: 200 });
   }),
 
-  http.put(
+  http.patch(
     BASE_URL + `${ENDPOINT.PORTFOLIO_ACTIVITIES}/:id`,
     async ({ params, request }) => {
       const id = Number(params.id);
@@ -174,7 +180,7 @@ export const PortfolioHandlers = [
         description: string;
         start_date: string;
         end_date: string;
-        category?: number;
+        category?: string;
       };
       const idx = activitiesStore.findIndex(a => a.id === id);
       if (idx === -1) {
@@ -186,7 +192,10 @@ export const PortfolioHandlers = [
         description: body.description ?? activitiesStore[idx].description,
         start_date: body.start_date ?? activitiesStore[idx].start_date,
         end_date: body.end_date ?? activitiesStore[idx].end_date,
-        category: body.category ?? activitiesStore[idx].category,
+        category:
+          body.category != null && body.category !== ''
+            ? body.category
+            : activitiesStore[idx].category,
       };
       return HttpResponse.json(activitiesStore[idx], { status: 200 });
     },
@@ -333,10 +342,14 @@ export const PortfolioHandlers = [
         name: existing?.name ?? '',
         html_url: existing?.html_url ?? '',
         language: existing?.language ?? '',
+        languages: existing?.languages ?? [],
         created_at: existing?.created_at ?? '',
         updated_at: existing?.updated_at ?? '',
         visibility: existing?.visibility ?? 'public',
         owner: existing?.owner ?? 'user',
+        commit_count: existing?.commit_count ?? 0,
+        stargazers_count: existing?.stargazers_count ?? 0,
+        forks_count: existing?.forks_count ?? 0,
       });
     });
     if (repositoriesStore.length > 0) {

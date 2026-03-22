@@ -34,6 +34,9 @@ const S = {
     min-height: 60px;
     min-width: ${({ isMobile }) => (isMobile ? '100%' : '340px')};
     padding: 0.5rem 1rem;
+    align-self: stretch;
+    height: auto;
+    align-items: center;
     ${boxShadow}
   `,
   BlueWrapper: styled(Flex.Row)<{ isMobile: boolean }>`

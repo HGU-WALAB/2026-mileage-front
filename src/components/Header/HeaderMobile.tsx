@@ -3,7 +3,7 @@ import { Flex, Heading } from '@/components';
 import { headerItems } from '@/constants/headerItems';
 import { headerHeight } from '@/constants/layoutSize';
 import { ROUTE_PATH } from '@/constants/routePath';
-import { usePostLogoutMutation } from '@/hooks/queries';
+import { usePostLogoutMutation } from '@/pages/auth/hooks';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { styled, useTheme } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';

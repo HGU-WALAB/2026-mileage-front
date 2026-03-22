@@ -10,6 +10,8 @@ import {
 
 import type { DraggableSectionKey } from '../../constants/constants';
 
+import SectionPromptQualityFooter from './SectionPromptQualityFooter';
+
 interface DraggableSectionProps {
   sectionId: DraggableSectionKey;
   title: string;
@@ -17,11 +19,15 @@ interface DraggableSectionProps {
   subtitle?: string;
   icon?: ReactNode;
   headerRight?: ReactNode;
+  /** true면 좁은 화면에서도 헤더 우측(작은 버튼)이 제목과 한 줄에 유지 */
+  compactHeaderRight?: boolean;
   onDragStart: (id: DraggableSectionKey) => void;
   onDragOver: (e: DragEvent<HTMLElement>, targetId: DraggableSectionKey) => void;
   onDragLeave: (e: DragEvent<HTMLElement>) => void;
   onDrop: (targetId: DraggableSectionKey) => void;
   isDragOver?: boolean;
+  /** 포트폴리오 프롬프트 품질 진행도 (카드 하단 오른쪽 정렬 바) */
+  promptFooter?: { percent: number; hint: string };
   children: ReactNode;
 }
 
@@ -31,11 +37,13 @@ const DraggableSection = ({
   subtitle,
   icon,
   headerRight,
+  compactHeaderRight = false,
   onDragStart,
   onDragOver,
   onDragLeave,
   onDrop,
   isDragOver = false,
+  promptFooter,
   children,
 }: DraggableSectionProps) => {
   const theme = useTheme();
@@ -103,9 +111,17 @@ const DraggableSection = ({
             <S.Subtitle>{subtitle}</S.Subtitle>
           )}
         </Flex.Column>
-        {headerRight != null && <S.HeaderRight>{headerRight}</S.HeaderRight>}
+        {headerRight != null && (
+          <S.HeaderRight $compact={compactHeaderRight}>{headerRight}</S.HeaderRight>
+        )}
       </S.Header>
       <S.Content>{children}</S.Content>
+      {promptFooter != null && (
+        <SectionPromptQualityFooter
+          hint={promptFooter.hint}
+          percent={promptFooter.percent}
+        />
+      )}
     </S.Section>
   );
 };
@@ -145,10 +161,10 @@ const S = {
     align-items: center;
     justify-content: center;
   `,
-  HeaderRight: styled('div')`
+  HeaderRight: styled('div')<{ $compact?: boolean }>`
     flex-shrink: 0;
     @media (max-width: 500px) {
-      width: 100%;
+      width: ${p => (p.$compact ? 'auto' : '100%')};
     }
   `,
   Subtitle: styled(Text)`

@@ -3,24 +3,27 @@ import {
   INPUT_DATA_LABEL,
   PORTFOLIO_PROMPT_TEMPLATE,
 } from '../../constants/promptTemplate';
-import type { UserInfoResponse } from '../../apis/portfolio';
+import type { TechStackItem, UserInfoResponse } from '../../apis/portfolio';
 import type {
   ActivityItem,
   MileageItem,
   RepoItem,
 } from '../context/SummaryContext';
 import { SECTION_TITLES } from '../../constants/constants';
+import { groupActivitiesByCategory } from '../../utils/activityGrouping';
+import {
+  getTechLevelBand,
+  getTechLevelBandLabel,
+} from '../../utils/techStackLevel';
 
 /** 미리보기에 보여지는 데이터만 사용해 마크다운 문자열 생성 */
 export interface BuildSummaryMarkdownParams {
   userInfo: UserInfoResponse | null;
   sectionOrder: DraggableSectionKey[];
-  techStackTags: string[];
+  techStackItems: TechStackItem[];
   repos: RepoItem[];
   mileageItems: MileageItem[];
   activities: ActivityItem[];
-  /** 자격증 섹션 (activities API category 1) */
-  certificates: ActivityItem[];
 }
 
 function escapeMarkdown(text: string): string {
@@ -52,11 +55,14 @@ function sectionUserInfo(userInfo: UserInfoResponse | null): string {
   return lines.join('\n');
 }
 
-function sectionTechStack(tags: string[]): string {
-  if (tags.length === 0) return '';
+function sectionTechStack(items: TechStackItem[]): string {
+  if (items.length === 0) return '';
   const title = SECTION_TITLES.tech;
-  const tagList = tags.map(t => `- ${escapeMarkdown(t)}`).join('\n');
-  return `## ${escapeMarkdown(title)}\n\n${tagList}`;
+  const lines = items.map(i => {
+    const band = getTechLevelBandLabel(getTechLevelBand(i.level));
+    return `- **${escapeMarkdown(i.domain.trim() || '기타')}** · ${escapeMarkdown(i.name)} (${i.level}%, ${band})`;
+  });
+  return `## ${escapeMarkdown(title)}\n\n${lines.join('\n')}`;
 }
 
 function sectionRepos(repos: RepoItem[]): string {
@@ -86,32 +92,25 @@ function sectionMileage(items: MileageItem[]): string {
 function sectionActivities(activities: ActivityItem[]): string {
   if (activities.length === 0) return '';
   const title = SECTION_TITLES.activities;
-  const lines = activities.map(a => {
-    const desc = a.description ? ` · ${a.description}` : '';
-    return `- **${escapeMarkdown(a.title)}** (${a.start_date} ~ ${a.end_date})${escapeMarkdown(desc)}`;
+  const groups = groupActivitiesByCategory(activities);
+  const blocks = groups.map(([cat, groupItems]) => {
+    const lines = groupItems.map(a => {
+      const desc = a.description ? ` · ${a.description}` : '';
+      return `- **${escapeMarkdown(a.title)}** (${a.start_date} ~ ${a.end_date})${escapeMarkdown(desc)}`;
+    });
+    return `### ${escapeMarkdown(cat)}\n\n${lines.join('\n')}`;
   });
-  return `## ${escapeMarkdown(title)}\n\n${lines.join('\n')}`;
-}
-
-function sectionCertificates(certificates: ActivityItem[]): string {
-  if (certificates.length === 0) return '';
-  const title = SECTION_TITLES.certificates;
-  const lines = certificates.map(a => {
-    const desc = a.description ? ` · ${a.description}` : '';
-    return `- **${escapeMarkdown(a.title)}** (${a.start_date} ~ ${a.end_date})${escapeMarkdown(desc)}`;
-  });
-  return `## ${escapeMarkdown(title)}\n\n${lines.join('\n')}`;
+  return `## ${escapeMarkdown(title)}\n\n${blocks.join('\n\n')}`;
 }
 
 const SECTION_BUILDERS: Record<
   DraggableSectionKey,
   (params: BuildSummaryMarkdownParams) => string
 > = {
-  tech: p => sectionTechStack(p.techStackTags),
+  tech: p => sectionTechStack(p.techStackItems),
   repo: p => sectionRepos(p.repos),
   mileage: p => sectionMileage(p.mileageItems),
   activities: p => sectionActivities(p.activities),
-  certificates: p => sectionCertificates(p.certificates),
 };
 
 /**

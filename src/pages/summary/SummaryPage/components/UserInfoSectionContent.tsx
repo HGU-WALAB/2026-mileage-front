@@ -12,6 +12,11 @@ import { toast } from 'react-toastify';
 import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { patchUserInfo, patchUserInfoWithImage } from '../../apis/portfolio';
 import { useSummaryContext } from '../context/SummaryContext';
+import {
+  PROMPT_QUALITY_SECTION_HINTS,
+  usePortfolioPromptProgress,
+} from '../utils/portfolioPromptProgress';
+import SectionPromptQualityFooter from './SectionPromptQualityFooter';
 
 const getProfileImageUrl = (filename: string | null | undefined): string | null =>
   filename?.trim()
@@ -25,6 +30,7 @@ interface UserInfoSectionContentProps {
 /** 유저정보. 상단 고정, 타이틀 없음. name/department/major1·2 표시, bio만 수정 가능 */
 const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProps) => {
   const { userInfo, setUserInfo } = useSummaryContext();
+  const promptProgress = usePortfolioPromptProgress();
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioDraft, setBioDraft] = useState('');
 
@@ -201,6 +207,10 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
           </Text>
         </Flex.Column>
       </S.Inner>
+      <SectionPromptQualityFooter
+        hint={PROMPT_QUALITY_SECTION_HINTS.intro}
+        percent={promptProgress.intro}
+      />
     </S.Card>
   );
 };
@@ -209,6 +219,8 @@ export default UserInfoSectionContent;
 
 const S = {
   Card: styled('section')`
+    display: flex;
+    flex-direction: column;
     background-color: ${({ theme }) => theme.palette.background.paper};
     border-radius: 0.75rem;
     padding: 1.25rem;
