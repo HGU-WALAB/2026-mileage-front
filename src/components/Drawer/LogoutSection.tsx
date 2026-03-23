@@ -13,8 +13,9 @@ const LogoutSection = () => {
   const { mutate: logout } = usePostLogoutMutation();
 
   const handleLogout = () => {
-    logout();
-    navigate(ROUTE_PATH.login);
+    logout(undefined, {
+      onSettled: () => navigate(ROUTE_PATH.login),
+    });
   };
 
   return (

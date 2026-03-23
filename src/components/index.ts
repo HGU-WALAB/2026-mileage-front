@@ -12,6 +12,7 @@ export { default as ErrorBox } from './Error/ErrorBox';
 export { default as ErrorResetBoundary } from './Error/ErrorResetBoundary';
 export { default as GlobalErrorBoundary } from './Error/GlobalErrorBoundary';
 export { default as GlobalErrorFallbackSection } from './Error/GlobalErrorFallbackSection';
+export { default as FullViewportLoading } from './Error/FullViewportLoading';
 export { default as GlobalSuspense } from './Error/GlobalSuspense';
 export { default as PageErrorFallback } from './Error/PageErrorFallback';
 export { default as SectionErrorFallback } from './Error/SectionErrorFallback';

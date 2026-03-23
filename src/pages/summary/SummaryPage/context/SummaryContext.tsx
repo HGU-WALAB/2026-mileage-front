@@ -61,7 +61,7 @@ export interface RepoItem {
 }
 
 export interface MileageItem {
-  /** 포트폴리오 마일리지 항목 id (PUT /api/portfolio/mileage/{id}용) */
+  /** 이력서 마일리지 항목 id (PUT /api/portfolio/mileage/{id}용) */
   id?: number;
   mileage_id: number;
   semester: string;

@@ -7,7 +7,7 @@ export interface PortfolioRepositoryLanguage {
   percentage: number;
 }
 
-/** 활동 요약 - 포트폴리오 레포지토리 한 건 (GET/PATCH 응답) */
+/** 활동 요약 - 이력서 레포지토리 한 건 (GET/PATCH 응답) */
 export interface PortfolioRepositoryItem {
   id: number;
   repo_id: number;
@@ -41,7 +41,7 @@ export interface RepositoriesResponse {
   repositories: PortfolioRepositoryItem[];
 }
 
-/** 활동 요약 - 포트폴리오 레포지토리 PUT 요청 한 건 */
+/** 활동 요약 - 이력서 레포지토리 PUT 요청 한 건 */
 export interface PutRepositoryItem {
   repo_id: number;
   custom_title: string | null;
@@ -59,7 +59,7 @@ export interface GetRepositoriesParams {
   affiliation?: string;
 }
 
-/** 활동 요약 - 포트폴리오 레포지토리 조회 (페이지네이션) */
+/** 활동 요약 - 이력서 레포지토리 조회 (페이지네이션) */
 export const getRepositories = async (params?: GetRepositoriesParams) => {
   const searchParams = new URLSearchParams();
   if (params?.page != null) searchParams.set('page', String(params.page));
@@ -115,7 +115,7 @@ export const getAllRepositories = async (
   return all;
 };
 
-/** 활동 요약 - 포트폴리오 레포지토리 전체 교체 (PUT) */
+/** 활동 요약 - 이력서 레포지토리 전체 교체 (PUT) */
 export const putRepositories = async (body: PutRepositoryItem[]) => {
   const response = await http.put<PutRepositoryItem[], RepositoriesResponse>(
     ENDPOINT.PORTFOLIO_REPOSITORIES,
@@ -124,7 +124,7 @@ export const putRepositories = async (body: PutRepositoryItem[]) => {
   return response;
 };
 
-/** 활동 요약 - 포트폴리오 레포지토리 한 건 수정 (PATCH) */
+/** 활동 요약 - 이력서 레포지토리 한 건 수정 (PATCH) */
 export const patchRepository = async (
   id: number,
   body: PatchRepositoryBody,

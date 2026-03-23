@@ -69,11 +69,24 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
   const [imageUploading, setImageUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setImageError(false);
-  }, [userInfo?.profile_image_url]);
+  // 쿼리 리패치 중 userInfo가 잠시 undefined가 되어도 이미지가 사라지지 않도록
+  // 마지막 유효한 URL을 유지
+  const stableImageUrlRef = useRef<string | null>(profileImageUrl);
+  if (profileImageUrl !== null) {
+    stableImageUrlRef.current = profileImageUrl;
+  }
+  const displayImageUrl = stableImageUrlRef.current;
 
-  const showProfileImage = Boolean(profileImageUrl && !imageError);
+  // profile_image_url 값이 실제로 바뀔 때만 imageError를 리셋
+  const prevProfileImageUrlRef = useRef<string | null | undefined>(
+    userInfo?.profile_image_url,
+  );
+  useEffect(() => {
+    if (prevProfileImageUrlRef.current !== userInfo?.profile_image_url) {
+      prevProfileImageUrlRef.current = userInfo?.profile_image_url;
+      setImageError(false);
+    }
+  }, [userInfo?.profile_image_url]);
 
   const handleEditImageClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -108,15 +121,16 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
     <S.Card>
       <S.Inner>
         <S.AvatarWrap>
-          {showProfileImage ? (
+          {/* img 요소를 언마운트하지 않고 CSS로 숨겨서 깜빡임 방지 */}
+          {displayImageUrl && (
             <S.AvatarImg
-              src={profileImageUrl!}
+              src={displayImageUrl}
               alt="프로필"
               onError={() => setImageError(true)}
+              style={{ display: imageError ? 'none' : 'block' }}
             />
-          ) : (
-            <S.Avatar />
           )}
+          {(!displayImageUrl || imageError) && <S.Avatar />}
           {!readOnly && (
             <>
               <input
@@ -139,35 +153,42 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
           )}
         </S.AvatarWrap>
         <Flex.Column gap="0.375rem" style={{ minWidth: 0, flex: 1 }}>
-          <Text
-            style={{
-              fontWeight: 700,
-              fontSize: '1.5rem',
-              lineHeight: 1.4,
-              color: palette.nearBlack,
-              margin: 0,
-            }}
+          <Flex.Row
+            align="center"
+            gap="0.5rem"
+            wrap="wrap"
+            style={{ minWidth: 0 }}
           >
-            {name}
-          </Text>
+            <Text
+              style={{
+                fontWeight: 700,
+                fontSize: '1.5rem',
+                lineHeight: 1.4,
+                color: palette.nearBlack,
+                margin: 0,
+                minWidth: 0,
+                wordBreak: 'break-word',
+              }}
+            >
+              {name}
+            </Text>
+            {!readOnly && !isEditingBio ? (
+              <S.EditBioButton type="button" onClick={handleStartEditBio}>
+                <EditIcon sx={{ fontSize: 18 }} />
+                수정
+              </S.EditBioButton>
+            ) : null}
+          </Flex.Row>
           {!isEditingBio ? (
-            <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-              <Text
-                style={{
-                  color: palette.grey600,
-                  fontSize: '1.125rem',
-                  margin: 0,
-                }}
-              >
-                {bio || '-'}
-              </Text>
-              {!readOnly && (
-                <S.EditBioButton type="button" onClick={handleStartEditBio}>
-                  <EditIcon sx={{ fontSize: 18 }} />
-                  수정
-                </S.EditBioButton>
-              )}
-            </Flex.Row>
+            <Text
+              style={{
+                color: palette.grey600,
+                fontSize: '1.125rem',
+                margin: 0,
+              }}
+            >
+              {bio || '-'}
+            </Text>
           ) : !readOnly ? (
             <Flex.Column gap="0.5rem" style={{ width: '100%' }}>
               <S.BioTextarea

@@ -66,7 +66,7 @@ const SBar = {
     height: 8px;
     border-radius: 999px;
     overflow: hidden;
-    background-color: ${palette.grey200};
+    background-color: ${palette.blue300};
   `,
   LangBarSeg: styled('span')<{ $color: string }>`
     height: 100%;

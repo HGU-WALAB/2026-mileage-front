@@ -8,6 +8,8 @@ const useGetCapabilityQuery = () => {
   return useQuery<CapabilityResponse[], AxiosError>({
     queryKey: [QUERY_KEYS.capability],
     queryFn: () => getCapability(),
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 };
 

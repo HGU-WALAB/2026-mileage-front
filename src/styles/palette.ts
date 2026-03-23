@@ -9,6 +9,10 @@ export const palette = {
   pink300: '#F1A5B5',
   pink500: '#E3879E',
   pink600: '#F1A5B5',
+  // red (destructive, base = #EF4444)
+  red300: '#FEE2E2',
+  red500: '#EF4444',
+  red600: '#DC2626',
   // purple
   purple300: '#A1A6FF',
   purple500: '#7D83FF',

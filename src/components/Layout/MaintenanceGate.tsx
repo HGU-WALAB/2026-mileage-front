@@ -1,9 +1,8 @@
-import { useMaintenanceCheck } from '@/pages/auth/hooks';
+import FullViewportLoading from '@/components/Error/FullViewportLoading';
 import { ROUTE_PATH } from '@/constants/routePath';
+import { useMaintenanceCheck } from '@/pages/auth/hooks';
 import { MaintenancePage } from '@/pages/etc/MaintenancePage';
 import { useAuthStore } from '@/stores';
-import { palette } from '@/styles/palette';
-import LinearProgress from '@mui/material/LinearProgress';
 import { Outlet, useLocation } from 'react-router-dom';
 
 /**
@@ -16,28 +15,7 @@ const MaintenanceGate = () => {
   const { isLogin } = useAuthStore();
 
   if (isLoading) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-        }}
-      >
-        <LinearProgress
-          sx={{
-            width: '12rem',
-            height: 6,
-            borderRadius: 3,
-            backgroundColor: palette.blue300,
-            '& .MuiLinearProgress-bar': {
-              backgroundColor: palette.blue500,
-            },
-          }}
-        />
-      </div>
-    );
+    return <FullViewportLoading />;
   }
 
   const isAuthRoute =

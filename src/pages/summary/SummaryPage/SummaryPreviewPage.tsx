@@ -1,21 +1,19 @@
-import { DownloadIcon } from '@/assets';
 import { Button, Flex, Footer } from '@/components';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
 import CodeIcon from '@mui/icons-material/Code';
+import DescriptionIcon from '@mui/icons-material/Description';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Button as MuiButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useCallback } from 'react';
+import { type FunctionComponent, type SVGProps } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 
 import { SECTION_TITLES, type DraggableSectionKey } from '../constants/constants';
 import { useSummaryContext } from './context/SummaryContext';
-import { buildSummaryMarkdown } from './utils/buildSummaryMarkdown';
 import {
   ActivitiesSectionContent,
   MileageSectionContent,
@@ -30,6 +28,11 @@ import {
   usePortfolioPromptProgress,
 } from './utils/portfolioPromptProgress';
 
+/** MUI SvgIcon은 Button `icon` 타입과 달라 래핑 */
+const ResumePaperIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <DescriptionIcon sx={{ fontSize: 20 }} />
+);
+
 const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   tech: <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
   repo: <FolderIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
@@ -40,32 +43,8 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
 const SummaryPreviewPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약 미리보기' });
   const navigate = useNavigate();
-  const {
-    userInfo,
-    sectionOrder,
-    techStackItems,
-    repos,
-    mileageItems,
-    activities,
-  } = useSummaryContext();
+  const { sectionOrder } = useSummaryContext();
   const promptProgress = usePortfolioPromptProgress();
-
-  const handleCopyMarkdown = useCallback(async () => {
-    const markdown = buildSummaryMarkdown({
-      userInfo,
-      sectionOrder,
-      techStackItems,
-      repos,
-      mileageItems,
-      activities,
-    });
-    try {
-      await navigator.clipboard.writeText(markdown);
-      toast.success('마크다운이 클립보드에 복사되었습니다.');
-    } catch {
-      toast.error('클립보드 복사에 실패했습니다.');
-    }
-  }, [userInfo, sectionOrder, techStackItems, repos, mileageItems, activities]);
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
@@ -93,13 +72,12 @@ const SummaryPreviewPage = () => {
           편집
         </S.EditButton>
         <Button
-          label="프롬프트 복사"
+          label="이력서 관리"
           variant="contained"
           color="blue"
           size="large"
-          icon={DownloadIcon}
+          icon={ResumePaperIcon}
           iconPosition="start"
-          onClick={handleCopyMarkdown}
         />
       </S.ButtonRow>
       <PortfolioPromptQualityDashboard progress={promptProgress} />
@@ -111,9 +89,9 @@ const SummaryPreviewPage = () => {
             title={SECTION_TITLES[key]}
             subtitle={
               key === 'activities'
-                ? '교내·외 수상 경력, 동아리, 대외활동 등을 추가하면 더 풍부한 포트폴리오 설명을 생성할 수 있습니다.'
+                ? '교내·외 수상 경력, 동아리, 대외활동 등을 추가하면 더 풍부한 이력서 설명을 생성할 수 있습니다.'
                 : key === 'mileage'
-                  ? '해당 마일리지 활동의 구체적인 내용을 입력하면 더욱 완성도 높은 포트폴리오 설명을 생성할 수 있습니다.'
+                  ? '해당 마일리지 활동의 구체적인 내용을 입력하면 더욱 완성도 높은 이력서 설명을 생성할 수 있습니다.'
                   : undefined
             }
             icon={SECTION_ICONS[key]}

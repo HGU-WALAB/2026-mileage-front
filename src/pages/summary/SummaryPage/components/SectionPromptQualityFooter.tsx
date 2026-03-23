@@ -8,6 +8,8 @@ export interface SectionPromptQualityFooterProps {
   hint: string;
   percent: number;
   variant?: SectionPromptQualityFooterVariant;
+  /** 트랙(미채움) 배경. 기본은 `palette.blue300` (`onPaper`일 때만 적용) */
+  trackColor?: string;
 }
 
 /**
@@ -17,6 +19,7 @@ const SectionPromptQualityFooter = ({
   hint,
   percent,
   variant = 'onPaper',
+  trackColor,
 }: SectionPromptQualityFooterProps) => {
   const safe = Math.max(0, Math.min(100, Math.round(percent)));
 
@@ -25,7 +28,7 @@ const SectionPromptQualityFooter = ({
       <S.Hint $variant={variant}>{hint}</S.Hint>
       <S.ProgressAlign>
         <S.BarRow>
-          <S.Track $variant={variant}>
+          <S.Track $variant={variant} $trackColor={trackColor}>
             <S.Fill $variant={variant} style={{ width: `${safe}%` }} />
           </S.Track>
           <S.Pct $variant={variant}>{safe}%</S.Pct>
@@ -71,13 +74,18 @@ const S = {
     gap: 0.5rem;
     flex-wrap: nowrap;
   `,
-  Track: styled('div')<{ $variant: SectionPromptQualityFooterVariant }>`
+  Track: styled('div')<{
+    $variant: SectionPromptQualityFooterVariant;
+    $trackColor?: string;
+  }>`
     width: clamp(5.5rem, 28vw, 7.5rem);
     height: 6px;
     border-radius: 3px;
     overflow: hidden;
-    background-color: ${({ $variant }) =>
-      $variant === 'onDark' ? 'rgba(255, 255, 255, 0.22)' : palette.grey200};
+    background-color: ${({ $variant, $trackColor }) =>
+      $variant === 'onDark'
+        ? 'rgba(255, 255, 255, 0.22)'
+        : $trackColor ?? palette.blue300};
     flex-shrink: 0;
   `,
   Fill: styled('div')<{ $variant: SectionPromptQualityFooterVariant }>`

@@ -8,6 +8,8 @@ const useGetActivityRecommendQuery = () => {
   return useQuery<ActivityRecommendResponse, AxiosError>({
     queryKey: [QUERY_KEYS.activityRecommend],
     queryFn: () => getActivityRecommend(),
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 };
 

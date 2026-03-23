@@ -2,6 +2,18 @@ import { STORE_NAME } from '@/constants/storeName';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const LS_GITHUB_STORAGE_KEY = 'github-storage';
+const LS_PORTFOLIO_USER_INFO_KEY = 'portfolio-user-info';
+
+function clearPortfolioLocalStorage() {
+  try {
+    localStorage.setItem(LS_GITHUB_STORAGE_KEY, '');
+    localStorage.setItem(LS_PORTFOLIO_USER_INFO_KEY, '');
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 interface AuthState {
   isLogin: boolean;
   student: {
@@ -45,13 +57,15 @@ const useAuthStore = create<AuthState>()(
               : state.currentSemester,
           term: typeof term === 'number' ? term : state.term,
         })),
-      logout: () =>
+      logout: () => {
+        clearPortfolioLocalStorage();
         set({
           isLogin: false,
           student: { studentId: '', studentName: '', studentType: '' },
           currentSemester: '',
           term: 0,
-        }),
+        });
+      },
     }),
     {
       name: STORE_NAME.auth,

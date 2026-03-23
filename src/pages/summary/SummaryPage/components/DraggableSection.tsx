@@ -26,7 +26,7 @@ interface DraggableSectionProps {
   onDragLeave: (e: DragEvent<HTMLElement>) => void;
   onDrop: (targetId: DraggableSectionKey) => void;
   isDragOver?: boolean;
-  /** 포트폴리오 프롬프트 품질 진행도 (카드 하단 오른쪽 정렬 바) */
+  /** 이력서 프롬프트 품질 진행도 (카드 하단 오른쪽 정렬 바) */
   promptFooter?: { percent: number; hint: string };
   children: ReactNode;
 }

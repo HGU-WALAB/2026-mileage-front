@@ -42,7 +42,7 @@ function getMileageRowId(m: MileageResponse, index: number): number {
   return m.subitemId * 10000 + index;
 }
 
-/** 포트폴리오 마일리지 선택 모달. 참여 마일리지 목록 + 기존 선택 비교 후 확인 시 PUT */
+/** 이력서 마일리지 선택 모달. 참여 마일리지 목록 + 기존 선택 비교 후 확인 시 PUT */
 const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
   const theme = useTheme();
   const { setMileageItems } = useSummaryContext();

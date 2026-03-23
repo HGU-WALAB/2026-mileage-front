@@ -16,7 +16,7 @@ import DeleteIcon from '@/assets/icons/delete.svg?react';
 import DownloadIcon from '@/assets/icons/download.svg?react';
 import EditIcon from '@/assets/icons/edit.svg?react';
 import JoinedCheckCircleIcon from '@/assets/icons/joinedCheckCircle.svg?react';
-import LoadingIcon from '@/assets/icons/loading.svg?react';
+import LoadingIcon from '@/assets/icons/loading-transparent.svg?react';
 import LogoIcon from '@/assets/icons/logo.svg?react';
 import LogoutIcon from '@/assets/icons/logout.svg?react';
 import MileageAddIcon from '@/assets/icons/mileageAdd.svg?react';

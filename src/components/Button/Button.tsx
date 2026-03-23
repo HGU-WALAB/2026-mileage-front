@@ -1,4 +1,5 @@
 import { ButtonVariant, Color, Size } from '@/types/style';
+import { palette } from '@/styles/palette';
 import { getColor } from '@/utils/getColor';
 import { Button as MuiButton } from '@mui/material';
 import { ButtonHTMLAttributes, FunctionComponent, SVGProps } from 'react';
@@ -39,11 +40,32 @@ const Button = ({
             : size
       }
       sx={{
-        backgroundColor: variant === 'contained' ? baseColor : 'transparent',
+        backgroundColor:
+          variant === 'contained'
+            ? baseColor
+            : variant === 'outlined'
+              ? palette.white
+              : 'transparent',
         borderColor: variant === 'outlined' ? baseColor : 'transparent',
+        ...(variant === 'outlined' || variant === 'text'
+          ? {
+              color: baseColor,
+              '& .MuiButton-startIcon, & .MuiButton-endIcon': {
+                color: 'currentColor',
+              },
+            }
+          : {}),
         '&:hover': {
-          backgroundColor: variant === 'contained' ? hoverColor : 'transparent',
+          backgroundColor:
+            variant === 'contained'
+              ? hoverColor
+              : variant === 'outlined'
+                ? palette.grey100
+                : 'transparent',
           borderColor: variant === 'outlined' ? hoverColor : 'transparent',
+          ...(variant === 'outlined' || variant === 'text'
+            ? { color: hoverColor }
+            : {}),
         },
         borderRadius: isRound ? '2.4rem' : '.75rem',
         width: size === 'full' ? '100%' : 'auto',

@@ -21,6 +21,8 @@ import {
   useMemo,
   useState,
   type CSSProperties,
+  type FunctionComponent,
+  type SVGProps,
 } from 'react';
 
 import type { TechStackItem } from '../../apis/portfolio';
@@ -43,6 +45,10 @@ export type TechStackSectionContentHandle = {
 };
 
 type GroupedEntry = { item: TechStackItem; flatIndex: number };
+
+const AddPlusButtonIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <AddIcon sx={{ fontSize: 20 }} />
+);
 
 function groupByDomainWithIndex(
   items: TechStackItem[],
@@ -251,6 +257,8 @@ const TechStackSectionContent = forwardRef<
                 variant="outlined"
                 color="blue"
                 size="medium"
+                icon={AddPlusButtonIcon}
+                iconPosition="start"
                 onClick={() => setAddOpen(true)}
               />
             </Flex.Row>
