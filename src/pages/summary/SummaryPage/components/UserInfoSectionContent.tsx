@@ -69,11 +69,24 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
   const [imageUploading, setImageUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setImageError(false);
-  }, [userInfo?.profile_image_url]);
+  // 쿼리 리패치 중 userInfo가 잠시 undefined가 되어도 이미지가 사라지지 않도록
+  // 마지막 유효한 URL을 유지
+  const stableImageUrlRef = useRef<string | null>(profileImageUrl);
+  if (profileImageUrl !== null) {
+    stableImageUrlRef.current = profileImageUrl;
+  }
+  const displayImageUrl = stableImageUrlRef.current;
 
-  const showProfileImage = Boolean(profileImageUrl && !imageError);
+  // profile_image_url 값이 실제로 바뀔 때만 imageError를 리셋
+  const prevProfileImageUrlRef = useRef<string | null | undefined>(
+    userInfo?.profile_image_url,
+  );
+  useEffect(() => {
+    if (prevProfileImageUrlRef.current !== userInfo?.profile_image_url) {
+      prevProfileImageUrlRef.current = userInfo?.profile_image_url;
+      setImageError(false);
+    }
+  }, [userInfo?.profile_image_url]);
 
   const handleEditImageClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -108,15 +121,16 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
     <S.Card>
       <S.Inner>
         <S.AvatarWrap>
-          {showProfileImage ? (
+          {/* img 요소를 언마운트하지 않고 CSS로 숨겨서 깜빡임 방지 */}
+          {displayImageUrl && (
             <S.AvatarImg
-              src={profileImageUrl!}
+              src={displayImageUrl}
               alt="프로필"
               onError={() => setImageError(true)}
+              style={{ display: imageError ? 'none' : 'block' }}
             />
-          ) : (
-            <S.Avatar />
           )}
+          {(!displayImageUrl || imageError) && <S.Avatar />}
           {!readOnly && (
             <>
               <input

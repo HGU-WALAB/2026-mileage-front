@@ -8,6 +8,8 @@ const useGetSemesterCapabilityQuery = () => {
   return useQuery<SemesterCapabilityResponse[], AxiosError>({
     queryKey: [QUERY_KEYS.semesterCapability],
     queryFn: () => getSemesterCapability(),
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 };
 

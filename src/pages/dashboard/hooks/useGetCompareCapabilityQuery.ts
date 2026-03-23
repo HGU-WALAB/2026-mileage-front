@@ -15,6 +15,8 @@ const useGetCompareCapabilityQuery = ({
   return useQuery<CompareCapabilityResponse[], AxiosError>({
     queryKey: [QUERY_KEYS.compareCapability, term, entryYear, major],
     queryFn: () => getCompareCapability({ term, entryYear, major }),
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 };
 
