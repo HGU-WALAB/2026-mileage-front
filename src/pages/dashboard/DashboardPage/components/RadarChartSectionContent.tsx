@@ -20,14 +20,29 @@ export const RadarChartSectionContent = ({
   const { data: capability = [] as CapabilityResponse[] } =
     useGetCapabilityQuery();
 
+  const selectedTerm =
+    compareOption.includes('term') &&
+    userInfo?.term != null &&
+    Number.isFinite(userInfo.term)
+      ? String(userInfo.term)
+      : undefined;
+  const selectedEntryYear =
+    compareOption.includes('entryYear') &&
+    typeof userInfo?.studentId === 'string' &&
+    /^\d{2}/.test(userInfo.studentId)
+      ? userInfo.studentId.slice(0, 2)
+      : undefined;
+  const selectedMajor =
+    compareOption.includes('major') && userInfo?.major1?.trim()
+      ? userInfo.major1.trim()
+      : undefined;
+
   const {
     data: compareCapability = [] as CompareCapabilityResponse[],
   } = useGetCompareCapabilityQuery({
-    term: compareOption.includes('term') ? `${userInfo?.term}` : '',
-    entryYear: compareOption.includes('entryYear')
-      ? userInfo?.studentId?.slice(1, 3) || ''
-      : '',
-    major: compareOption.includes('major') ? userInfo?.major1 || '' : '',
+    term: selectedTerm,
+    entryYear: selectedEntryYear,
+    major: selectedMajor,
   });
 
   const capabilityData: RadarCapability[] = capability.map(
@@ -37,23 +52,11 @@ export const RadarChartSectionContent = ({
           other.capabilityId === cap.capabilityId,
       );
 
-      const denominator =
-        typeof cap.totalMilestoneCount === 'number' &&
-        cap.totalMilestoneCount > 0
-          ? cap.totalMilestoneCount
-          : 1;
-
-      const myMileagePercent = (cap.milestoneCount / denominator) * 100;
-      const otherMileagePercent = matchedCompare
-        ? (matchedCompare.averageMilestoneCount / denominator) * 100
-        : 0;
-
       return {
         capabilityId: cap.capabilityId,
         capabilityName: cap.capabilityName,
-        // ver1에서는 퍼센트 스케일링(예: * 1.5) 없이 "그대로" 표시
-        '나의 마일리지': myMileagePercent,
-        '비교 대상 평균 마일리지': otherMileagePercent,
+        '나의 마일리지': cap.milestoneCount,
+        '비교 대상 평균 마일리지': matchedCompare?.averageMilestoneCount ?? 0,
       };
     },
   );

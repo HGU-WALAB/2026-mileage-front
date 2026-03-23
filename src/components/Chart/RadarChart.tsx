@@ -19,7 +19,7 @@ const RadarChart = ({
     <S.RadarChartWrapper>
       <ResponsiveRadar
         data={data}
-        maxValue={100}
+        maxValue="auto"
         keys={keys}
         indexBy="capabilityName"
         margin={{ top: 60, right: 50, bottom: 50, left: 50 }}
@@ -67,7 +67,7 @@ const RadarChart = ({
             <strong>역량: </strong>
             {point.data.map(d => (
               <p key={String(d.id)}>
-                {d.id} : {Number(d.value).toFixed(0)}%
+                {d.id} : {Number(d.value).toFixed(0)}
               </p>
             ))}
           </div>

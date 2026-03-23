@@ -2,7 +2,7 @@ export interface CapabilityResponse {
   capabilityId: number;
   capabilityName: string;
   milestoneCount: number;
-  totalMilestoneCount: number;
+  totalMilestoneCount: number; //이거 안씀
 }
 
 export interface CompareCapabilityRequest {
@@ -14,6 +14,8 @@ export interface CompareCapabilityRequest {
 export interface CompareCapabilityResponse {
   capabilityId: number;
   capabilityName: string;
+  totalMilestoneCount: number; //이거 안씀
+  groupSize: number; // 이거 안씀
   averageMilestoneCount: number;
 }
 
