@@ -53,10 +53,10 @@ export const postPortfolioCvBuildPrompt = async (body: PortfolioCvBuildPromptReq
   );
 };
 
-/** PATCH /api/portfolio/cv/{id} — 서버 스키마상 title은 선택, 4단계에서는 html_content만 전송 */
+/** PATCH /api/portfolio/cv/{id} — title·html_content 각각 선택(부분 갱신 가능) */
 export interface PortfolioCvPatchRequest {
   title?: string;
-  html_content: string;
+  html_content?: string;
 }
 
 export const patchPortfolioCv = async (id: number, body: PortfolioCvPatchRequest) => {
@@ -64,4 +64,9 @@ export const patchPortfolioCv = async (id: number, body: PortfolioCvPatchRequest
     `${ENDPOINT.PORTFOLIO_CV}/${id}`,
     body,
   );
+};
+
+/** DELETE /api/portfolio/cv/{id} */
+export const deletePortfolioCv = async (id: number) => {
+  return http.delete<void>(`${ENDPOINT.PORTFOLIO_CV}/${id}`);
 };

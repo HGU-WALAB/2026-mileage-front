@@ -328,6 +328,16 @@ export const PortfolioHandlers = [
     }
   }),
 
+  http.delete(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/:id`, ({ params }) => {
+    const id = Number(params.id);
+    const idx = cvStore.findIndex(c => c.id === id);
+    if (idx === -1 || Number.isNaN(id)) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    cvStore.splice(idx, 1);
+    return new HttpResponse(null, { status: 200 });
+  }),
+
   http.post(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/build-prompt`, async ({ request }) => {
     try {
       const body = (await request.json()) as PortfolioCvBuildPromptRequest;

@@ -5,6 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CloseIcon from '@mui/icons-material/Close';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
 import { IconButton, LinearProgress } from '@mui/material';
@@ -12,6 +13,7 @@ import { styled } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, type FunctionComponent, type SVGProps } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 import { ROUTE_PATH } from '@/constants/routePath';
 
@@ -21,6 +23,7 @@ import {
   getPortfolioCvList,
   type PortfolioCvListItem,
 } from '../../apis/cv';
+import useDeletePortfolioCvMutation from '../../hooks/useDeletePortfolioCvMutation';
 import CvPreviewModal from './CvPreviewModal';
 
 const CV_QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
@@ -30,6 +33,9 @@ const AddIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
 );
 const VisibilityIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <VisibilityIcon sx={{ fontSize: 18 }} />
+);
+const DeleteOutlineIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
 );
 
 export interface CvManagementPanelProps {
@@ -53,6 +59,7 @@ function keywordCount(notes: string): number {
 const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
   const navigate = useNavigate();
   const [previewId, setPreviewId] = useState<number | null>(null);
+  const deleteMutation = useDeletePortfolioCvMutation();
 
   const listQuery = useQuery({
     queryKey: [QUERY_KEYS.portfolioCv, 'list'] as const,
@@ -76,6 +83,25 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
   const closePreview = useCallback(() => {
     setPreviewId(null);
   }, []);
+
+  const handleDeleteCv = useCallback(
+    (id: number) => {
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          toast.success('이력서가 삭제되었습니다.', { position: 'top-center' });
+          setPreviewId(current => (current === id ? null : current));
+        },
+        onError: () => {
+          toast.error('삭제에 실패했습니다. 잠시 후 다시 시도해 주세요.', {
+            position: 'top-center',
+          });
+        },
+      });
+    },
+    [deleteMutation],
+  );
+
+  const deletePending = deleteMutation.isPending;
 
   return (
     <S.Root
@@ -162,6 +188,8 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
             key={item.id}
             item={item}
             onView={() => openPreview(item.id)}
+            onRequestDelete={() => handleDeleteCv(item.id)}
+            deletePending={deletePending}
           />
         ))}
       </S.ListArea>
@@ -172,6 +200,10 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
         data={detailQuery.data}
         isPending={previewId != null && detailQuery.isPending}
         isError={previewId != null && detailQuery.isError}
+        onRequestDelete={
+          previewId != null ? () => handleDeleteCv(previewId) : undefined
+        }
+        isDeletePending={deletePending}
       />
     </S.Root>
   );
@@ -180,9 +212,13 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
 function CvHistoryCard({
   item,
   onView,
+  onRequestDelete,
+  deletePending,
 }: {
   item: PortfolioCvListItem;
   onView: () => void;
+  onRequestDelete: () => void;
+  deletePending: boolean;
 }) {
   const kCount = keywordCount(item.additional_notes ?? '');
   const subLine =
@@ -222,7 +258,12 @@ function CvHistoryCard({
               <span>{formatDateOnly(item.updated_at)}</span>
             </S.MetaChip>
           </Flex.Row>
-          <Flex.Row style={{ flexShrink: 0 }}>
+          <Flex.Row
+            align="center"
+            gap="0.5rem"
+            wrap="wrap"
+            style={{ flexShrink: 0 }}
+          >
             <Button
               label="보기"
               variant="outlined"
@@ -231,6 +272,16 @@ function CvHistoryCard({
               icon={VisibilityIconWrap}
               iconPosition="start"
               onClick={onView}
+            />
+            <Button
+              label="삭제"
+              variant="outlined"
+              color="red"
+              size="medium"
+              icon={DeleteOutlineIconWrap}
+              iconPosition="start"
+              onClick={onRequestDelete}
+              disabled={deletePending}
             />
           </Flex.Row>
         </Flex.Row>
