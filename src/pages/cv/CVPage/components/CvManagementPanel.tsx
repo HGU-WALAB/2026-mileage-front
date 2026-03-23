@@ -179,9 +179,9 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
           </Text>
         ) : null}
         {!listQuery.isPending && cvs.length === 0 ? (
-          <Text margin="0" color={palette.grey500} style={{ fontSize: '0.875rem' }}>
-            저장된 이력서가 없습니다.
-          </Text>
+          <S.EmptyConnectCard>
+            <S.EmptyConnectMessage>저장된 이력서가 없습니다.</S.EmptyConnectMessage>
+          </S.EmptyConnectCard>
         ) : null}
         {cvs.map(item => (
           <CvHistoryCard
@@ -311,6 +311,30 @@ const S = {
   ListArea: styled(Flex.Column)`
     flex-shrink: 0;
     background-color: ${palette.grey100};
+  `,
+  /** `ListArea`(grey100) 위에서 카드처럼 떠 보이도록 히스토리 카드(`S.Card`)와 동일한 면·테두리·그림자 */
+  EmptyConnectCard: styled('div')`
+    padding: 2rem 1.5rem;
+    border-radius: 0.75rem;
+    background-color: ${palette.white};
+    border: 1px solid ${palette.grey200};
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 7.5rem;
+  `,
+  EmptyConnectMessage: styled('p')`
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.65;
+    letter-spacing: 0.01em;
+    color: ${palette.grey600};
+    font-weight: 500;
+    text-align: center;
   `,
   Card: styled('div')`
     display: flex;
