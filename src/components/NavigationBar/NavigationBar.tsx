@@ -1,12 +1,12 @@
 import { Flex } from '@/components';
-import { drawerItems } from '@/constants/drawerItems';
+import { getMobilePrimaryNavItems } from '@/constants/drawerMenu';
 import { navigationBarHeight } from '@/constants/layoutSize';
 import { getOpacityColor } from '@/utils/getOpacityColor';
 import { styled } from '@mui/material';
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-/** 모바일 하단 네비 순서 (shortText 기준) */
+/** 모바일 하단 네비 순서 (shortText 기준). 그룹은 서브 탭으로만 전환 */
 const MOBILE_NAV_ORDER: string[] = [
   '대시보드',
   '마일리지',
@@ -19,9 +19,10 @@ const NavigationBar = () => {
   const location = useLocation();
 
   const navigationItems = useMemo(() => {
-    return [...drawerItems].sort(
+    return getMobilePrimaryNavItems().sort(
       (a, b) =>
-        MOBILE_NAV_ORDER.indexOf(a.shortText) - MOBILE_NAV_ORDER.indexOf(b.shortText),
+        MOBILE_NAV_ORDER.indexOf(a.shortText) -
+        MOBILE_NAV_ORDER.indexOf(b.shortText),
     );
   }, []);
 
@@ -32,28 +33,27 @@ const NavigationBar = () => {
       align="center"
       justify="space-between"
     >
-      {navigationItems.map(item => (
-        <S.Navigation
-          key={`navigation-${item.text}`}
-          justify="center"
-          align="center"
-          onClick={() => navigate(item.route)}
-        >
-          <S.Item
-            selected={location.pathname === item.route}
+      {navigationItems.map(item => {
+        const selected = item.isActive(location.pathname);
+        return (
+          <S.Navigation
+            key={`navigation-${item.key}`}
             justify="center"
             align="center"
-            pointer
+            onClick={() => navigate(item.route)}
           >
-            {location.pathname === item.route ? (
-              <item.selectedIcon />
-            ) : (
-              <item.icon />
-            )}
-            {item.shortText}
-          </S.Item>
-        </S.Navigation>
-      ))}
+            <S.Item
+              selected={selected}
+              justify="center"
+              align="center"
+              pointer
+            >
+              {selected ? <item.selectedIcon /> : <item.icon />}
+              {item.shortText}
+            </S.Item>
+          </S.Navigation>
+        );
+      })}
     </S.Container>
   );
 };
@@ -65,10 +65,7 @@ const S = {
     backdrop-filter: blur(1.875rem);
     background-color: ${({ theme }) =>
       getOpacityColor(theme.palette.white, 0.1)};
-    bottom: 0;
-    left: 0;
-    position: fixed;
-    z-index: 10;
+    flex-shrink: 0;
   `,
   Navigation: styled(Flex.Column)`
     ${({ theme }) => theme.typography.body2};
