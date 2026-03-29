@@ -15,8 +15,8 @@ import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { groupActivitiesByCategory } from '../../utils/activityGrouping';
 import {
   type ActivityItem,
-  useSummaryContext,
-} from '../context/SummaryContext';
+  usePortfolioContext,
+} from '../context/PortfolioContext';
 
 interface ActivitiesSectionContentProps {
   readOnly?: boolean;
@@ -39,7 +39,7 @@ const ActivitiesSectionContent = forwardRef<
     saveExistingActivity,
     activitiesNextId,
     setActivitiesNextId,
-  } = useSummaryContext();
+  } = usePortfolioContext();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editDraft, setEditDraft] = useState<Partial<ActivityItem>>({});
 

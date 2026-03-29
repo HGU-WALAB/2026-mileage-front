@@ -1,9 +1,5 @@
 import { Button, Flex, Footer, Text } from '@/components';
-import {
-  ROUTE_PATH,
-  SUMMARY_CV_PANEL_QUERY_KEY,
-  SUMMARY_CV_PANEL_QUERY_VALUE,
-} from '@/constants/routePath';
+import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
@@ -15,25 +11,16 @@ import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Button as MuiButton, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FunctionComponent,
-  type SVGProps,
-} from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useRef, useState, type FunctionComponent, type SVGProps } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { CvManagementPanel } from '@/pages/cv';
 import useGetGitHubStatusQuery from '@/pages/profile/hooks/useGetGitHubStatusQuery';
-import { putPortfolioSettings } from '../apis/portfolio';
 import {
   SECTION_TITLES,
   type DraggableSectionKey,
 } from '../constants/constants';
-import { useSummaryContext } from './context/SummaryContext';
+import { usePortfolioContext } from './context/PortfolioContext';
 import {
   ActivitiesSectionContent,
   type ActivitiesSectionContentHandle,
@@ -49,10 +36,14 @@ import {
   UserInfoSectionContent,
 } from './components';
 import {
+  useCvPanelOpenFromQuery,
+  usePortfolioSectionOrderDragDrop,
+  useScrollPortfolioSection,
+} from './hooks';
+import {
   PROMPT_QUALITY_SECTION_HINTS,
   usePortfolioPromptProgress,
 } from './utils/portfolioPromptProgress';
-import { scrollPortfolioSectionIntoView } from './utils/scrollPortfolioSection';
 
 /** MUI SvgIcon은 Button `icon` 타입과 달라 래핑 */
 const ResumePaperIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
@@ -70,90 +61,27 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   activities: <EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
 };
 
-const SummaryEditPage = () => {
+const PortfolioEditPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약' });
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const {
-    sectionOrder,
-    setSectionOrder,
-  } = useSummaryContext();
-  const [draggedId, setDraggedId] = useState<DraggableSectionKey | null>(null);
-  const [dragOverId, setDragOverId] = useState<DraggableSectionKey | null>(null);
+  const { sectionOrder, setSectionOrder } = usePortfolioContext();
+  const { cvPanelOpen, setCvPanelOpen } = useCvPanelOpenFromQuery();
   const [repoModalOpen, setRepoModalOpen] = useState(false);
   const [mileageModalOpen, setMileageModalOpen] = useState(false);
-  const [cvPanelOpen, setCvPanelOpen] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get(SUMMARY_CV_PANEL_QUERY_KEY) !== SUMMARY_CV_PANEL_QUERY_VALUE) {
-      return;
-    }
-    setCvPanelOpen(true);
-    const next = new URLSearchParams(searchParams);
-    next.delete(SUMMARY_CV_PANEL_QUERY_KEY);
-    setSearchParams(next, { replace: true });
-  }, [searchParams, setSearchParams]);
   const { data: githubStatus } = useGetGitHubStatusQuery();
   const hasGithub = githubStatus?.connected === true && !!githubStatus?.githubUsername;
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const techStackRef = useRef<TechStackSectionContentHandle>(null);
   const activitiesRef = useRef<ActivitiesSectionContentHandle>(null);
   const promptProgress = usePortfolioPromptProgress();
-
-  const handlePromptQualitySectionClick = useCallback(
-    (key: Parameters<typeof scrollPortfolioSectionIntoView>[0]) => {
-      scrollPortfolioSectionIntoView(key);
-    },
-    [],
-  );
-
-  const handleDragStart = useCallback((id: DraggableSectionKey) => {
-    setDraggedId(id);
-  }, []);
-
-  const handleDragOver = useCallback(
-    (_e: React.DragEvent<HTMLElement>, targetId: DraggableSectionKey) => {
-      setDragOverId(targetId);
-    },
-    [],
-  );
-
-  const handleDragLeave = useCallback((_e: React.DragEvent<HTMLElement>) => {
-    setDragOverId(null);
-  }, []);
-
-  const handleDrop = useCallback(
-    (targetId: DraggableSectionKey) => {
-      if (draggedId == null || draggedId === targetId) {
-        setDraggedId(null);
-        setDragOverId(null);
-        return;
-      }
-      const fromIdx = sectionOrder.indexOf(draggedId);
-      const toIdx = sectionOrder.indexOf(targetId);
-      if (fromIdx === -1 || toIdx === -1) {
-        setDraggedId(null);
-        setDragOverId(null);
-        return;
-      }
-      const next = [...sectionOrder];
-      const [removed] = next.splice(fromIdx, 1);
-      next.splice(toIdx, 0, removed);
-      setSectionOrder(next);
-      setDraggedId(null);
-      setDragOverId(null);
-      putPortfolioSettings({ section_order: next })
-        .then(() => {
-          toast.success('변경사항이 저장되었습니다.', {
-            position: 'top-center',
-          });
-        })
-        .catch(() => {
-          toast.error('섹션 순서 저장에 실패했습니다.');
-        });
-    },
-    [draggedId, sectionOrder, setSectionOrder],
-  );
+  const handlePromptQualitySectionClick = useScrollPortfolioSection();
+  const {
+    dragOverId,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+  } = usePortfolioSectionOrderDragDrop(sectionOrder, setSectionOrder);
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
@@ -205,7 +133,7 @@ const SummaryEditPage = () => {
           <S.PreviewButton
             variant="outlined"
             size="large"
-            onClick={() => navigate(ROUTE_PATH.summaryPreview)}
+            onClick={() => navigate(ROUTE_PATH.portfolioPreview)}
           >
             미리보기
           </S.PreviewButton>
@@ -328,7 +256,7 @@ const SummaryEditPage = () => {
   );
 };
 
-export default SummaryEditPage;
+export default PortfolioEditPage;
 
 const S = {
   ContentSplit: styled(Flex.Row)<{ $panelOpen: boolean }>`

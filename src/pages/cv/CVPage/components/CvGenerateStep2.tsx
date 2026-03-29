@@ -9,7 +9,7 @@ import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
 import { TextField, useTheme } from '@mui/material';
 import { type FunctionComponent, type SVGProps } from 'react';
 
-import { INPUT_MAX_LENGTH } from '@/pages/summary/constants/inputLimits';
+import { INPUT_MAX_LENGTH } from '@/pages/portfolio/constants/inputLimits';
 
 import { CvGeneratePageS as S } from '../cvGeneratePageStyles';
 

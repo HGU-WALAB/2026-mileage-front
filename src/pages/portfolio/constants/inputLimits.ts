@@ -1,6 +1,6 @@
 /**
  * 포트폴리오 입력 칸 최대 글자수 제한.
- * 모든 summary 섹션 input/textarea 에서 이 값을 참조합니다.
+ * 모든 포트폴리오 섹션 input/textarea 에서 이 값을 참조합니다.
  */
 export const INPUT_MAX_LENGTH = {
   /** 한 줄 소개 */

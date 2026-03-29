@@ -99,10 +99,10 @@ export const DRAWER_MENU_ENTRIES: DrawerMenuEntry[] = [
   },
   {
     kind: 'link',
-    id: 'summary',
+    id: 'portfolio',
     text: '내 활동 관리',
     shortText: '활동관리',
-    route: ROUTE_PATH.summary,
+    route: ROUTE_PATH.portfolio,
     icon: BuildingIcon,
     selectedIcon: BuildingBlueIcon,
   },

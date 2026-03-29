@@ -1,4 +1,4 @@
-import type { PortfolioMileageItem } from '@/pages/summary/apis/portfolio';
+import type { PortfolioMileageItem } from '@/pages/portfolio/apis/portfolio';
 
 export const mockPortfolioMileage: PortfolioMileageItem[] = [
   {

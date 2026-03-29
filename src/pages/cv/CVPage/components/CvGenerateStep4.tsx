@@ -2,7 +2,7 @@ import { Button, Flex, Heading, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
-import { formatDateOnly } from '@/pages/summary/utils/date';
+import { formatDateOnly } from '@/pages/portfolio/utils/date';
 import BusinessIcon from '@mui/icons-material/Business';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';

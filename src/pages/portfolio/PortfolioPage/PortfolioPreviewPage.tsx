@@ -9,11 +9,11 @@ import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Button as MuiButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useCallback, type FunctionComponent, type SVGProps } from 'react';
+import { type FunctionComponent, type SVGProps } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { SECTION_TITLES, type DraggableSectionKey } from '../constants/constants';
-import { useSummaryContext } from './context/SummaryContext';
+import { usePortfolioContext } from './context/PortfolioContext';
 import {
   ActivitiesSectionContent,
   MileageSectionContent,
@@ -24,11 +24,11 @@ import {
   TechStackSectionContent,
   UserInfoSectionContent,
 } from './components';
+import { useScrollPortfolioSection } from './hooks';
 import {
   PROMPT_QUALITY_SECTION_HINTS,
   usePortfolioPromptProgress,
 } from './utils/portfolioPromptProgress';
-import { scrollPortfolioSectionIntoView } from './utils/scrollPortfolioSection';
 
 /** MUI SvgIcon은 Button `icon` 타입과 달라 래핑 */
 const ResumePaperIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
@@ -42,18 +42,12 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
   activities: <EmojiEventsIcon sx={{ fontSize: 20, color: palette.grey500 }} />,
 };
 
-const SummaryPreviewPage = () => {
+const PortfolioPreviewPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약 미리보기' });
   const navigate = useNavigate();
-  const { sectionOrder } = useSummaryContext();
+  const { sectionOrder } = usePortfolioContext();
   const promptProgress = usePortfolioPromptProgress();
-
-  const handlePromptQualitySectionClick = useCallback(
-    (key: Parameters<typeof scrollPortfolioSectionIntoView>[0]) => {
-      scrollPortfolioSectionIntoView(key);
-    },
-    [],
-  );
+  const handlePromptQualitySectionClick = useScrollPortfolioSection();
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
@@ -76,7 +70,7 @@ const SummaryPreviewPage = () => {
         <S.EditButton
           variant="outlined"
           size="large"
-          onClick={() => navigate(ROUTE_PATH.summary)}
+          onClick={() => navigate(ROUTE_PATH.portfolio)}
         >
           편집
         </S.EditButton>
@@ -123,7 +117,7 @@ const SummaryPreviewPage = () => {
   );
 };
 
-export default SummaryPreviewPage;
+export default PortfolioPreviewPage;
 
 const S = {
   ButtonRow: styled(Flex.Row)`

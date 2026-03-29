@@ -1,4 +1,4 @@
-import type { ActivityApiItem } from '@/pages/summary/apis/portfolio';
+import type { ActivityApiItem } from '@/pages/portfolio/apis/portfolio';
 
 /** display_order 0이 맨 위. category는 사용자 정의 문자열 */
 export const mockActivitiesResponse: ActivityApiItem[] = [

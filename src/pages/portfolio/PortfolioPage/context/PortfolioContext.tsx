@@ -145,7 +145,7 @@ export function portfolioMileageToItem(
 
 export type UserInfo = UserInfoResponse;
 
-export interface SummaryState {
+export interface PortfolioState {
   userInfo: UserInfo | null;
   setUserInfo: (v: UserInfo | null | ((p: UserInfo | null) => UserInfo | null)) => void;
   sectionOrder: DraggableSectionKey[];
@@ -170,17 +170,17 @@ export interface SummaryState {
   setActivitiesNextId: (v: number | ((p: number) => number)) => void;
 }
 
-const SummaryContext = createContext<SummaryState | null>(null);
+const PortfolioContext = createContext<PortfolioState | null>(null);
 
-export const useSummaryContext = () => {
-  const ctx = useContext(SummaryContext);
+export const usePortfolioContext = () => {
+  const ctx = useContext(PortfolioContext);
   if (ctx == null) {
-    throw new Error('useSummaryContext must be used within SummaryProvider');
+    throw new Error('usePortfolioContext must be used within PortfolioProvider');
   }
   return ctx;
 };
 
-interface SummaryProviderProps {
+interface PortfolioProviderProps {
   children: ReactNode;
 }
 
@@ -195,7 +195,7 @@ const normalizeTechStackList = (list: TechStackItem[]) =>
 
 const QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
 
-export const SummaryProvider = ({ children }: SummaryProviderProps) => {
+export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
   const queryClient = useQueryClient();
   const [activitiesNextId, setActivitiesNextId] = useState(-1);
 
@@ -391,7 +391,7 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   }, [setActivities]);
 
   // ── Context value ──────────────────────────────────────────────────────────
-  const value = useMemo<SummaryState>(
+  const value = useMemo<PortfolioState>(
     () => ({
       userInfo: userInfoQuery.data ?? null,
       setUserInfo,
@@ -432,6 +432,6 @@ export const SummaryProvider = ({ children }: SummaryProviderProps) => {
   );
 
   return (
-    <SummaryContext.Provider value={value}>{children}</SummaryContext.Provider>
+    <PortfolioContext.Provider value={value}>{children}</PortfolioContext.Provider>
   );
 };

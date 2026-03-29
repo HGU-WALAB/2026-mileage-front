@@ -10,7 +10,10 @@ import {
   putPortfolioMileage,
   type PortfolioMileageItem,
 } from '../../apis/portfolio';
-import { portfolioMileageToItem, useSummaryContext } from '../context/SummaryContext';
+import {
+  portfolioMileageToItem,
+  usePortfolioContext,
+} from '../context/PortfolioContext';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Checkbox from '@mui/material/Checkbox';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -45,7 +48,7 @@ function getMileageRowId(m: MileageResponse, index: number): number {
 /** 포트폴리오 마일리지 선택 모달. 참여 마일리지 목록 + 기존 선택 비교 후 확인 시 PUT */
 const MileageSelectModal = ({ open, onClose }: MileageSelectModalProps) => {
   const theme = useTheme();
-  const { setMileageItems } = useSummaryContext();
+  const { setMileageItems } = usePortfolioContext();
   const [searchList, setSearchList] = useState<MileageResponse[]>([]);
   const [portfolioMileage, setPortfolioMileage] = useState<PortfolioMileageItem[]>([]);
   const [selectedMileageIds, setSelectedMileageIds] = useState<Set<number>>(new Set());

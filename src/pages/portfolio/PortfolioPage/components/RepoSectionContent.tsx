@@ -14,8 +14,8 @@ import { formatDateRange } from '../../utils/date';
 import {
   type RepoItem,
   portfolioRepoToRepoItem,
-  useSummaryContext,
-} from '../context/SummaryContext';
+  usePortfolioContext,
+} from '../context/PortfolioContext';
 import {
   formatRepoStat,
   RepoLanguageBar,
@@ -32,7 +32,7 @@ interface RepoSectionContentProps {
 const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
-  const { repos: contextRepos, setRepos } = useSummaryContext();
+  const { repos: contextRepos, setRepos } = usePortfolioContext();
   const repos = Array.isArray(contextRepos) ? contextRepos : [];
   const [page, setPage] = useState(0);
   const [editingRepo, setEditingRepo] = useState<RepoItem | null>(null);

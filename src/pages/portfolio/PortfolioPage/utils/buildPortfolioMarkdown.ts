@@ -8,7 +8,7 @@ import type {
   ActivityItem,
   MileageItem,
   RepoItem,
-} from '../context/SummaryContext';
+} from '../context/PortfolioContext';
 import { SECTION_TITLES } from '../../constants/constants';
 import { groupActivitiesByCategory } from '../../utils/activityGrouping';
 import {
@@ -17,7 +17,7 @@ import {
 } from '../../utils/techStackLevel';
 
 /** 미리보기에 보여지는 데이터만 사용해 마크다운 문자열 생성 */
-export interface BuildSummaryMarkdownParams {
+export interface BuildPortfolioMarkdownParams {
   userInfo: UserInfoResponse | null;
   sectionOrder: DraggableSectionKey[];
   techStackItems: TechStackItem[];
@@ -119,7 +119,7 @@ function sectionActivities(activities: ActivityItem[]): string {
 
 const SECTION_BUILDERS: Record<
   DraggableSectionKey,
-  (params: BuildSummaryMarkdownParams) => string
+  (params: BuildPortfolioMarkdownParams) => string
 > = {
   tech: p => sectionTechStack(p.techStackItems),
   repo: p => sectionRepos(p.repos),
@@ -131,7 +131,7 @@ const SECTION_BUILDERS: Record<
  * 미리보기와 동일한 내용(유저 정보 + 선택된 섹션 순서·표시 항목)을 마크다운 문자열로 반환.
  * 프롬프트 템플릿 + [입력 데이터] + 실제 데이터 순으로 붙여 반환.
  */
-export function buildSummaryMarkdown(params: BuildSummaryMarkdownParams): string {
+export function buildPortfolioMarkdown(params: BuildPortfolioMarkdownParams): string {
   const parts: string[] = [sectionUserInfo(params.userInfo), ''];
 
   for (const key of params.sectionOrder) {

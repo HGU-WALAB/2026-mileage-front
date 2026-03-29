@@ -1,4 +1,4 @@
-import type { ActivityItem } from '../SummaryPage/context/SummaryContext';
+import type { ActivityItem } from '../PortfolioPage/context/PortfolioContext';
 
 /** 카테고리 문자열 기준 그룹. 구간 내에서는 display_order 순 */
 export function groupActivitiesByCategory(

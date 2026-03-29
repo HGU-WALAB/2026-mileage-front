@@ -10,10 +10,10 @@ import type {
   PutRepositoryItem,
   UserInfoPatchRequest,
   UserInfoResponse,
-} from '@/pages/summary/apis/portfolio';
-import type { TechStackItem } from '@/pages/summary/apis/portfolio';
-import type { PatchRepositoryBody } from '@/pages/summary/apis/repositories';
-import { DRAGGABLE_SECTION_ORDER } from '@/pages/summary/constants/constants';
+} from '@/pages/portfolio/apis/portfolio';
+import type { TechStackItem } from '@/pages/portfolio/apis/portfolio';
+import type { PatchRepositoryBody } from '@/pages/portfolio/apis/repositories';
+import { DRAGGABLE_SECTION_ORDER } from '@/pages/portfolio/constants/constants';
 import { mockActivitiesResponse } from '@/mocks/fixtures/portfolioActivities';
 import { mockMileageList } from '@/mocks/fixtures/mileageList';
 import { mockPortfolioMileage } from '@/mocks/fixtures/portfolioMileage';

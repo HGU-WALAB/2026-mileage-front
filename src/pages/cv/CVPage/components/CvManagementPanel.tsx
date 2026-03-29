@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 
 import { ROUTE_PATH } from '@/constants/routePath';
 
-import { formatDateOnly } from '@/pages/summary/utils/date';
+import { formatDateOnly } from '@/pages/portfolio/utils/date';
 import {
   getPortfolioCvById,
   getPortfolioCvList,

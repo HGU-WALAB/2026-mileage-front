@@ -4,8 +4,8 @@ import { LoadingIcon } from '@/assets';
 import { Flex, Heading, Text } from '@/components';
 import {
   ROUTE_PATH,
-  SUMMARY_CV_PANEL_QUERY_KEY,
-  SUMMARY_CV_PANEL_QUERY_VALUE,
+  PORTFOLIO_CV_PANEL_QUERY_KEY,
+  PORTFOLIO_CV_PANEL_QUERY_VALUE,
 } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
@@ -17,7 +17,7 @@ import { Fragment, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { useSummaryContext } from '@/pages/summary/SummaryPage/context/SummaryContext';
+import { usePortfolioContext } from '@/pages/portfolio/PortfolioPage/context/PortfolioContext';
 
 import usePatchPortfolioCvMutation from '../hooks/usePatchPortfolioCvMutation';
 import usePostPortfolioCvBuildPromptMutation from '../hooks/usePostPortfolioCvBuildPromptMutation';
@@ -67,7 +67,7 @@ const CvGeneratePage = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
-  const { userInfo, repos, mileageItems, activities } = useSummaryContext();
+  const { userInfo, repos, mileageItems, activities } = usePortfolioContext();
   const buildPromptMutation = usePostPortfolioCvBuildPromptMutation();
   const patchCvMutation = usePatchPortfolioCvMutation();
 
@@ -166,7 +166,7 @@ const CvGeneratePage = () => {
   ]);
 
   const handleBack = useCallback(() => {
-    navigate(ROUTE_PATH.summary);
+    navigate(ROUTE_PATH.portfolio);
   }, [navigate]);
 
   const handleNextFromStep1 = useCallback(() => {
@@ -210,9 +210,9 @@ const CvGeneratePage = () => {
         onSuccess: () => {
           toast.success('히스토리에 저장되었습니다.');
           navigate({
-            pathname: ROUTE_PATH.summary,
+            pathname: ROUTE_PATH.portfolio,
             search: new URLSearchParams({
-              [SUMMARY_CV_PANEL_QUERY_KEY]: SUMMARY_CV_PANEL_QUERY_VALUE,
+              [PORTFOLIO_CV_PANEL_QUERY_KEY]: PORTFOLIO_CV_PANEL_QUERY_VALUE,
             }).toString(),
           });
         },

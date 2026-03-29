@@ -4,31 +4,18 @@ import { palette } from '@/styles/palette';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
+
+import { scrollMainToTop, useMainScrollPast } from '../hooks';
 
 const SCROLL_THRESHOLD = 300;
 
-function getScrollMain(): HTMLElement | null {
-  return document.querySelector('main');
-}
-
 const ScrollToTopFab = () => {
-  const [visible, setVisible] = useState(false);
+  const visible = useMainScrollPast(SCROLL_THRESHOLD);
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
 
-  useEffect(() => {
-    const main = getScrollMain();
-    if (!main) return;
-    const onScroll = () => {
-      setVisible(main.scrollTop >= SCROLL_THRESHOLD);
-    };
-    onScroll();
-    main.addEventListener('scroll', onScroll, { passive: true });
-    return () => main.removeEventListener('scroll', onScroll);
-  }, []);
-
   const handleClick = useCallback(() => {
-    getScrollMain()?.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollMainToTop();
   }, []);
 
   if (!visible) return null;

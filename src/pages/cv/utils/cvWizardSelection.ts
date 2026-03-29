@@ -1,4 +1,4 @@
-import type { RepoItem } from '@/pages/summary/SummaryPage/context/SummaryContext';
+import type { RepoItem } from '@/pages/portfolio/PortfolioPage/context/PortfolioContext';
 
 export function repoSelectionId(r: RepoItem): number {
   return r.id ?? r.repo_id;

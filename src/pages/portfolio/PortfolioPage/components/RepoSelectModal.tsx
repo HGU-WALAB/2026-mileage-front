@@ -5,7 +5,10 @@ import { palette } from '@/styles/palette';
 import type { PortfolioRepositoryItem, PutRepositoryItem } from '../../apis/portfolio';
 import { getAllRepositories, getRepositories, putRepositories } from '../../apis/portfolio';
 import { formatDateRange } from '../../utils/date';
-import { portfolioRepoToRepoItem, useSummaryContext } from '../context/SummaryContext';
+import {
+  portfolioRepoToRepoItem,
+  usePortfolioContext,
+} from '../context/PortfolioContext';
 import {
   formatRepoStat,
   RepoLanguageBar,
@@ -53,7 +56,7 @@ const AFFILIATION_OPTIONS = [
 const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
-  const { setRepos, repos: portfolioRepos } = useSummaryContext();
+  const { setRepos, repos: portfolioRepos } = usePortfolioContext();
   const [pageRepos, setPageRepos] = useState<PortfolioRepositoryItem[]>([]);
   const [loadedRepoById, setLoadedRepoById] = useState<
     Map<number, PortfolioRepositoryItem>

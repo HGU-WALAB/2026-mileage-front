@@ -1,4 +1,4 @@
-import type { UserInfoResponse } from '@/pages/summary/apis/portfolio';
+import type { UserInfoResponse } from '@/pages/portfolio/apis/portfolio';
 
 export const mockUserInfoResponse: UserInfoResponse = {
   name: '홍길동 (김길동)',

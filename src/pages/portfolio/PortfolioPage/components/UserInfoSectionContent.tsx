@@ -18,7 +18,7 @@ import {
 } from '../../apis/portfolio';
 import { PORTFOLIO_SECTION_ELEMENT_ID } from '../../constants/constants';
 import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
-import { useSummaryContext } from '../context/SummaryContext';
+import { usePortfolioContext } from '../context/PortfolioContext';
 import {
   PROMPT_QUALITY_SECTION_HINTS,
   usePortfolioPromptProgress,
@@ -36,7 +36,7 @@ interface UserInfoSectionContentProps {
 
 /** 유저정보. 상단 고정, 타이틀 없음. name/department/major1·2 표시, bio만 수정 가능 */
 const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProps) => {
-  const { userInfo, setUserInfo } = useSummaryContext();
+  const { userInfo, setUserInfo } = usePortfolioContext();
   const promptProgress = usePortfolioPromptProgress();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const [isEditingBio, setIsEditingBio] = useState(false);

@@ -9,8 +9,8 @@ import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { putPortfolioMileageItem } from '../../apis/portfolio';
 import {
   type MileageItem,
-  useSummaryContext,
-} from '../context/SummaryContext';
+  usePortfolioContext,
+} from '../context/PortfolioContext';
 
 interface MileageSectionContentProps {
   readOnly?: boolean;
@@ -20,7 +20,7 @@ const MileageSectionContent = ({
   readOnly = false,
 }: MileageSectionContentProps) => {
   const theme = useTheme();
-  const { mileageItems, setMileageItems } = useSummaryContext();
+  const { mileageItems, setMileageItems } = usePortfolioContext();
   const [editingItem, setEditingItem] = useState<MileageItem | null>(null);
   const [editDraft, setEditDraft] = useState('');
 

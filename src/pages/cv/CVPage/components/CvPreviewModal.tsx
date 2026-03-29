@@ -14,7 +14,7 @@ import { styled } from '@mui/material/styles';
 import { useCallback, useEffect, useState, type FunctionComponent, type SVGProps } from 'react';
 import { toast } from 'react-toastify';
 
-import { formatDateOnly } from '@/pages/summary/utils/date';
+import { formatDateOnly } from '@/pages/portfolio/utils/date';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import type { PortfolioCvDetail } from '../../apis/cv';
 import usePatchPortfolioCvMutation from '../../hooks/usePatchPortfolioCvMutation';

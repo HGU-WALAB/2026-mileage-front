@@ -3,11 +3,11 @@ import { useMemo } from 'react';
 import type { TechStackItem } from '../../apis/portfolio';
 
 import {
-  useSummaryContext,
+  usePortfolioContext,
   type ActivityItem,
   type MileageItem,
   type RepoItem,
-} from '../context/SummaryContext';
+} from '../context/PortfolioContext';
 
 /** 한 줄 소개 만점 기준 글자 수 */
 export const PROMPT_PROGRESS_INTRO_CHARS_FULL = 100;
@@ -137,7 +137,7 @@ export function usePortfolioPromptProgress(): PortfolioPromptProgress {
     repos,
     mileageItems,
     activities,
-  } = useSummaryContext();
+  } = usePortfolioContext();
 
   return useMemo(
     () =>

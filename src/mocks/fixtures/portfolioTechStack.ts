@@ -1,4 +1,4 @@
-import type { TechStackResponse } from '@/pages/summary/apis/portfolio';
+import type { TechStackResponse } from '@/pages/portfolio/apis/portfolio';
 
 export const mockTechStackResponse: TechStackResponse = {
   tech_stack: [

@@ -8,13 +8,13 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { Checkbox, useTheme } from '@mui/material';
 import { type ReactNode } from 'react';
 
-import { TechStackSectionContent } from '@/pages/summary/SummaryPage/components';
-import { formatDateRange } from '@/pages/summary/utils/date';
+import { TechStackSectionContent } from '@/pages/portfolio/PortfolioPage/components';
+import { formatDateRange } from '@/pages/portfolio/utils/date';
 import {
   type ActivityItem,
   type MileageItem,
   type RepoItem,
-} from '@/pages/summary/SummaryPage/context/SummaryContext';
+} from '@/pages/portfolio/PortfolioPage/context/PortfolioContext';
 
 import { CvGeneratePageS as S } from '../cvGeneratePageStyles';
 import { repoSelectionId, toggleInList } from '../../utils/cvWizardSelection';

@@ -34,7 +34,7 @@ import {
   getTechLevelBand,
   getTechLevelBandLabel,
 } from '../../utils/techStackLevel';
-import { useSummaryContext } from '../context/SummaryContext';
+import { usePortfolioContext } from '../context/PortfolioContext';
 
 interface TechStackSectionContentProps {
   readOnly?: boolean;
@@ -110,7 +110,7 @@ const TechStackSectionContent = forwardRef<
 >(function TechStackSectionContent({ readOnly = false }, ref) {
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
-  const { techStackItems, setTechStackItems } = useSummaryContext();
+  const { techStackItems, setTechStackItems } = usePortfolioContext();
 
   const [addOpen, setAddOpen] = useState(false);
   const [domainInput, setDomainInput] = useState('');

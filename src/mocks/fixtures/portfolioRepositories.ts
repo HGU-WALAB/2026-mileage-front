@@ -1,4 +1,4 @@
-import type { PortfolioRepositoryItem } from '@/pages/summary/apis/portfolio';
+import type { PortfolioRepositoryItem } from '@/pages/portfolio/apis/portfolio';
 
 export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
   {
