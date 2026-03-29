@@ -3,6 +3,7 @@ import {
   BuildingIcon,
   DashboardBlueIcon,
   DashboardIcon,
+  EditIcon,
   MileageListBlueIcon,
   MileageListIcon,
   ScholarshipBlueIcon,
@@ -98,13 +99,41 @@ export const DRAWER_MENU_ENTRIES: DrawerMenuEntry[] = [
     ],
   },
   {
-    kind: 'link',
-    id: 'portfolio',
+    kind: 'group',
+    id: 'portfolio-management',
     text: '내 활동 관리',
     shortText: '활동관리',
-    route: ROUTE_PATH.portfolio,
     icon: BuildingIcon,
     selectedIcon: BuildingBlueIcon,
+    isGroupActive: pathname =>
+      pathname === ROUTE_PATH.portfolio ||
+      pathname.startsWith(`${ROUTE_PATH.portfolio}/`) ||
+      pathname === ROUTE_PATH.cv ||
+      pathname.startsWith(`${ROUTE_PATH.cv}/`),
+    children: [
+      {
+        id: 'portfolio-main',
+        text: '내 활동 관리',
+        shortText: '활동',
+        route: ROUTE_PATH.portfolio,
+        icon: BuildingIcon,
+        selectedIcon: BuildingBlueIcon,
+        isNavActive: pathname =>
+          pathname === ROUTE_PATH.portfolio ||
+          pathname.startsWith(`${ROUTE_PATH.portfolio}/`),
+      },
+      {
+        id: 'cv-generate',
+        text: '이력서 생성',
+        shortText: '이력서',
+        route: ROUTE_PATH.cv,
+        icon: EditIcon,
+        selectedIcon: EditIcon,
+        isNavActive: pathname =>
+          pathname === ROUTE_PATH.cv ||
+          pathname.startsWith(`${ROUTE_PATH.cv}/`),
+      },
+    ],
   },
   {
     kind: 'link',
