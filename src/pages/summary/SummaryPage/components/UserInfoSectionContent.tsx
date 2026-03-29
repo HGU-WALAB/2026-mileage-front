@@ -16,6 +16,7 @@ import {
   patchUserInfo,
   putPortfolioUserProfileImage,
 } from '../../apis/portfolio';
+import { PORTFOLIO_SECTION_ELEMENT_ID } from '../../constants/constants';
 import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { useSummaryContext } from '../context/SummaryContext';
 import {
@@ -284,7 +285,7 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
   };
 
   return (
-    <S.Card>
+    <S.Card id={PORTFOLIO_SECTION_ELEMENT_ID.intro}>
       <S.Inner>
         <S.AvatarWrap>
           {/* img 요소를 언마운트하지 않고 CSS로 숨겨서 깜빡임 방지 */}

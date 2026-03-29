@@ -8,6 +8,7 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { styled } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import type { PortfolioPromptQualityCardKey } from '../../constants/constants';
 import {
   PROMPT_QUALITY_SECTION_HINTS,
   type PortfolioPromptProgress,
@@ -15,10 +16,13 @@ import {
 
 interface PortfolioPromptQualityDashboardProps {
   progress: PortfolioPromptProgress;
+  /** 미니 카드 클릭 시 해당 포트폴리오 섹션으로 스크롤 */
+  onSectionClick?: (key: PortfolioPromptQualityCardKey) => void;
 }
 
 const PortfolioPromptQualityDashboard = ({
   progress,
+  onSectionClick,
 }: PortfolioPromptQualityDashboardProps) => {
   return (
     <S.Root>
@@ -39,30 +43,40 @@ const PortfolioPromptQualityDashboard = ({
       <S.GridScroll>
         <S.Grid>
         <MiniCard
+          sectionKey="intro"
+          onSectionClick={onSectionClick}
           icon={<PersonOutlineIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
           title="자기소개"
           hint={PROMPT_QUALITY_SECTION_HINTS.intro}
           percent={progress.intro}
         />
         <MiniCard
+          sectionKey="tech"
+          onSectionClick={onSectionClick}
           icon={<CodeIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
           title="기술 스택"
           hint={PROMPT_QUALITY_SECTION_HINTS.tech}
           percent={progress.tech}
         />
         <MiniCard
+          sectionKey="repo"
+          onSectionClick={onSectionClick}
           icon={<FolderIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
           title="레포지토리"
           hint={PROMPT_QUALITY_SECTION_HINTS.repo}
           percent={progress.repo}
         />
         <MiniCard
+          sectionKey="activities"
+          onSectionClick={onSectionClick}
           icon={<EmojiEventsIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
           title="활동"
           hint={PROMPT_QUALITY_SECTION_HINTS.activities}
           percent={progress.activities}
         />
         <MiniCard
+          sectionKey="mileage"
+          onSectionClick={onSectionClick}
           icon={
             <MilitaryTechOutlinedIcon sx={{ fontSize: 18, color: palette.blue600 }} />
           }
@@ -79,19 +93,23 @@ const PortfolioPromptQualityDashboard = ({
 export default PortfolioPromptQualityDashboard;
 
 function MiniCard({
+  sectionKey,
+  onSectionClick,
   icon,
   title,
   hint,
   percent,
 }: {
+  sectionKey: PortfolioPromptQualityCardKey;
+  onSectionClick?: (key: PortfolioPromptQualityCardKey) => void;
   icon: ReactNode;
   title: string;
   hint: string;
   percent: number;
 }) {
   const safe = Math.max(0, Math.min(100, Math.round(percent)));
-  return (
-    <S.Card>
+  const body = (
+    <>
       <S.CardTop>
         <S.IconWrap>{icon}</S.IconWrap>
         <S.CardTitle>{title}</S.CardTitle>
@@ -103,8 +121,19 @@ function MiniCard({
         </S.CardBarTrack>
         <S.CardPct>{safe}%</S.CardPct>
       </S.CardProgressRow>
-    </S.Card>
+    </>
   );
+  if (onSectionClick) {
+    return (
+      <S.CardButton
+        type="button"
+        onClick={() => onSectionClick(sectionKey)}
+      >
+        {body}
+      </S.CardButton>
+    );
+  }
+  return <S.Card>{body}</S.Card>;
 }
 
 const S = {
@@ -183,6 +212,31 @@ const S = {
     background-color: ${palette.white};
     border: 1px solid ${palette.grey200};
     box-sizing: border-box;
+  `,
+  CardButton: styled('button')`
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+    width: 100%;
+    padding: 0.7rem 0.65rem 0.65rem;
+    border-radius: 0.5rem;
+    background-color: ${palette.white};
+    border: 1px solid ${palette.grey200};
+    box-sizing: border-box;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    &:focus-visible {
+      outline: 2px solid ${palette.blue500};
+      outline-offset: 2px;
+    }
   `,
   CardTop: styled(Flex.Row)`
     align-items: flex-start;

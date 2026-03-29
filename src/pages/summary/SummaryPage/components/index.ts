@@ -1,4 +1,5 @@
 export { default as PortfolioPromptQualityDashboard } from './PortfolioPromptQualityDashboard';
+export { default as ScrollToTopFab } from './ScrollToTopFab';
 export { default as ActivitiesSectionContent } from './ActivitiesSectionContent';
 export type { ActivitiesSectionContentHandle } from './ActivitiesSectionContent';
 export { default as DraggableSection } from './DraggableSection';

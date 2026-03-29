@@ -9,7 +9,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Button as MuiButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { type FunctionComponent, type SVGProps } from 'react';
+import { useCallback, type FunctionComponent, type SVGProps } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { SECTION_TITLES, type DraggableSectionKey } from '../constants/constants';
@@ -19,6 +19,7 @@ import {
   MileageSectionContent,
   PortfolioPromptQualityDashboard,
   RepoSectionContent,
+  ScrollToTopFab,
   StaticSection,
   TechStackSectionContent,
   UserInfoSectionContent,
@@ -27,6 +28,7 @@ import {
   PROMPT_QUALITY_SECTION_HINTS,
   usePortfolioPromptProgress,
 } from './utils/portfolioPromptProgress';
+import { scrollPortfolioSectionIntoView } from './utils/scrollPortfolioSection';
 
 /** MUI SvgIcon은 Button `icon` 타입과 달라 래핑 */
 const ResumePaperIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
@@ -45,6 +47,13 @@ const SummaryPreviewPage = () => {
   const navigate = useNavigate();
   const { sectionOrder } = useSummaryContext();
   const promptProgress = usePortfolioPromptProgress();
+
+  const handlePromptQualitySectionClick = useCallback(
+    (key: Parameters<typeof scrollPortfolioSectionIntoView>[0]) => {
+      scrollPortfolioSectionIntoView(key);
+    },
+    [],
+  );
 
   const renderSectionContent = (key: DraggableSectionKey) => {
     switch (key) {
@@ -80,12 +89,16 @@ const SummaryPreviewPage = () => {
           iconPosition="start"
         />
       </S.ButtonRow>
-      <PortfolioPromptQualityDashboard progress={promptProgress} />
+      <PortfolioPromptQualityDashboard
+        progress={promptProgress}
+        onSectionClick={handlePromptQualitySectionClick}
+      />
       <UserInfoSectionContent readOnly />
       <Flex.Column gap="1rem">
         {sectionOrder.map(key => (
           <StaticSection
             key={key}
+            anchorSectionKey={key}
             title={SECTION_TITLES[key]}
             subtitle={
               key === 'activities'
@@ -104,6 +117,7 @@ const SummaryPreviewPage = () => {
           </StaticSection>
         ))}
       </Flex.Column>
+      <ScrollToTopFab />
       <Footer />
     </Flex.Column>
   );

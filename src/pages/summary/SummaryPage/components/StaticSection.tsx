@@ -3,9 +3,15 @@ import { boxShadow } from '@/styles/common';
 import { styled, useTheme } from '@mui/material';
 import type { ReactNode } from 'react';
 
+import {
+  PORTFOLIO_SECTION_ELEMENT_ID,
+  type DraggableSectionKey,
+} from '../../constants/constants';
 import SectionPromptQualityFooter from './SectionPromptQualityFooter';
 
 interface StaticSectionProps {
+  /** 스크롤 앵커 (미리보기에서 품질 카드와 동일 id) */
+  anchorSectionKey?: DraggableSectionKey;
   title: string;
   /** 섹션 타이틀 옆 회색 가이드 텍스트 (미리보기에서도 사용 가능) */
   subtitle?: string;
@@ -15,6 +21,7 @@ interface StaticSectionProps {
 }
 
 const StaticSection = ({
+  anchorSectionKey,
   title,
   subtitle,
   icon,
@@ -24,7 +31,13 @@ const StaticSection = ({
   const theme = useTheme();
 
   return (
-    <S.Section>
+    <S.Section
+      id={
+        anchorSectionKey != null
+          ? PORTFOLIO_SECTION_ELEMENT_ID[anchorSectionKey]
+          : undefined
+      }
+    >
       <S.Header align="center" gap="0.5rem">
         {icon != null && <S.IconWrap>{icon}</S.IconWrap>}
         <Flex.Column gap="0.125rem">

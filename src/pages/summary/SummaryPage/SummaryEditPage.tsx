@@ -43,6 +43,7 @@ import {
   PortfolioPromptQualityDashboard,
   RepoSelectModal,
   RepoSectionContent,
+  ScrollToTopFab,
   TechStackSectionContent,
   type TechStackSectionContentHandle,
   UserInfoSectionContent,
@@ -51,6 +52,7 @@ import {
   PROMPT_QUALITY_SECTION_HINTS,
   usePortfolioPromptProgress,
 } from './utils/portfolioPromptProgress';
+import { scrollPortfolioSectionIntoView } from './utils/scrollPortfolioSection';
 
 /** MUI SvgIcon은 Button `icon` 타입과 달라 래핑 */
 const ResumePaperIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
@@ -97,6 +99,13 @@ const SummaryEditPage = () => {
   const techStackRef = useRef<TechStackSectionContentHandle>(null);
   const activitiesRef = useRef<ActivitiesSectionContentHandle>(null);
   const promptProgress = usePortfolioPromptProgress();
+
+  const handlePromptQualitySectionClick = useCallback(
+    (key: Parameters<typeof scrollPortfolioSectionIntoView>[0]) => {
+      scrollPortfolioSectionIntoView(key);
+    },
+    [],
+  );
 
   const handleDragStart = useCallback((id: DraggableSectionKey) => {
     setDraggedId(id);
@@ -225,7 +234,10 @@ const SummaryEditPage = () => {
           width="100%"
           style={{ minWidth: 0 }}
         >
-          <PortfolioPromptQualityDashboard progress={promptProgress} />
+          <PortfolioPromptQualityDashboard
+            progress={promptProgress}
+            onSectionClick={handlePromptQualitySectionClick}
+          />
           <UserInfoSectionContent />
           <Flex.Column gap="1rem" width="100%" style={{ minWidth: 0 }}>
         {sectionOrder.map(key => (
@@ -310,6 +322,7 @@ const SummaryEditPage = () => {
         open={mileageModalOpen}
         onClose={() => setMileageModalOpen(false)}
       />
+      <ScrollToTopFab />
       <Footer />
     </Flex.Column>
   );

@@ -8,7 +8,10 @@ import {
   useCallback,
 } from 'react';
 
-import type { DraggableSectionKey } from '../../constants/constants';
+import {
+  PORTFOLIO_SECTION_ELEMENT_ID,
+  type DraggableSectionKey,
+} from '../../constants/constants';
 
 import SectionPromptQualityFooter from './SectionPromptQualityFooter';
 
@@ -75,6 +78,7 @@ const DraggableSection = ({
 
   return (
     <S.Section
+      id={PORTFOLIO_SECTION_ELEMENT_ID[sectionId]}
       draggable
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
