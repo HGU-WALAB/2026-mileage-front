@@ -76,7 +76,7 @@ const CvGenerateStep1 = ({
           <Flex.Row align="center" gap="0.5rem" wrap="wrap">
             <PersonOutlineIcon sx={{ fontSize: 22, color: palette.blue500 }} />
             <Heading as="h4" margin="0" color={theme.palette.text.primary}>
-              프로필 (자동 포함)
+              프로필 (필수)
             </Heading>
           </Flex.Row>
           <S.ProfileInner align="flex-start" gap="1rem" wrap="wrap">
@@ -113,7 +113,7 @@ const CvGenerateStep1 = ({
           <Flex.Row align="center" gap="0.5rem" wrap="wrap" style={{ marginBottom: '0.65rem' }}>
             <MenuBookIcon sx={{ fontSize: 20, color: palette.grey600 }} />
             <Heading as="h4" margin="0" color={theme.palette.text.primary}>
-              기술 스택 (자동 포함)
+              기술 스택 (필수)
             </Heading>
           </Flex.Row>
           <TechStackSectionContent readOnly />

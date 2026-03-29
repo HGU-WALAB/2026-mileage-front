@@ -8,6 +8,7 @@ import type {
   PortfolioRepositoryItem,
   PutPortfolioMileageItem,
   PutRepositoryItem,
+  UserInfoPatchRequest,
   UserInfoResponse,
 } from '@/pages/summary/apis/portfolio';
 import type { TechStackItem } from '@/pages/summary/apis/portfolio';
@@ -226,6 +227,19 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
   }),
 
+  http.put(BASE_URL + ENDPOINT.PORTFOLIO_USER_INFO_IMAGE, async ({ request }) => {
+    try {
+      const formData = await request.formData();
+      const profileImage = formData.get('profile_image');
+      if (profileImage instanceof File && profileImage.name) {
+        userInfoStore.profile_image_url = profileImage.name;
+      }
+    } catch {
+      // ignore
+    }
+    return HttpResponse.json({ ...userInfoStore }, { status: 200 });
+  }),
+
   http.get(
     BASE_URL + `${ENDPOINT.PORTFOLIO_USER_INFO_IMAGE}/:filename`,
     () => {
@@ -243,31 +257,24 @@ export const PortfolioHandlers = [
   ),
 
   http.patch(BASE_URL + ENDPOINT.PORTFOLIO_USER_INFO, async ({ request }) => {
-    const url = new URL(request.url);
-    const bioParam = url.searchParams.get('bio');
-    if (bioParam !== null) {
-      userInfoStore.bio = bioParam;
-    }
-    const contentType = request.headers.get('Content-Type') ?? '';
-    if (contentType.includes('multipart/form-data')) {
-      try {
-        const formData = await request.formData();
-        const profileImage = formData.get('profile_image');
-        if (profileImage instanceof File && profileImage.name) {
-          userInfoStore.profile_image_url = profileImage.name;
-        }
-      } catch {
-        // ignore formData parse
+    try {
+      const body = (await request.json()) as UserInfoPatchRequest;
+      if (body.bio !== undefined) {
+        userInfoStore.bio = body.bio;
       }
-    } else {
-      try {
-        const body = (await request.json()) as { bio?: string };
-        if (body.bio !== undefined) {
-          userInfoStore.bio = body.bio;
-        }
-      } catch {
-        // ignore json parse
+      if (body.profile_image_url !== undefined) {
+        userInfoStore.profile_image_url = body.profile_image_url;
       }
+      if (body.profile_links !== undefined) {
+        userInfoStore.profile_links = Array.isArray(body.profile_links)
+          ? body.profile_links.map(l => ({
+              label: String(l.label ?? ''),
+              url: String(l.url ?? ''),
+            }))
+          : [];
+      }
+    } catch {
+      // ignore json parse
     }
     return HttpResponse.json({ ...userInfoStore }, { status: 200 });
   }),

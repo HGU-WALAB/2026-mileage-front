@@ -52,6 +52,20 @@ function sectionUserInfo(userInfo: UserInfoResponse | null): string {
     ...(bio ? [`**${escapeMarkdown(bio)}**`, ''] : []),
     escapeMarkdown(departmentMajorLine) + (gradeSemester ? escapeMarkdown(gradeSemester) : ''),
   ];
+
+  const profileLinks =
+    userInfo?.profile_links?.filter(
+      l => (l.label?.trim() ?? '') !== '' && (l.url?.trim() ?? '') !== '',
+    ) ?? [];
+  if (profileLinks.length > 0) {
+    lines.push('');
+    for (const l of profileLinks) {
+      const lab = escapeMarkdown(l.label.trim());
+      const u = l.url.trim();
+      lines.push(`- [${lab}](${u})`);
+    }
+  }
+
   return lines.join('\n');
 }
 

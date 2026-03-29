@@ -21,4 +21,8 @@ export const INPUT_MAX_LENGTH = {
   REPO_TITLE: 100,
   /** 레포지토리 설명 */
   REPO_DESCRIPTION: 350,
+  /** 프로필 링크 라벨 */
+  PROFILE_LINK_LABEL: 120,
+  /** 프로필 링크 URL */
+  PROFILE_LINK_URL: 2048,
 } as const;
