@@ -125,6 +125,26 @@ export const CvGeneratePageS = {
     object-fit: cover;
     display: block;
   `,
+  ProfileLinkList: styled('ul')`
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+  `,
+  ProfileLinkAnchor: styled('a')`
+    color: ${palette.blue500};
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    word-break: break-all;
+    &:hover {
+      text-decoration: underline;
+    }
+  `,
   SectionBlock: styled('div')`
     display: flex;
     flex-direction: column;
@@ -146,15 +166,22 @@ export const CvGeneratePageS = {
     min-width: 0;
     padding-right: 0.25rem;
   `,
-  SelectRow: styled('div')<{ $disabled?: boolean }>`
+  SelectRow: styled('div', {
+    shouldForwardProp: p => p !== '$disabled' && p !== '$selected',
+  })<{ $disabled?: boolean; $selected?: boolean }>`
     display: flex;
     flex-direction: column;
     padding: 0.65rem 0.75rem;
     border-radius: 0.5rem;
-    border: 1px solid ${palette.grey200};
-    background-color: ${palette.grey100};
+    border: 1px solid
+      ${({ $selected }) => ($selected ? palette.blue400 : palette.grey200)};
+    background-color: ${({ $selected }) =>
+      $selected ? palette.blue300 : palette.grey100};
     opacity: ${({ $disabled }) => ($disabled ? 0.75 : 1)};
     box-sizing: border-box;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
   `,
   CategoryTag: styled('span')(({ theme }) => ({
     display: 'inline-flex',

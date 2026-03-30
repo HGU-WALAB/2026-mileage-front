@@ -2,6 +2,7 @@ import { Button, Flex, Heading, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import CodeIcon from '@mui/icons-material/Code';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import FolderIcon from '@mui/icons-material/Folder';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -9,6 +10,10 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { Checkbox, useTheme } from '@mui/material';
 import { type FunctionComponent, type ReactNode, type SVGProps } from 'react';
 
+import {
+  normalizePortfolioProfileUrl,
+  type ProfileLinkItem,
+} from '@/pages/portfolio/apis/userInfo';
 import { TechStackSectionContent } from '@/pages/portfolio/PortfolioPage/components';
 import { formatActivityPeriodRange } from '@/pages/portfolio/utils/date';
 import {
@@ -29,6 +34,7 @@ export interface CvGenerateStep1Props {
   bio: string;
   departmentMajorLine: string;
   profileImageUrl: string | null;
+  profileLinks: ProfileLinkItem[];
   mileageItems: MileageItem[];
   activities: ActivityItem[];
   visibleRepos: RepoItem[];
@@ -48,6 +54,7 @@ const CvGenerateStep1 = ({
   bio,
   departmentMajorLine,
   profileImageUrl,
+  profileLinks,
   mileageItems,
   activities,
   visibleRepos,
@@ -62,6 +69,9 @@ const CvGenerateStep1 = ({
   buildPromptPending,
 }: CvGenerateStep1Props) => {
   const theme = useTheme();
+  const visibleProfileLinks = (profileLinks ?? []).filter(
+    l => l.url?.trim() || l.label?.trim(),
+  );
 
   return (
     <>
@@ -77,13 +87,13 @@ const CvGenerateStep1 = ({
               color: theme.palette.grey[600],
             }}
           >
-            CV에 넣을 마일리지·레포지토리·활동을 선택하세요. 프로필과 기술 스택은 자동으로 포함됩니다.
+            포트폴리오에 넣을 마일리지·레포지토리·활동을 선택하세요. 프로필과 기술 스택은 자동으로 포함됩니다.
           </Text>
         </Flex.Column>
 
         <S.HighlightSection>
           <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-            <PersonOutlineIcon sx={{ fontSize: 22, color: palette.blue500 }} />
+            <PersonOutlineIcon sx={{ fontSize: 22, color: theme.palette.text.primary }} />
             <Heading as="h4" margin="0" color={theme.palette.text.primary}>
               프로필 (필수)
             </Heading>
@@ -114,19 +124,68 @@ const CvGenerateStep1 = ({
               >
                 {departmentMajorLine}
               </Text>
+              {visibleProfileLinks.length > 0 ? (
+                <S.ProfileLinkList aria-label="프로필 링크">
+                  {visibleProfileLinks.map((link, idx) => {
+                    const href = normalizePortfolioProfileUrl(link.url?.trim() ?? '');
+                    const label = link.label?.trim() || '링크';
+                    return (
+                      <li key={`${link.url}-${idx}`}>
+                        <Flex.Row
+                          align="flex-start"
+                          gap="0.5rem"
+                          wrap="wrap"
+                          style={{ minWidth: 0 }}
+                        >
+                          <Text
+                            margin="0"
+                            style={{
+                              ...theme.typography.body2,
+                              fontWeight: 600,
+                              color: theme.palette.text.primary,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {label}
+                          </Text>
+                          {href ? (
+                            <S.ProfileLinkAnchor
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {link.url?.trim()}
+                            </S.ProfileLinkAnchor>
+                          ) : (
+                            <Text
+                              margin="0"
+                              style={{
+                                ...theme.typography.body2,
+                                color: theme.palette.grey[500],
+                              }}
+                            >
+                              —
+                            </Text>
+                          )}
+                        </Flex.Row>
+                      </li>
+                    );
+                  })}
+                </S.ProfileLinkList>
+              ) : null}
             </Flex.Column>
           </S.ProfileInner>
         </S.HighlightSection>
 
-        <S.SectionBlock>
+        <S.HighlightSection>
           <Flex.Row align="center" gap="0.5rem" wrap="wrap" style={{ marginBottom: '0.65rem' }}>
-            <MenuBookIcon sx={{ fontSize: 20, color: palette.grey600 }} />
+            <CodeIcon sx={{ fontSize: 20, color: palette.grey500 }} />
             <Heading as="h4" margin="0" color={theme.palette.text.primary}>
               기술 스택 (필수)
             </Heading>
           </Flex.Row>
           <TechStackSectionContent readOnly />
-        </S.SectionBlock>
+        </S.HighlightSection>
 
         <SelectableSection
           title="마일리지 항목"
@@ -291,7 +350,11 @@ function MileageSelectableRow({
 }) {
   const theme = useTheme();
   return (
-    <S.SelectRow $disabled={disabled} style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}>
+    <S.SelectRow
+      $disabled={disabled}
+      $selected={selected}
+      style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+    >
       <Flex.Row align="center" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
         <Checkbox
           checked={selected}
@@ -370,7 +433,7 @@ function RepoSelectableRow({
       ? repo.custom_title.trim()
       : repo.name;
   return (
-    <S.SelectRow style={{ cursor: 'pointer' }}>
+    <S.SelectRow $selected={selected} style={{ cursor: 'pointer' }}>
       <Flex.Row align="center" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
         <Checkbox
           checked={selected}
@@ -425,7 +488,7 @@ function ActivitySelectableRow({
     activity.end_date,
   );
   return (
-    <S.SelectRow style={{ cursor: 'pointer' }}>
+    <S.SelectRow $selected={selected} style={{ cursor: 'pointer' }}>
       <Flex.Row align="center" gap="0.75rem" width="100%" style={{ minWidth: 0 }}>
         <Checkbox
           checked={selected}

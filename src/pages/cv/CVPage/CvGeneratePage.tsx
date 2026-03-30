@@ -423,6 +423,7 @@ const CvGeneratePage = () => {
                 bio={bio}
                 departmentMajorLine={departmentMajorLine}
                 profileImageUrl={profileImageUrl}
+                profileLinks={userInfo?.profile_links ?? []}
                 mileageItems={mileageItems}
                 activities={activities}
                 visibleRepos={visibleRepos}
