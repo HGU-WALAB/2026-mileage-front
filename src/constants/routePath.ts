@@ -6,12 +6,11 @@ export const ROUTE_PATH = {
   scholarship: '/scholarship/apply',
   awardArchive: '/mileage/award',
   portfolio: '/portfolio',
-  portfolioPreview: '/portfolio/preview',
   cv: '/cv',
   myPage: '/my',
   githubCallback: '/auth/github/callback',
 };
 
-/** 내 활동 관리에서 이력서 관리 패널을 연 상태로 진입 (`?cvPanel=1`) */
+/** 내 활동 관리에서 포트폴리오 관리 패널을 연 상태로 진입 (`?cvPanel=1`) */
 export const PORTFOLIO_CV_PANEL_QUERY_KEY = 'cvPanel';
 export const PORTFOLIO_CV_PANEL_QUERY_VALUE = '1';

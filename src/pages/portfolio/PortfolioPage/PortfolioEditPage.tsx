@@ -1,5 +1,4 @@
 import { Button, Flex, Footer, Text } from '@/components';
-import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
@@ -12,7 +11,6 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Button as MuiButton, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useRef, useState, type FunctionComponent, type SVGProps } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { CvManagementPanel } from '@/pages/cv';
 import useGetGitHubStatusQuery from '@/pages/profile/hooks/useGetGitHubStatusQuery';
@@ -63,7 +61,6 @@ const SECTION_ICONS: Record<DraggableSectionKey, React.ReactNode> = {
 
 const PortfolioEditPage = () => {
   useTrackPageView({ eventName: '[View] 활동 요약' });
-  const navigate = useNavigate();
   const {
     sectionOrder,
     setSectionOrder,
@@ -137,13 +134,6 @@ const PortfolioEditPage = () => {
           포트폴리오가 생성됩니다.
         </S.GuideText>
         <S.ButtonGroup gap="0.5rem">
-          <S.PreviewButton
-            variant="outlined"
-            size="large"
-            onClick={() => navigate(ROUTE_PATH.portfolioPreview)}
-          >
-            미리보기
-          </S.PreviewButton>
           <Button
             label="포트폴리오 관리"
             variant="contained"

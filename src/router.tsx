@@ -20,9 +20,6 @@ const PortfolioLayout = React.lazy(
 const PortfolioEditPage = React.lazy(
   () => import('@/pages/portfolio/PortfolioPage/PortfolioEditPage'),
 );
-const PortfolioPreviewPage = React.lazy(
-  () => import('@/pages/portfolio/PortfolioPage/PortfolioPreviewPage'),
-);
 const CvGeneratePage = React.lazy(() => import('@/pages/cv/CVPage/CvGeneratePage'));
 const GitHubCallbackPage = React.lazy(
   () => import('@/pages/profile/GitHubCallbackPage'),
@@ -66,10 +63,6 @@ const router = createBrowserRouter(
                 {
                   path: ROUTE_PATH.portfolio,
                   element: <PortfolioEditPage />,
-                },
-                {
-                  path: ROUTE_PATH.portfolioPreview,
-                  element: <PortfolioPreviewPage />,
                 },
                 {
                   path: ROUTE_PATH.cv,

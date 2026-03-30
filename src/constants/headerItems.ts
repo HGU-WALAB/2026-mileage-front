@@ -6,7 +6,6 @@ export const headerItems = {
   // [ROUTE_PATH.newMileage]: '마일리지 등록',
   [ROUTE_PATH.scholarship]: '장학금 신청',
   [ROUTE_PATH.portfolio]: '내 활동 관리',
-  [ROUTE_PATH.portfolioPreview]: '내 활동 미리보기',
   [ROUTE_PATH.cv]: '포트폴리오 생성',
   [ROUTE_PATH.myPage]: '마이페이지',
 };
