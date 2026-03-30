@@ -41,7 +41,14 @@ const Dropdown = ({
   const formControlSize = size === 'xlarge' ? 'medium' : size;
 
   if (freeSolo) {
-    const { className, style, id, role, ...restDivProps } = props;
+    const {
+      className,
+      style,
+      id,
+      role,
+      onChange: _divOnChange,
+      ...restDivProps
+    } = props;
     return (
       <Autocomplete
         className={className}

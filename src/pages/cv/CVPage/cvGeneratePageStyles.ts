@@ -85,13 +85,17 @@ export const CvGeneratePageS = {
       lineHeight: 1.2,
     },
   })),
-  StepConnector: styled('div')`
+  StepConnector: styled('div', {
+    shouldForwardProp: p => p !== '$completed',
+  })<{ $completed?: boolean }>`
     flex: 1 1 0;
     min-width: 0;
     height: 2px;
     margin-top: 0.8125rem;
     align-self: flex-start;
-    background-color: ${palette.grey200};
+    background-color: ${({ $completed }) =>
+      $completed ? palette.blue500 : palette.grey200};
+    transition: background-color 0.2s ease;
     @media (min-width: 901px) {
       min-width: 0.5rem;
       margin-top: 1rem;

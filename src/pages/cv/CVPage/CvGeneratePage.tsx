@@ -368,7 +368,12 @@ const CvGeneratePage = () => {
                     {step.label}
                   </S.StepLabel>
                 </S.StepItemColumn>
-                {idx < STEPS.length - 1 ? <S.StepConnector aria-hidden /> : null}
+                {idx < STEPS.length - 1 ? (
+                  <S.StepConnector
+                    $completed={wizardStep >= idx + 2}
+                    aria-hidden
+                  />
+                ) : null}
               </Fragment>
             );
           })}
