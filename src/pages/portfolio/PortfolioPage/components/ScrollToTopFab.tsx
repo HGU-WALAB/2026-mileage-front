@@ -34,9 +34,9 @@ export default ScrollToTopFab;
 const S = {
   Wrapper: styled('div')<{ $isMobile: boolean }>`
     position: fixed;
-    right: 1rem;
+    right: 2.5rem;
     bottom: ${({ $isMobile }) =>
-      $isMobile ? `calc(${navigationBarHeight}px + 1rem)` : '1.5rem'};
+      $isMobile ? `calc(${navigationBarHeight}px + 4rem)` : '2.5rem'};
     z-index: 20;
   `,
   Fab: styled('button')`
