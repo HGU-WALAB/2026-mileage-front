@@ -1,4 +1,4 @@
-import { Button, Flex, Text } from '@/components';
+import { Button, Dropdown, Flex, Input, Text } from '@/components';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { palette } from '@/styles/palette';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,6 +14,7 @@ import {
   useTheme,
 } from '@mui/material';
 import {
+  Fragment,
   forwardRef,
   useCallback,
   useEffect,
@@ -160,30 +161,53 @@ const TechStackSectionContent = forwardRef<
     [techStackDomains],
   );
 
+  /** Dropdown은 문자열 목록만 지원 — 동명 도메인은 (id)로 구분 */
+  const skillDomainDropdownItems = useMemo(() => {
+    const list = sortedDomains.filter(
+      (d): d is TechStackDomain & { id: number } => d.id != null,
+    );
+    const baseNames = list.map(d => d.name.trim() || '이름 없음');
+    const counts = baseNames.reduce((m, n) => {
+      m.set(n, (m.get(n) ?? 0) + 1);
+      return m;
+    }, new Map<string, number>());
+    return list.map(d => {
+      const base = d.name.trim() || '이름 없음';
+      const label =
+        (counts.get(base) ?? 0) > 1 ? `${base} (${d.id})` : base;
+      return { id: d.id, label };
+    });
+  }, [sortedDomains]);
+
+  const skillDomainSelectedLabel = useMemo(() => {
+    return (
+      skillDomainDropdownItems.find(o => o.id === skillDomainId)?.label ?? ''
+    );
+  }, [skillDomainDropdownItems, skillDomainId]);
+
   const visibleTierIndices = useMemo(
     () => collectVisibleProficiencyTiers(sortedDomains),
     [sortedDomains],
   );
 
   const tableGridColumns = useMemo(() => {
+    /* 도메인 열 너비 고정, 숙련도 열은 태그·헤더에 맞춰 max-content */
+    const domainCol = '10.5rem';
     const tierPart =
       visibleTierIndices.length > 0
-        ? visibleTierIndices.map(() => 'minmax(6rem, 1fr)').join(' ')
+        ? visibleTierIndices.map(() => 'minmax(5.25rem, max-content)').join(' ')
         : '';
     const actionPart = readOnly ? '' : ' minmax(6.75rem, 7.5rem)';
     return tierPart
-      ? `minmax(8.75rem, 10rem) ${tierPart}${actionPart}`
-      : `minmax(8.75rem, 10rem)${actionPart}`;
+      ? `${domainCol} ${tierPart}${actionPart}`
+      : `${domainCol}${actionPart}`;
   }, [visibleTierIndices, readOnly]);
 
-  const tableMinWidthRem = useMemo(() => {
-    const n = visibleTierIndices.length;
-    const core =
-      10 +
-      n * (n > 0 ? 6 : 0) +
-      (readOnly ? 0 : 7.5);
-    return Math.max(18, core);
-  }, [visibleTierIndices.length, readOnly]);
+  /** 단일 그리드에서 행마다 열 너비 통일 (헤더·모든 도메인 행 동일 트랙) */
+  const tableColumnCount = useMemo(
+    () => 1 + visibleTierIndices.length + (readOnly ? 0 : 1),
+    [visibleTierIndices.length, readOnly],
+  );
 
   useEffect(() => {
     if (!addDomainOpen) setDomainNameInput('');
@@ -337,9 +361,9 @@ const TechStackSectionContent = forwardRef<
       <S.Table
         role="table"
         aria-label="기술 스택"
-        style={{ minWidth: `max(100%, ${tableMinWidthRem}rem)` }}
+        style={{ width: '100%', minWidth: '100%' }}
       >
-        <S.GridRow $cols={tableGridColumns} $surface="head" role="row">
+        <S.TableGrid $cols={tableGridColumns} $columnCount={tableColumnCount}>
           <S.GridHeadCell>
             <S.HeadInner>
               <TextFieldsOutlinedIcon
@@ -372,82 +396,75 @@ const TechStackSectionContent = forwardRef<
               </S.HeadInner>
             </S.GridHeadCell>
           )}
-        </S.GridRow>
-        {sortedDomains.map(domain => {
-          const rowBuckets = bucketStacksForVisible(
-            domain.tech_stacks,
-            visibleTierIndices,
-          );
-          return (
-            <S.GridRow
-              key={domain.id}
-              $cols={tableGridColumns}
-              $surface="body"
-              role="row"
-            >
-              <S.GridBodyCell $role="domain">
-                <Flex.Row
-                  align="flex-start"
-                  justify="space-between"
-                  gap="0.5rem"
-                  style={{ width: '100%', minWidth: 0 }}
-                >
-                  <S.DomainText style={{ flex: '1 1 auto', minWidth: 0 }}>
-                    {domain.name}
-                  </S.DomainText>
-                  {!readOnly && domain.id != null && (
-                    <S.IconGhostBtn
-                      type="button"
-                      onClick={() => handleDeleteDomain(domain.id!)}
-                      aria-label={`도메인 ${domain.name} 전체 삭제`}
-                    >
-                      <CloseIcon sx={{ fontSize: 18 }} />
-                    </S.IconGhostBtn>
-                  )}
-                </Flex.Row>
-              </S.GridBodyCell>
-              {rowBuckets.map((entries, colIdx) => (
-                <S.GridBodyCell
-                  $role="tier"
-                  key={`${domain.id}-tier-${visibleTierIndices[colIdx]}`}
-                >
-                  <S.TagCloudColumn>
-                    {entries.map(({ skill, stackIndex }) => (
-                      <NotionTag
-                        key={`${domain.id}-${stackIndex}`}
-                        item={skill}
-                        stackIndex={stackIndex}
-                        readOnly={readOnly}
-                        onRemove={idx => handleRemoveSkill(domain.id!, idx)}
-                        onEdit={
-                          readOnly || domain.id == null
-                            ? undefined
-                            : () =>
-                                openSkillEditDialog(domain.id!, stackIndex)
-                        }
+          {sortedDomains.map(domain => {
+            const rowBuckets = bucketStacksForVisible(
+              domain.tech_stacks,
+              visibleTierIndices,
+            );
+            return (
+              <Fragment key={domain.id}>
+                <S.GridBodyCell $role="domain">
+                  <Flex.Row
+                    align="flex-start"
+                    justify="space-between"
+                    gap="0.5rem"
+                    style={{ width: '100%', minWidth: 0 }}
+                  >
+                    <S.DomainText style={{ flex: '1 1 auto', minWidth: 0 }}>
+                      {domain.name}
+                    </S.DomainText>
+                    {!readOnly && domain.id != null && (
+                      <S.IconGhostBtn
+                        type="button"
+                        onClick={() => handleDeleteDomain(domain.id!)}
+                        aria-label={`도메인 ${domain.name} 전체 삭제`}
+                      >
+                        <CloseIcon sx={{ fontSize: 18 }} />
+                      </S.IconGhostBtn>
+                    )}
+                  </Flex.Row>
+                </S.GridBodyCell>
+                {rowBuckets.map((entries, colIdx) => (
+                  <S.GridBodyCell
+                    $role="tier"
+                    key={`${domain.id}-tier-${visibleTierIndices[colIdx]}`}
+                  >
+                    <S.TagCloudColumn $fitContent>
+                      {entries.map(({ skill, stackIndex }) => (
+                        <NotionTag
+                          key={`${domain.id}-${stackIndex}`}
+                          item={skill}
+                          stackIndex={stackIndex}
+                          readOnly={readOnly}
+                          onRemove={idx => handleRemoveSkill(domain.id!, idx)}
+                          onEdit={
+                            readOnly || domain.id == null
+                              ? undefined
+                              : () =>
+                                  openSkillEditDialog(domain.id!, stackIndex)
+                          }
+                        />
+                      ))}
+                    </S.TagCloudColumn>
+                  </S.GridBodyCell>
+                ))}
+                {!readOnly && (
+                  <S.GridBodyCell $role="skill">
+                    {domain.id != null ? (
+                      <Button
+                        label="기술 추가"
+                        variant="outlined"
+                        color="blue"
+                        size="small"
+                        onClick={() => openSkillDialog(domain.id!)}
                       />
-                    ))}
-                  </S.TagCloudColumn>
-                </S.GridBodyCell>
-              ))}
-              {!readOnly && (
-                <S.GridBodyCell $role="skill">
-                  {domain.id != null ? (
-                    <Button
-                      label="기술 추가"
-                      variant="outlined"
-                      color="blue"
-                      size="small"
-                      onClick={() => openSkillDialog(domain.id!)}
-                    />
-                  ) : null}
-                </S.GridBodyCell>
-              )}
-            </S.GridRow>
-          );
-        })}
-        {!readOnly && (
-          <S.GridRow $cols={tableGridColumns} $surface="foot" role="row">
+                    ) : null}
+                  </S.GridBodyCell>
+                )}
+              </Fragment>
+            );
+          })}
+          {!readOnly && (
             <S.FooterStripe>
               <S.AddDomainFootBtn
                 type="button"
@@ -457,8 +474,8 @@ const TechStackSectionContent = forwardRef<
                 도메인 추가
               </S.AddDomainFootBtn>
             </S.FooterStripe>
-          </S.GridRow>
-        )}
+          )}
+        </S.TableGrid>
       </S.Table>
     </S.TableScroll>
   );
@@ -637,18 +654,27 @@ const TechStackSectionContent = forwardRef<
                   </Text>
                 </Flex.Column>
                 <S.FieldGroup>
-                  <S.FieldLabel>도메인</S.FieldLabel>
-                  <S.FieldInput
+                  <Input
+                    label="도메인"
                     value={domainNameInput}
                     onChange={e => setDomainNameInput(e.target.value)}
                     placeholder="예: 프론트엔드, 백엔드, 인프라, 협업툴"
-                    maxLength={INPUT_MAX_LENGTH.TECH_STACK_DOMAIN}
-                    aria-label="도메인"
+                    inputProps={{
+                      maxLength: INPUT_MAX_LENGTH.TECH_STACK_DOMAIN,
+                      'aria-label': '도메인',
+                    }}
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         handleAddDomainSubmit();
                       }
+                    }}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.variant.default,
+                      },
                     }}
                   />
                 </S.FieldGroup>
@@ -707,43 +733,61 @@ const TechStackSectionContent = forwardRef<
                   </Text>
                 </Flex.Column>
                 <S.FieldGroup>
-                  <S.FieldLabel htmlFor="skill-dialog-domain">도메인</S.FieldLabel>
                   {skillDialogIsEdit ? (
-                    <S.FieldSelect
-                      id="skill-dialog-domain"
-                      value={skillDomainId ?? ''}
-                      onChange={e => {
-                        const v = Number(e.target.value);
-                        setSkillDomainId(Number.isFinite(v) ? v : null);
+                    <Dropdown
+                      label="도메인"
+                      items={skillDomainDropdownItems.map(o => o.label)}
+                      selectedItem={skillDomainSelectedLabel}
+                      setSelectedItem={label => {
+                        const o = skillDomainDropdownItems.find(
+                          x => x.label === label,
+                        );
+                        if (o) setSkillDomainId(o.id);
                       }}
-                      aria-label="도메인 선택"
-                    >
-                      {sortedDomains.map(d =>
-                        d.id != null ? (
-                          <option key={d.id} value={d.id}>
-                            {d.name.trim() || '이름 없음'}
-                          </option>
-                        ) : null,
-                      )}
-                    </S.FieldSelect>
+                      width="100%"
+                      size="medium"
+                    />
                   ) : (
-                    <S.FieldReadOnly>{skillDomainName || '—'}</S.FieldReadOnly>
+                    <Input
+                      label="도메인"
+                      value={skillDomainName || '—'}
+                      fullWidth
+                      size="medium"
+                      inputProps={{
+                        readOnly: true,
+                        id: 'skill-dialog-domain-readonly',
+                        'aria-label': '도메인',
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: theme.palette.variant.default,
+                        },
+                      }}
+                    />
                   )}
                 </S.FieldGroup>
                 <S.FieldGroup>
-                  <S.FieldLabel htmlFor="skill-dialog-name">기술 이름</S.FieldLabel>
-                  <S.FieldInput
-                    id="skill-dialog-name"
+                  <Input
+                    label="기술 이름"
                     value={skillNameInput}
                     onChange={e => setSkillNameInput(e.target.value)}
                     placeholder="예: SpringBoot, Swift, React.js, Git, Notion"
-                    maxLength={INPUT_MAX_LENGTH.TECH_STACK_NAME}
-                    aria-label="기술 이름"
+                    inputProps={{
+                      maxLength: INPUT_MAX_LENGTH.TECH_STACK_NAME,
+                      'aria-label': '기술 이름',
+                    }}
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         handleSkillDialogSubmit();
                       }
+                    }}
+                    fullWidth
+                    size="medium"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.variant.default,
+                      },
                     }}
                   />
                 </S.FieldGroup>
@@ -859,48 +903,34 @@ const S = {
     background-color: ${palette.white};
     box-sizing: border-box;
   `,
-  GridRow: styled('div')<{ $cols: string; $surface: 'head' | 'body' | 'foot' }>`
+  TableGrid: styled('div')<{ $cols: string; $columnCount: number }>`
     display: grid;
     grid-template-columns: ${p => p.$cols};
     width: 100%;
     box-sizing: border-box;
-    ${p =>
-      p.$surface === 'head'
-        ? `
-      background-color: ${palette.grey100};
-      border-bottom: 1px solid ${palette.grey200};
-      align-items: center;
-    `
-        : ''}
-    ${p =>
-      p.$surface === 'body'
-        ? `
-      border-bottom: 1px solid ${palette.grey200};
-      align-items: stretch;
-    `
-        : ''}
+    align-items: stretch;
+    & > *:nth-child(${p => p.$columnCount}n) {
+      border-right: none;
+    }
   `,
   GridHeadCell: styled('div')`
     padding: 10px 10px;
     border-right: 1px solid ${palette.grey200};
+    border-bottom: 1px solid ${palette.grey200};
+    background-color: ${palette.grey100};
     min-width: 0;
     display: flex;
     align-items: center;
     box-sizing: border-box;
-    &:last-child {
-      border-right: none;
-    }
   `,
   GridBodyCell: styled('div')<{ $role: 'domain' | 'tier' | 'skill' }>`
     padding: 12px 10px;
     border-right: 1px solid ${palette.grey200};
+    border-bottom: 1px solid ${palette.grey200};
     min-width: 0;
     display: flex;
     box-sizing: border-box;
     align-items: ${p => (p.$role === 'skill' ? 'center' : 'flex-start')};
-    &:last-child {
-      border-right: none;
-    }
   `,
   FooterStripe: styled('div')`
     grid-column: 1 / -1;
@@ -909,7 +939,6 @@ const S = {
     flex-direction: row;
     align-items: center;
     background-color: ${palette.white};
-    border-top: 1px solid ${palette.grey200};
     box-sizing: border-box;
     width: 100%;
   `,
@@ -931,15 +960,21 @@ const S = {
     font-weight: 700;
     color: ${palette.nearBlack};
     line-height: 1.4;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   `,
-  TagCloudColumn: styled('div')`
+  TagCloudColumn: styled('div')<{ $fitContent?: boolean }>`
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
     align-content: flex-start;
-    width: 100%;
+    box-sizing: border-box;
+    width: ${p => (p.$fitContent ? 'max-content' : '100%')};
+    max-width: ${p => (p.$fitContent ? '100%' : 'none')};
   `,
   NotionTag: styled('div')<{ $readOnly?: boolean }>`
     display: inline-flex;
@@ -1107,45 +1142,6 @@ const S = {
     font-size: 0.8125rem;
     font-weight: 600;
     color: ${palette.grey600};
-  `,
-  FieldInput: styled('input')`
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid ${palette.grey200};
-    font-size: 0.9375rem;
-    outline: none;
-    box-sizing: border-box;
-    &:focus {
-      border-color: ${palette.blue400};
-      box-shadow: 0 0 0 2px ${palette.blue300};
-    }
-  `,
-  FieldReadOnly: styled('div')`
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid ${palette.grey200};
-    font-size: 0.9375rem;
-    color: ${palette.nearBlack};
-    background-color: ${palette.grey100};
-    box-sizing: border-box;
-  `,
-  FieldSelect: styled('select')`
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid ${palette.grey200};
-    font-size: 0.9375rem;
-    color: ${palette.nearBlack};
-    background-color: ${palette.white};
-    outline: none;
-    box-sizing: border-box;
-    cursor: pointer;
-    &:focus {
-      border-color: ${palette.blue400};
-      box-shadow: 0 0 0 2px ${palette.blue300};
-    }
   `,
   TierChoice: styled('button')<{ $selected: boolean }>`
     display: inline-flex;
