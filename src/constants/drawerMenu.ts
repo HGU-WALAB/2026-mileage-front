@@ -6,8 +6,6 @@ import {
   EditIcon,
   MileageListBlueIcon,
   MileageListIcon,
-  ScholarshipBlueIcon,
-  ScholarshipIcon,
   UserBlueIcon,
   UserIcon,
 } from '@/assets';
@@ -36,6 +34,8 @@ export type DrawerMenuLink = {
   route: string;
   icon: DrawerIcon;
   selectedIcon: DrawerIcon;
+  /** 없으면 `pathname === route`. 하위 경로 포함 시 지정 */
+  isNavActive?: (pathname: string) => boolean;
 };
 
 /** 접는 그룹 — 서브는 `children`만 수정 */
@@ -67,36 +67,16 @@ export const DRAWER_MENU_ENTRIES: DrawerMenuEntry[] = [
     selectedIcon: DashboardBlueIcon,
   },
   {
-    kind: 'group',
-    id: 'mileage-management',
-    text: '마일리지 관리',
+    kind: 'link',
+    id: 'mileage-list',
+    text: '마일리지 조회',
     shortText: '마일리지',
+    route: ROUTE_PATH.mileageList,
     icon: MileageListIcon,
     selectedIcon: MileageListBlueIcon,
-    isGroupActive: pathname =>
-      pathname.startsWith('/mileage') || pathname.startsWith('/scholarship'),
-    children: [
-      {
-        id: 'mileage-list',
-        text: '마일리지 조회',
-        shortText: '마일리지',
-        route: ROUTE_PATH.mileageList,
-        icon: MileageListIcon,
-        selectedIcon: MileageListBlueIcon,
-        isNavActive: pathname =>
-          pathname === ROUTE_PATH.mileageList ||
-          pathname.startsWith(`${ROUTE_PATH.mileageList}/`),
-      },
-      {
-        id: 'scholarship-apply',
-        text: '장학금 신청',
-        shortText: '장학금',
-        route: ROUTE_PATH.scholarship,
-        icon: ScholarshipIcon,
-        selectedIcon: ScholarshipBlueIcon,
-        isNavActive: pathname => pathname.startsWith('/scholarship'),
-      },
-    ],
+    isNavActive: pathname =>
+      pathname === ROUTE_PATH.mileageList ||
+      pathname.startsWith(`${ROUTE_PATH.mileageList}/`),
   },
   {
     kind: 'group',
@@ -158,7 +138,10 @@ const routeNavActiveRegistry = (() => {
         map.set(child.route, child.isNavActive);
       });
     } else {
-      map.set(entry.route, pathname => pathname === entry.route);
+      map.set(
+        entry.route,
+        entry.isNavActive ?? (pathname => pathname === entry.route),
+      );
     }
   }
   return map;
@@ -203,7 +186,8 @@ export function getMobilePrimaryNavItems(): MobilePrimaryNavItem[] {
         route: entry.route,
         icon: entry.icon,
         selectedIcon: entry.selectedIcon,
-        isActive: pathname => pathname === entry.route,
+        isActive:
+          entry.isNavActive ?? (pathname => pathname === entry.route),
       });
     }
   }

@@ -200,7 +200,10 @@ const MenuSection = () => {
           );
         }
 
-        const leafSelected = location.pathname === entry.route;
+        const leafSelected = isRouteActiveForNav(
+          location.pathname,
+          entry.route,
+        );
 
         return (
           <ListItem
