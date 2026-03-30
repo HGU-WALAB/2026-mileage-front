@@ -32,14 +32,9 @@ import CvGenerateStep2 from './components/CvGenerateStep2';
 import CvGenerateStep3 from './components/CvGenerateStep3';
 import CvGenerateStep4 from './components/CvGenerateStep4';
 
-const STEPS = [
-  { n: 1, label: '공고 입력' },
-  { n: 2, label: '항목 선택' },
-  { n: 3, label: '프롬프트 생성' },
-  { n: 4, label: '결과 저장' },
-] as const;
-
 type WizardStep = 1 | 2 | 3 | 4;
+
+type StepDef = { readonly n: 1 | 2 | 3 | 4; readonly label: string };
 
 type StepVisualState = 'completed' | 'active' | 'upcoming';
 
@@ -113,6 +108,19 @@ const CvGeneratePage = () => {
     typeof preparingEmployment === 'boolean'
       ? preparingEmployment
       : defaultPreparingEmployment;
+
+  const wizardSteps = useMemo<StepDef[]>(
+    () => [
+      {
+        n: 1,
+        label: employmentPrepChecked ? '공고 입력' : '진로 관심 분야',
+      },
+      { n: 2, label: '항목 선택' },
+      { n: 3, label: '프롬프트 생성' },
+      { n: 4, label: '결과 저장' },
+    ],
+    [employmentPrepChecked],
+  );
 
   // 마운트 시 불완전한 저장 상태 보정
   useEffect(() => {
@@ -334,7 +342,9 @@ const CvGeneratePage = () => {
             color: theme.palette.grey[600],
           }}
         >
-          채용 공고를 입력한 뒤 포함할 활동을 고르고, 맞춤 프롬프트를 만들어 히스토리로 관리하세요
+          {employmentPrepChecked
+            ? '채용 공고를 입력한 뒤 포함할 활동을 고르고, 맞춤 프롬프트를 만들어 히스토리로 관리하세요'
+            : '진로 관심 분야를 입력한 뒤 포함할 활동을 고르고, 맞춤 프롬프트를 만들어 히스토리로 관리하세요'}
         </Text>
       </Flex.Column>
 
@@ -347,7 +357,7 @@ const CvGeneratePage = () => {
         }
       >
         <S.StepperRow role="list" aria-label="진행 단계">
-          {STEPS.map((step, idx) => {
+          {wizardSteps.map((step, idx) => {
             const vs = stepVisual(step.n, wizardStep);
             return (
               <Fragment key={step.n}>
@@ -359,7 +369,7 @@ const CvGeneratePage = () => {
                     aria-current={vs === 'active' ? 'step' : undefined}
                   >
                     {vs === 'completed' ? (
-                      <CheckIcon sx={{ fontSize: 14 }} aria-hidden />
+                      <CheckIcon sx={{ fontSize: 15 }} aria-hidden />
                     ) : (
                       step.n
                     )}
@@ -368,7 +378,7 @@ const CvGeneratePage = () => {
                     {step.label}
                   </S.StepLabel>
                 </S.StepItemColumn>
-                {idx < STEPS.length - 1 ? (
+                {idx < wizardSteps.length - 1 ? (
                   <S.StepConnector
                     $completed={wizardStep >= idx + 2}
                     aria-hidden
@@ -441,6 +451,7 @@ const CvGeneratePage = () => {
                 onPrev={handlePrevFromStep2}
                 onBuildPrompt={handleBuildPrompt}
                 buildPromptPending={buildPromptMutation.isPending}
+                preparingEmployment={employmentPrepChecked}
               />
             ) : null}
 

@@ -10,7 +10,9 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { Checkbox, useTheme } from '@mui/material';
 import {
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   type FunctionComponent,
   type ReactNode,
   type SVGProps,
@@ -53,6 +55,8 @@ export interface CvGenerateStep1Props {
   onPrev: () => void;
   onBuildPrompt: () => void;
   buildPromptPending: boolean;
+  /** 이전 단계(공고/진로 입력) 문구용 */
+  preparingEmployment?: boolean;
 }
 
 const CvGenerateStep1 = ({
@@ -73,6 +77,7 @@ const CvGenerateStep1 = ({
   onPrev,
   onBuildPrompt,
   buildPromptPending,
+  preparingEmployment = true,
 }: CvGenerateStep1Props) => {
   const theme = useTheme();
   const visibleProfileLinks = (profileLinks ?? []).filter(
@@ -149,6 +154,52 @@ const CvGenerateStep1 = ({
     () => activitySelectableIds.some(id => selectedActivityIds.includes(id)),
     [activitySelectableIds, selectedActivityIds],
   );
+
+  const didInitAllMileageRef = useRef(false);
+  const didInitAllRepoRef = useRef(false);
+  const didInitAllActivityRef = useRef(false);
+
+  // 섹션 디폴트: "전체 선택"을 기본값으로 노출
+  // - 사용자가 직접 해제해서 selected*Ids가 비어있을 수도 있으므로,
+  //   섹션별로 "자동 전체선택"은 한 번만 실행합니다.
+  useEffect(() => {
+    if (
+      !didInitAllMileageRef.current &&
+      selectedMileageIds.length === 0 &&
+      mileageSelectableIds.length > 0
+    ) {
+      onSelectedMileageIdsChange(() => mileageSelectableIds);
+      didInitAllMileageRef.current = true;
+    }
+
+    if (
+      !didInitAllRepoRef.current &&
+      selectedRepoIds.length === 0 &&
+      repoSelectableIds.length > 0
+    ) {
+      onSelectedRepoIdsChange(() => repoSelectableIds);
+      didInitAllRepoRef.current = true;
+    }
+
+    if (
+      !didInitAllActivityRef.current &&
+      selectedActivityIds.length === 0 &&
+      activitySelectableIds.length > 0
+    ) {
+      onSelectedActivityIdsChange(() => activitySelectableIds);
+      didInitAllActivityRef.current = true;
+    }
+  }, [
+    activitySelectableIds,
+    mileageSelectableIds,
+    onSelectedActivityIdsChange,
+    onSelectedMileageIdsChange,
+    onSelectedRepoIdsChange,
+    repoSelectableIds,
+    selectedActivityIds.length,
+    selectedMileageIds.length,
+    selectedRepoIds.length,
+  ]);
 
   const handleActivitySelectAll = useCallback(() => {
     onSelectedActivityIdsChange(prev =>
@@ -368,7 +419,11 @@ const CvGenerateStep1 = ({
           type="button"
           variant="outlined"
           onClick={onPrev}
-          aria-label="공고 입력 단계로 돌아가기"
+          aria-label={
+            preparingEmployment
+              ? '공고 입력 단계로 돌아가기'
+              : '진로 관심 분야 단계로 돌아가기'
+          }
           startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
         >
           이전 단계

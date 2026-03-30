@@ -6,7 +6,12 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
-import { Checkbox, TextField, useTheme } from '@mui/material';
+import {
+  FormControlLabel,
+  Switch,
+  TextField,
+  useTheme,
+} from '@mui/material';
 import { type FunctionComponent, type SVGProps } from 'react';
 
 import { CV_TARGET_POSITION_PRESETS } from '../../constants/cvTargetPositionOptions';
@@ -72,7 +77,7 @@ const CvGenerateStep2 = ({
     : '관심있는 기업 정보 (선택)';
   const jobHelperText = preparingEmployment
     ? '회사명, 공고 제목, 우대사항, 자격요건 등 — 비워도 진행할 수 있습니다.'
-    : '관심 있는 회사·산업, 채용 공고 요약 등 — 비워도 진행할 수 있습니다.';
+    : '관심 있는 회사·산업, 진로와 관련된 메모 등 — 비워도 진행할 수 있습니다.';
   const introText = preparingEmployment
     ? '지원 직무는 필수입니다. 공고 정보·추가 요청사항은 선택입니다.'
     : '관심 직무는 필수입니다. 기업 정보·추가 요청사항은 선택입니다.';
@@ -95,54 +100,63 @@ const CvGenerateStep2 = ({
               color={theme.palette.text.primary}
               style={{ flex: '1 1 12rem', minWidth: 0 }}
             >
-              {preparingEmployment ? '채용 공고를 입력하세요' : '진로 관심 분야'}
+              {preparingEmployment
+                ? '채용 공고를 입력하세요'
+                : '진로 관심 분야를 입력하세요'}
             </Heading>
-            <label
-              htmlFor="cv-preparing-employment"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                flexShrink: 0,
-                cursor: 'pointer',
-                margin: 0,
-                userSelect: 'none',
-              }}
-            >
-              <Checkbox
-                id="cv-preparing-employment"
-                checked={preparingEmployment}
-                onChange={e => onPreparingEmploymentChange(e.target.checked)}
-                size="small"
+            <S.EmploymentToggleBox>
+              <FormControlLabel
+                control={
+                  <Switch
+                    id="cv-preparing-employment"
+                    checked={preparingEmployment}
+                    onChange={e => onPreparingEmploymentChange(e.target.checked)}
+                    size="small"
+                    sx={{
+                      ml: 0.25,
+                      mr: 0,
+                      '& .MuiSwitch-thumb': {
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                      },
+                      '& .MuiSwitch-switchBase.Mui-checked': {
+                        color: palette.white,
+                        '& + .MuiSwitch-track': {
+                          backgroundColor: palette.blue500,
+                          opacity: 1,
+                        },
+                      },
+                      '& .MuiSwitch-track': {
+                        backgroundColor: palette.grey300,
+                        opacity: 1,
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Text
+                    as="span"
+                    margin="0"
+                    style={{
+                      ...theme.typography.body2,
+                      color: theme.palette.text.secondary,
+                      fontWeight: 600,
+                      lineHeight: 1.5,
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    취업을 준비중입니다.
+                  </Text>
+                }
+                labelPlacement="start"
                 sx={{
-                  padding: '4px',
+                  m: 0,
                   flexShrink: 0,
-                  color: palette.grey500,
-                  '&.Mui-checked': {
-                    color: palette.blue500,
-                  },
-                  '&:hover': {
-                    backgroundColor: 'rgba(91, 140, 241, 0.06)',
-                  },
-                }}
-                inputProps={{
-                  'aria-labelledby': 'cv-preparing-employment-label',
+                  gap: 0.25,
+                  alignItems: 'center',
+                  '& .MuiFormControlLabel-label': { mr: 0 },
                 }}
               />
-              <Text
-                id="cv-preparing-employment-label"
-                as="span"
-                margin="0"
-                style={{
-                  ...theme.typography.body2,
-                  color: palette.grey600,
-                  fontWeight: 500,
-                  lineHeight: 1.43,
-                }}
-              >
-                취업을 준비중입니다.
-              </Text>
-            </label>
+            </S.EmploymentToggleBox>
           </Flex.Row>
           <Text
             margin="0"
@@ -244,7 +258,11 @@ const CvGenerateStep2 = ({
             type="button"
             variant="outlined"
             onClick={onPrev}
-            aria-label="공고 입력 단계로 돌아가기"
+            aria-label={
+              preparingEmployment
+                ? '공고 입력 단계로 돌아가기'
+                : '진로 관심 분야 단계로 돌아가기'
+            }
             startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
           >
             이전 단계

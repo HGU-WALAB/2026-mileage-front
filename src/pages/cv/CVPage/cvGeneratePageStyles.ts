@@ -49,22 +49,23 @@ export const CvGeneratePageS = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '2rem',
-        height: '2rem',
+        width: $active ? '2.375rem' : '2rem',
+        height: $active ? '2.375rem' : '2rem',
         borderRadius: '50%',
         ...theme.typography.body2,
-        fontSize: '0.8125rem',
+        fontSize: $active ? '0.9375rem' : '0.8125rem',
         fontWeight: 700,
         flexShrink: 0,
         boxSizing: 'border-box',
-        border: `2px solid ${filled ? palette.blue500 : palette.grey300}`,
+        border: `${$active ? '2.5px' : '2px'} solid ${filled ? palette.blue500 : palette.grey300}`,
         backgroundColor: filled ? palette.blue500 : palette.white,
         color: filled ? palette.white : theme.palette.grey[600],
+        boxShadow: $active ? `0 2px 8px ${palette.blue300}` : 'none',
         ...($muted && !filled ? { opacity: 0.85 } : {}),
         '@media (max-width: 900px)': {
-          width: '1.625rem',
-          height: '1.625rem',
-          fontSize: '0.6875rem',
+          width: $active ? '1.875rem' : '1.625rem',
+          height: $active ? '1.875rem' : '1.625rem',
+          fontSize: $active ? '0.75rem' : '0.6875rem',
         },
       };
     },
@@ -73,7 +74,8 @@ export const CvGeneratePageS = {
     shouldForwardProp: p => p !== '$active' && p !== '$completed',
   })<{ $active?: boolean; $completed?: boolean }>(({ theme, $active, $completed }) => ({
     ...theme.typography.caption,
-    fontWeight: $active ? 700 : $completed ? 600 : 500,
+    fontWeight: $active ? 800 : $completed ? 600 : 500,
+    fontSize: $active ? '0.8125rem' : undefined,
     color: $active || $completed ? palette.blue600 : theme.palette.text.secondary,
     textAlign: 'center',
     lineHeight: 1.25,
@@ -81,10 +83,31 @@ export const CvGeneratePageS = {
     width: '100%',
     maxWidth: '100%',
     '@media (max-width: 900px)': {
-      fontSize: '0.625rem',
+      fontSize: $active ? '0.6875rem' : '0.625rem',
       lineHeight: 1.2,
     },
   })),
+  EmploymentToggleBox: styled('div')`
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    border: 1.5px solid ${palette.blue300};
+    background-color: rgba(91, 140, 241, 0.06);
+    box-sizing: border-box;
+    flex-shrink: 0;
+
+    &:hover {
+      border-color: ${palette.blue400};
+      background-color: rgba(91, 140, 241, 0.09);
+    }
+
+    /* 내부 FormControlLabel이 기본 margin을 만들어 레이아웃이 흔들리는 것 방지 */
+    & .MuiFormControlLabel-root {
+      margin: 0;
+    }
+  `,
   StepConnector: styled('div', {
     shouldForwardProp: p => p !== '$completed',
   })<{ $completed?: boolean }>`
