@@ -84,11 +84,13 @@ function NotionTag({
   stackIndex,
   readOnly,
   onRemove,
+  onEdit,
 }: {
   item: TechStackSkill;
   stackIndex: number;
   readOnly: boolean;
   onRemove: (stackIndex: number) => void;
+  onEdit?: () => void;
 }) {
   const tier = levelToProficiencyTier(item.level);
   const pair = getProficiencyTierTagPair(tier);
@@ -104,12 +106,25 @@ function NotionTag({
       }}
       title={tierLabel}
     >
-      <S.TagLabel>{item.name}</S.TagLabel>
+      {!readOnly && onEdit ? (
+        <S.TagLabelButton
+          type="button"
+          onClick={onEdit}
+          aria-label={`${item.name} 수정`}
+        >
+          <S.TagLabel>{item.name}</S.TagLabel>
+        </S.TagLabelButton>
+      ) : (
+        <S.TagLabel>{item.name}</S.TagLabel>
+      )}
       {!readOnly && (
         <S.TagRemove
           type="button"
           $fg={pair.fg}
-          onClick={() => onRemove(stackIndex)}
+          onClick={e => {
+            e.stopPropagation();
+            onRemove(stackIndex);
+          }}
           aria-label={`${item.name} 삭제`}
         >
           <CloseIcon sx={{ fontSize: 13 }} />
@@ -134,6 +149,11 @@ const TechStackSectionContent = forwardRef<
   const [skillDomainId, setSkillDomainId] = useState<number | null>(null);
   const [skillNameInput, setSkillNameInput] = useState('');
   const [skillTier, setSkillTier] = useState<ProficiencyTierIndex>(2);
+  /** null이면 추가, 있으면 해당 위치 기술 수정 */
+  const [skillEditOrigin, setSkillEditOrigin] = useState<{
+    domainId: number;
+    stackIndex: number;
+  } | null>(null);
 
   const sortedDomains = useMemo(
     () => sortDomains(techStackDomains),
@@ -174,14 +194,33 @@ const TechStackSectionContent = forwardRef<
       setSkillDomainId(null);
       setSkillNameInput('');
       setSkillTier(2);
+      setSkillEditOrigin(null);
     }
   }, [addSkillOpen]);
 
   const openSkillDialog = useCallback((domainId: number) => {
     if (readOnly) return;
+    setSkillEditOrigin(null);
     setSkillDomainId(domainId);
+    setSkillNameInput('');
+    setSkillTier(2);
     setAddSkillOpen(true);
   }, [readOnly]);
+
+  const openSkillEditDialog = useCallback(
+    (domainId: number, stackIndex: number) => {
+      if (readOnly) return;
+      const d = techStackDomains.find(x => x.id === domainId);
+      const skill = d?.tech_stacks[stackIndex];
+      if (!skill) return;
+      setSkillEditOrigin({ domainId, stackIndex });
+      setSkillDomainId(domainId);
+      setSkillNameInput(skill.name);
+      setSkillTier(levelToProficiencyTier(skill.level));
+      setAddSkillOpen(true);
+    },
+    [readOnly, techStackDomains],
+  );
 
   const handleRemoveSkill = useCallback(
     (domainId: number, stackIndex: number) => {
@@ -224,25 +263,61 @@ const TechStackSectionContent = forwardRef<
     setAddDomainOpen(false);
   }, [domainNameInput, setTechStackDomains]);
 
-  const handleAddSkillSubmit = useCallback(() => {
+  const handleSkillDialogSubmit = useCallback(() => {
     const name = skillNameInput.trim();
     if (name === '' || skillDomainId == null) return;
     const level = tierToRepresentativeLevel(skillTier);
-    setTechStackDomains(prev =>
-      prev.map(d =>
-        d.id === skillDomainId
-          ? { ...d, tech_stacks: [...d.tech_stacks, { name, level }] }
-          : d,
-      ),
-    );
+
+    if (skillEditOrigin == null) {
+      setTechStackDomains(prev =>
+        prev.map(d =>
+          d.id === skillDomainId
+            ? { ...d, tech_stacks: [...d.tech_stacks, { name, level }] }
+            : d,
+        ),
+      );
+    } else {
+      const { domainId: originDomainId, stackIndex } = skillEditOrigin;
+      setTechStackDomains(prev =>
+        prev.map(d => {
+          if (originDomainId === skillDomainId) {
+            if (d.id !== originDomainId) return d;
+            const stacks = [...d.tech_stacks];
+            stacks[stackIndex] = { name, level };
+            return { ...d, tech_stacks: stacks };
+          }
+          if (d.id === originDomainId) {
+            return {
+              ...d,
+              tech_stacks: d.tech_stacks.filter((_, i) => i !== stackIndex),
+            };
+          }
+          if (d.id === skillDomainId) {
+            return {
+              ...d,
+              tech_stacks: [...d.tech_stacks, { name, level }],
+            };
+          }
+          return d;
+        }),
+      );
+    }
     setAddSkillOpen(false);
-  }, [skillDomainId, skillNameInput, skillTier, setTechStackDomains]);
+  }, [
+    skillDomainId,
+    skillEditOrigin,
+    skillNameInput,
+    skillTier,
+    setTechStackDomains,
+  ]);
 
   /** 표 칼럼은 데이터 있는 단계만 쓰더라도, 색상 기준 범례는 5단계 전부 표시 */
   const levelLegend = useMemo(() => getProficiencyTierLegend(), []);
 
   const skillDomainName =
     sortedDomains.find(d => d.id === skillDomainId)?.name?.trim() ?? '';
+
+  const skillDialogIsEdit = skillEditOrigin != null;
 
   useImperativeHandle(
     ref,
@@ -344,6 +419,12 @@ const TechStackSectionContent = forwardRef<
                         stackIndex={stackIndex}
                         readOnly={readOnly}
                         onRemove={idx => handleRemoveSkill(domain.id!, idx)}
+                        onEdit={
+                          readOnly || domain.id == null
+                            ? undefined
+                            : () =>
+                                openSkillEditDialog(domain.id!, stackIndex)
+                        }
                       />
                     ))}
                   </S.TagCloudColumn>
@@ -478,6 +559,15 @@ const TechStackSectionContent = forwardRef<
                             onRemove={idx =>
                               handleRemoveSkill(domain.id!, idx)
                             }
+                            onEdit={
+                              readOnly || domain.id == null
+                                ? undefined
+                                : () =>
+                                    openSkillEditDialog(
+                                      domain.id!,
+                                      stackIndex,
+                                    )
+                            }
                           />
                         ))}
                       </S.TagCloudColumn>
@@ -602,7 +692,7 @@ const TechStackSectionContent = forwardRef<
                       letterSpacing: '-0.02em',
                     }}
                   >
-                    기술 항목 추가
+                    {skillDialogIsEdit ? '기술 항목 수정' : '기술 항목 추가'}
                   </Text>
                   <Text
                     style={{
@@ -611,16 +701,39 @@ const TechStackSectionContent = forwardRef<
                       margin: 0,
                     }}
                   >
-                    기술 이름과 숙련도 단계(Beginner~Expert)를 선택합니다.
+                    {skillDialogIsEdit
+                      ? '이름·도메인·숙련도 단계를 바꿀 수 있습니다.'
+                      : '기술 이름과 숙련도 단계(Beginner~Expert)를 선택합니다.'}
                   </Text>
                 </Flex.Column>
                 <S.FieldGroup>
-                  <S.FieldLabel>도메인</S.FieldLabel>
-                  <S.FieldReadOnly>{skillDomainName || '—'}</S.FieldReadOnly>
+                  <S.FieldLabel htmlFor="skill-dialog-domain">도메인</S.FieldLabel>
+                  {skillDialogIsEdit ? (
+                    <S.FieldSelect
+                      id="skill-dialog-domain"
+                      value={skillDomainId ?? ''}
+                      onChange={e => {
+                        const v = Number(e.target.value);
+                        setSkillDomainId(Number.isFinite(v) ? v : null);
+                      }}
+                      aria-label="도메인 선택"
+                    >
+                      {sortedDomains.map(d =>
+                        d.id != null ? (
+                          <option key={d.id} value={d.id}>
+                            {d.name.trim() || '이름 없음'}
+                          </option>
+                        ) : null,
+                      )}
+                    </S.FieldSelect>
+                  ) : (
+                    <S.FieldReadOnly>{skillDomainName || '—'}</S.FieldReadOnly>
+                  )}
                 </S.FieldGroup>
                 <S.FieldGroup>
-                  <S.FieldLabel>기술 이름</S.FieldLabel>
+                  <S.FieldLabel htmlFor="skill-dialog-name">기술 이름</S.FieldLabel>
                   <S.FieldInput
+                    id="skill-dialog-name"
                     value={skillNameInput}
                     onChange={e => setSkillNameInput(e.target.value)}
                     placeholder="예: SpringBoot, Swift, React.js, Git, Notion"
@@ -629,7 +742,7 @@ const TechStackSectionContent = forwardRef<
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        handleAddSkillSubmit();
+                        handleSkillDialogSubmit();
                       }
                     }}
                   />
@@ -671,11 +784,11 @@ const TechStackSectionContent = forwardRef<
                 onClick={() => setAddSkillOpen(false)}
               />
               <Button
-                label="추가"
+                label={skillDialogIsEdit ? '저장' : '추가'}
                 variant="contained"
                 color="blue"
                 size="medium"
-                onClick={handleAddSkillSubmit}
+                onClick={handleSkillDialogSubmit}
               />
             </DialogActions>
           </Dialog>
@@ -850,6 +963,31 @@ const S = {
     text-overflow: ellipsis;
     white-space: nowrap;
   `,
+  TagLabelButton: styled('button')`
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    &:focus-visible {
+      outline: 2px solid ${palette.blue400};
+      outline-offset: 1px;
+    }
+  `,
   TagRemove: styled('button')<{ $fg: string }>`
     display: flex;
     align-items: center;
@@ -992,6 +1130,22 @@ const S = {
     color: ${palette.nearBlack};
     background-color: ${palette.grey100};
     box-sizing: border-box;
+  `,
+  FieldSelect: styled('select')`
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid ${palette.grey200};
+    font-size: 0.9375rem;
+    color: ${palette.nearBlack};
+    background-color: ${palette.white};
+    outline: none;
+    box-sizing: border-box;
+    cursor: pointer;
+    &:focus {
+      border-color: ${palette.blue400};
+      box-shadow: 0 0 0 2px ${palette.blue300};
+    }
   `,
   TierChoice: styled('button')<{ $selected: boolean }>`
     display: inline-flex;
