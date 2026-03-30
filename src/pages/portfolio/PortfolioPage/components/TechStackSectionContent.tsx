@@ -190,23 +190,23 @@ const TechStackSectionContent = forwardRef<
     [sortedDomains],
   );
 
+  /** 데이터에 숙련도 열이 없을 때도 중간 1fr 트랙을 두어 도메인·액션만으로 쪼그라들지 않게 함 */
+  const hasTierColumns = visibleTierIndices.length > 0;
+  const tierTrackCount = hasTierColumns ? visibleTierIndices.length : 1;
+
   const tableGridColumns = useMemo(() => {
-    /* 도메인·액션 열은 최소 너비, 숙련도 열은 1fr로 행 전체 너비를 채움 */
     const domainCol = 'minmax(10.5rem, 12rem)';
-    const tierPart =
-      visibleTierIndices.length > 0
-        ? visibleTierIndices.map(() => 'minmax(5.25rem, 1fr)').join(' ')
-        : '';
+    const tierTracks = hasTierColumns
+      ? visibleTierIndices.map(() => 'minmax(5.25rem, 1fr)').join(' ')
+      : 'minmax(0, 1fr)';
     const actionPart = readOnly ? '' : ' minmax(6.75rem, 7.5rem)';
-    return tierPart
-      ? `${domainCol} ${tierPart}${actionPart}`
-      : `${domainCol}${actionPart}`;
-  }, [visibleTierIndices, readOnly]);
+    return `${domainCol} ${tierTracks}${actionPart}`;
+  }, [hasTierColumns, visibleTierIndices, readOnly]);
 
   /** 단일 그리드에서 행마다 열 너비 통일 (헤더·모든 도메인 행 동일 트랙) */
   const tableColumnCount = useMemo(
-    () => 1 + visibleTierIndices.length + (readOnly ? 0 : 1),
-    [visibleTierIndices.length, readOnly],
+    () => 1 + tierTrackCount + (readOnly ? 0 : 1),
+    [tierTrackCount, readOnly],
   );
 
   useEffect(() => {
@@ -372,18 +372,31 @@ const TechStackSectionContent = forwardRef<
               <S.HeadLabel style={{ color: headerLabelColor }}>도메인</S.HeadLabel>
             </S.HeadInner>
           </S.GridHeadCell>
-          {visibleTierIndices.map(tierIdx => (
-            <S.GridHeadCell key={tierIdx}>
+          {hasTierColumns ? (
+            visibleTierIndices.map(tierIdx => (
+              <S.GridHeadCell key={tierIdx}>
+                <S.HeadInner>
+                  <ViewWeekOutlinedIcon
+                    sx={{ fontSize: 17, color: headerIconColor, flexShrink: 0 }}
+                  />
+                  <S.HeadLabel $tier style={{ color: headerLabelColor }}>
+                    {PROFICIENCY_TIER_LABELS[tierIdx]}
+                  </S.HeadLabel>
+                </S.HeadInner>
+              </S.GridHeadCell>
+            ))
+          ) : (
+            <S.GridHeadCell key="tier-empty-head">
               <S.HeadInner>
                 <ViewWeekOutlinedIcon
                   sx={{ fontSize: 17, color: headerIconColor, flexShrink: 0 }}
                 />
                 <S.HeadLabel $tier style={{ color: headerLabelColor }}>
-                  {PROFICIENCY_TIER_LABELS[tierIdx]}
+                  숙련도
                 </S.HeadLabel>
               </S.HeadInner>
             </S.GridHeadCell>
-          ))}
+          )}
           {!readOnly && (
             <S.GridHeadCell>
               <S.HeadInner>
@@ -397,10 +410,9 @@ const TechStackSectionContent = forwardRef<
             </S.GridHeadCell>
           )}
           {sortedDomains.map(domain => {
-            const rowBuckets = bucketStacksForVisible(
-              domain.tech_stacks,
-              visibleTierIndices,
-            );
+            const rowBuckets = hasTierColumns
+              ? bucketStacksForVisible(domain.tech_stacks, visibleTierIndices)
+              : [[]] as ReturnType<typeof bucketStacksForVisible>;
             return (
               <Fragment key={domain.id}>
                 <S.GridBodyCell $role="domain">
@@ -427,25 +439,38 @@ const TechStackSectionContent = forwardRef<
                 {rowBuckets.map((entries, colIdx) => (
                   <S.GridBodyCell
                     $role="tier"
-                    key={`${domain.id}-tier-${visibleTierIndices[colIdx]}`}
+                    key={
+                      hasTierColumns
+                        ? `${domain.id}-tier-${visibleTierIndices[colIdx]}`
+                        : `${domain.id}-tier-empty`
+                    }
                   >
-                    <S.TagCloudColumn>
-                      {entries.map(({ skill, stackIndex }) => (
-                        <NotionTag
-                          key={`${domain.id}-${stackIndex}`}
-                          item={skill}
-                          stackIndex={stackIndex}
-                          readOnly={readOnly}
-                          onRemove={idx => handleRemoveSkill(domain.id!, idx)}
-                          onEdit={
-                            readOnly || domain.id == null
-                              ? undefined
-                              : () =>
-                                  openSkillEditDialog(domain.id!, stackIndex)
-                          }
-                        />
-                      ))}
-                    </S.TagCloudColumn>
+                    {entries.length === 0 && !readOnly && !hasTierColumns ? (
+                      <S.EmptyTierCellHint style={{ color: headerLabelColor }}>
+                        기술 추가 시 단계별 열이 나뉩니다
+                      </S.EmptyTierCellHint>
+                    ) : (
+                      <S.TagCloudColumn>
+                        {entries.map(({ skill, stackIndex }) => (
+                          <NotionTag
+                            key={`${domain.id}-${stackIndex}`}
+                            item={skill}
+                            stackIndex={stackIndex}
+                            readOnly={readOnly}
+                            onRemove={idx => handleRemoveSkill(domain.id!, idx)}
+                            onEdit={
+                              readOnly || domain.id == null
+                                ? undefined
+                                : () =>
+                                    openSkillEditDialog(
+                                      domain.id!,
+                                      stackIndex,
+                                    )
+                            }
+                          />
+                        ))}
+                      </S.TagCloudColumn>
+                    )}
                   </S.GridBodyCell>
                 ))}
                 {!readOnly && (
@@ -975,6 +1000,15 @@ const S = {
     box-sizing: border-box;
     width: ${p => (p.$fitContent ? 'max-content' : '100%')};
     max-width: ${p => (p.$fitContent ? '100%' : 'none')};
+  `,
+  EmptyTierCellHint: styled('span')`
+    display: block;
+    width: 100%;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
   `,
   NotionTag: styled('div')<{ $readOnly?: boolean }>`
     display: inline-flex;
