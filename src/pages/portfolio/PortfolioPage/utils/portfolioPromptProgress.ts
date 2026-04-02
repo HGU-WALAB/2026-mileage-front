@@ -4,10 +4,8 @@ import type { TechStackDomain } from '../../apis/portfolio';
 
 import {
   usePortfolioContext,
-  type ActivityItem,
-  type MileageItem,
-  type RepoItem,
 } from '../context/PortfolioContext';
+import type { ActivityItem, MileageItem, RepoItem } from '../../types/portfolioItems';
 
 /** 한 줄 소개 만점 기준 글자 수 */
 export const PROMPT_PROGRESS_INTRO_CHARS_FULL = 100;

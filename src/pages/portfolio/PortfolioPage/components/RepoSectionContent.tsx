@@ -12,10 +12,10 @@ import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { patchRepository } from '../../apis/repositories';
 import { formatDateRange } from '../../utils/date';
 import {
-  type RepoItem,
   portfolioRepoToRepoItem,
   usePortfolioContext,
 } from '../context/PortfolioContext';
+import type { RepoItem } from '../../types/portfolioItems';
 import {
   formatRepoStat,
   RepoLanguageBar,

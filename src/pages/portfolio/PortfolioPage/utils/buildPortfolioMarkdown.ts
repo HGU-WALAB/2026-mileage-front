@@ -4,11 +4,7 @@ import {
   PORTFOLIO_PROMPT_TEMPLATE,
 } from '../../constants/promptTemplate';
 import type { TechStackDomain, UserInfoResponse } from '../../apis/portfolio';
-import type {
-  ActivityItem,
-  MileageItem,
-  RepoItem,
-} from '../context/PortfolioContext';
+import type { ActivityItem, MileageItem, RepoItem } from '../../types/portfolioItems';
 import { SECTION_TITLES } from '../../constants/constants';
 import { groupActivitiesByCategory } from '../../utils/activityGrouping';
 import { formatActivityPeriodRange } from '../../utils/date';

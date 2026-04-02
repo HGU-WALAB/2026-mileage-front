@@ -16,9 +16,9 @@ import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { groupActivitiesByCategory } from '../../utils/activityGrouping';
 import { formatActivityPeriodRange } from '../../utils/date';
 import {
-  type ActivityItem,
   usePortfolioContext,
 } from '../context/PortfolioContext';
+import type { ActivityItem } from '../../types/portfolioItems';
 
 type ActivityEditDraft = Partial<ActivityItem> & { tagCompose?: string };
 

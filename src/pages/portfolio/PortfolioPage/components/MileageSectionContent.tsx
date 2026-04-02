@@ -8,9 +8,9 @@ import { toast } from 'react-toastify';
 import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { putPortfolioMileageItem } from '../../apis/portfolio';
 import {
-  type MileageItem,
   usePortfolioContext,
 } from '../context/PortfolioContext';
+import type { MileageItem } from '../../types/portfolioItems';
 
 interface MileageSectionContentProps {
   readOnly?: boolean;
