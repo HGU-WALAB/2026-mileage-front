@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getGitHubCallback } from '@/pages/profile/apis/github';
+import { postGithubRepositoriesCacheRefresh } from '@/pages/portfolio/apis/repositories';
 import { ROUTE_PATH } from '@/constants/routePath';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/queryKeys';
@@ -20,7 +21,17 @@ const GitHubCallbackPage = () => {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        await getGitHubCallback(code || undefined, error || undefined);
+        const status = await getGitHubCallback(
+          code || undefined,
+          error || undefined,
+        );
+        if (status.connected) {
+          try {
+            await postGithubRepositoriesCacheRefresh();
+          } catch {
+            // 캐시 갱신 실패해도 연결 플로우는 계속 (마이페이지에서 모달로 재시도 가능)
+          }
+        }
         // GitHub 상태 쿼리 무효화하여 최신 상태 가져오기
         await queryClient.invalidateQueries({
           queryKey: [QUERY_KEYS.githubStatus],

@@ -41,6 +41,11 @@ export interface RepositoriesResponse {
   repositories: PortfolioRepositoryItem[];
 }
 
+/** POST /api/portfolio/repositories/github-cache/refresh 응답 */
+export interface GithubRepositoriesCacheRefreshResponse {
+  reposSynced: number;
+}
+
 /** 활동 요약 - 포트폴리오 레포지토리 PUT 요청 한 건 */
 export interface PutRepositoryItem {
   repo_id: number;
@@ -58,6 +63,15 @@ export interface GetRepositoriesParams {
   visibility?: string;
   affiliation?: string;
 }
+
+/** GitHub 레포 캐시 갱신 (마이페이지 연결 직후·모달에서 수동 호출) */
+export const postGithubRepositoriesCacheRefresh = async () => {
+  const response = await http.post<
+    undefined,
+    GithubRepositoriesCacheRefreshResponse
+  >(ENDPOINT.PORTFOLIO_REPOSITORIES_GITHUB_CACHE_REFRESH);
+  return response;
+};
 
 /** 활동 요약 - 포트폴리오 레포지토리 조회 (페이지네이션) */
 export const getRepositories = async (params?: GetRepositoriesParams) => {

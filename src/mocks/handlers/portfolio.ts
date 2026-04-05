@@ -4,6 +4,7 @@ import { BASE_URL } from '@/apis/config';
 import { ENDPOINT } from '@/apis/endPoint';
 import type {
   ActivityApiItem,
+  GithubRepositoriesCacheRefreshResponse,
   PortfolioMileageItem,
   PortfolioRepositoryItem,
   PutPortfolioMileageItem,
@@ -530,6 +531,16 @@ export const PortfolioHandlers = [
       return new HttpResponse(null, { status: 400 });
     }
   }),
+
+  http.post(
+    BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES_GITHUB_CACHE_REFRESH,
+    () => {
+      const body: GithubRepositoriesCacheRefreshResponse = {
+        reposSynced: repositoriesStore.length,
+      };
+      return HttpResponse.json(body, { status: 200 });
+    },
+  ),
 
   http.get(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, ({ request }) => {
     const url = new URL(request.url);

@@ -1,7 +1,6 @@
 import { Flex, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
-import HistoryIcon from '@mui/icons-material/History';
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import { useMemo } from 'react';
 import { styled } from '@mui/material';
@@ -200,13 +199,6 @@ export function RepoStatPills({
         justifyContent: isMobile ? 'flex-start' : 'flex-end',
       }}
     >
-      {c != null && (
-        <SPill.StatPill>
-          <HistoryIcon sx={{ fontSize: 14, color: palette.grey500 }} />
-          <SPill.StatPillValue>{c}</SPill.StatPillValue>
-          <SPill.StatPillLabel>커밋</SPill.StatPillLabel>
-        </SPill.StatPill>
-      )}
       {s != null && (
         <SPill.StatPill>
           <StarOutlineIcon sx={{ fontSize: 14, color: palette.grey500 }} />

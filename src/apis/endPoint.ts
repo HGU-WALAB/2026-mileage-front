@@ -29,7 +29,8 @@ export const ENDPOINT = {
   /** GET /api/portfolio/user-info/image/{filename} - filename에 profile_image_url 사용 */
   PORTFOLIO_USER_INFO_IMAGE: `/api/portfolio/user-info/image`,
   PORTFOLIO_REPOSITORIES: `/api/portfolio/repositories`,
-  PORTFOLIO_GITHUB_REPOS: `/api/portfolio/github/repos`,
+  /** POST — GitHub 레포 메타 캐시 갱신 (GitHub list API) */
+  PORTFOLIO_REPOSITORIES_GITHUB_CACHE_REFRESH: `/api/portfolio/repositories/github-cache/refresh`,
   PORTFOLIO_SETTINGS: `/api/portfolio/settings`,
   PORTFOLIO_MILEAGE: `/api/portfolio/mileage`,
   PORTFOLIO_CV: `/api/portfolio/cv`,
