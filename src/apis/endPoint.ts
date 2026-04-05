@@ -33,4 +33,6 @@ export const ENDPOINT = {
   PORTFOLIO_SETTINGS: `/api/portfolio/settings`,
   PORTFOLIO_MILEAGE: `/api/portfolio/mileage`,
   PORTFOLIO_CV: `/api/portfolio/cv`,
+  /** GET /api/portfolio/share/cv/{publicToken}/html — 인증 없이 공개 HTML */
+  PORTFOLIO_CV_SHARE: `/api/portfolio/share/cv`,
 };

@@ -21,6 +21,7 @@ const PortfolioEditPage = React.lazy(
   () => import('@/pages/portfolio/PortfolioPage/PortfolioEditPage'),
 );
 const CvGeneratePage = React.lazy(() => import('@/pages/cv/CVPage/CvGeneratePage'));
+const CvSharePage = React.lazy(() => import('@/pages/cv/CVPage/CvSharePage'));
 const GitHubCallbackPage = React.lazy(
   () => import('@/pages/profile/GitHubCallbackPage'),
 );
@@ -90,6 +91,10 @@ const router = createBrowserRouter(
             {
               path: ROUTE_PATH.githubCallback,
               element: <GitHubCallbackPage />,
+            },
+            {
+              path: ROUTE_PATH.cvShare,
+              element: <CvSharePage />,
             },
           ],
         },

@@ -55,6 +55,13 @@ let nextMileageId = Math.max(0, ...mileageStore.map(m => m.id)) + 1;
 const cvStore: PortfolioCvDetail[] = mockPortfolioCvDetails.map(c => ({ ...c }));
 let nextCvId = Math.max(0, ...cvStore.map(c => c.id)) + 1;
 
+/** 공개 이력서 share HTML API — 403/404 시 내려주는 안내 HTML (목) */
+const CV_SHARE_HTML_404 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>안내</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:2rem;max-width:36rem;line-height:1.65;color:#1a1a1a;background:#fafafa}</style></head><body><h1 style="font-size:1.2rem;margin:0 0 0.75rem">이력서를 찾을 수 없습니다</h1><p style="margin:0;color:#555">형식이 올바르지 않습니다. 링크를 다시 확인해 주세요.</p></body></html>`;
+
+const CV_SHARE_HTML_403 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>안내</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:2rem;max-width:36rem;line-height:1.65;color:#1a1a1a;background:#fafafa}</style></head><body><h1 style="font-size:1.2rem;margin:0 0 0.75rem">비공개 이력서입니다</h1><p style="margin:0;color:#555">작성자가 아직 공개로 설정하지 않았습니다. 필요하면 작성자에게 공개 요청을 해 주세요.</p></body></html>`;
+
+const CV_PUBLIC_TOKEN_REGEX = /^\d{8,12}$/;
+
 function buildPortfolioMileageItem(
   id: number,
   displayOrder: number,
@@ -376,8 +383,10 @@ export const PortfolioHandlers = [
           job_posting: c.job_posting,
           target_position: c.target_position,
           additional_notes: c.additional_notes,
+          public_token: c.public_token,
           created_at: c.created_at,
           updated_at: c.updated_at,
+          is_public: c.is_public,
         })),
       },
       { status: 200 },
@@ -393,6 +402,39 @@ export const PortfolioHandlers = [
     return HttpResponse.json({ ...item }, { status: 200 });
   }),
 
+  http.get(
+    `${BASE_URL}${ENDPOINT.PORTFOLIO_CV_SHARE}/:publicToken/html`,
+    ({ params }) => {
+      const token = decodeURIComponent(String(params.publicToken ?? '')).trim();
+      if (!CV_PUBLIC_TOKEN_REGEX.test(token)) {
+        return new HttpResponse(CV_SHARE_HTML_404, {
+          status: 404,
+          headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+        });
+      }
+      const item = cvStore.find(c => c.public_token === token);
+      if (!item) {
+        return new HttpResponse(CV_SHARE_HTML_404, {
+          status: 404,
+          headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+        });
+      }
+      if (!item.is_public) {
+        return new HttpResponse(CV_SHARE_HTML_403, {
+          status: 403,
+          headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+        });
+      }
+      if (!item.html_content?.trim()) {
+        return new HttpResponse(null, { status: 204 });
+      }
+      return new HttpResponse(item.html_content, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+      });
+    },
+  ),
+
   http.patch(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/:id`, async ({ params, request }) => {
     const id = Number(params.id);
     const idx = cvStore.findIndex(c => c.id === id);
@@ -403,6 +445,7 @@ export const PortfolioHandlers = [
       const body = (await request.json()) as {
         title?: string;
         html_content?: string;
+        is_public?: boolean;
       };
       const now = new Date().toISOString();
       const prev = cvStore[idx];
@@ -414,6 +457,7 @@ export const PortfolioHandlers = [
             : prev.title,
         html_content:
           body.html_content !== undefined ? String(body.html_content) : prev.html_content,
+        is_public: body.is_public !== undefined ? Boolean(body.is_public) : prev.is_public,
         updated_at: now,
       };
       cvStore[idx] = next;
@@ -466,6 +510,7 @@ export const PortfolioHandlers = [
         .filter(Boolean)
         .join('\n');
       const cvId = nextCvId++;
+      const public_token = String(9_000_000_000 + cvId);
       const now = new Date().toISOString();
       cvStore.push({
         id: cvId,
@@ -475,10 +520,12 @@ export const PortfolioHandlers = [
         additional_notes: notes,
         prompt,
         html_content: '',
+        public_token,
+        is_public: false,
         created_at: now,
         updated_at: now,
       });
-      return HttpResponse.json({ prompt, cv_id: cvId }, { status: 200 });
+      return HttpResponse.json({ prompt, cv_id: cvId, public_token }, { status: 200 });
     } catch {
       return new HttpResponse(null, { status: 400 });
     }

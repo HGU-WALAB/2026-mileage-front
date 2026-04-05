@@ -24,11 +24,11 @@ import {
 } from '@/pages/portfolio/apis/userInfo';
 import { TechStackSectionContent } from '@/pages/portfolio/PortfolioPage/components';
 import { formatActivityPeriodRange } from '@/pages/portfolio/utils/date';
-import {
-  type ActivityItem,
-  type MileageItem,
-  type RepoItem,
-} from '@/pages/portfolio/PortfolioPage/context/PortfolioContext';
+import type {
+  ActivityItem,
+  MileageItem,
+  RepoItem,
+} from '@/pages/portfolio/types/portfolioItems';
 
 import { CvGeneratePageS as S } from '../cvGeneratePageStyles';
 import { repoSelectionId, toggleInList } from '../../utils/cvWizardSelection';
@@ -752,7 +752,7 @@ function ActivitySelectableRow({
             ) : null}
             {activity.tags && activity.tags.length > 0 ? (
               <Flex.Row gap="0.375rem" wrap="wrap" style={{ width: '100%' }}>
-                {activity.tags.map(tag => (
+                {activity.tags.map((tag: string) => (
                   <S.TagChip key={`${activity.id}-${tag}`}>{tag}</S.TagChip>
                 ))}
               </Flex.Row>

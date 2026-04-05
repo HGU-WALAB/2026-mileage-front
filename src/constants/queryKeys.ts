@@ -12,6 +12,7 @@ export const QUERY_KEYS = {
   portfolioMileage: 'portfolioMileage',
   portfolioActivities: 'portfolioActivities',
   portfolioCv: 'portfolioCv',
+  portfolioCvShareHtml: 'portfolioCvShareHtml',
   capability: 'capability',
   compareCapability: 'compareCapability',
   capabilityDetail: 'capabilityDetail',

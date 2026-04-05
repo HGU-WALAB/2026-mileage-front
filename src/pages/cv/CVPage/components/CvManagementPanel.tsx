@@ -15,7 +15,7 @@ import { useCallback, useState, type FunctionComponent, type SVGProps } from 're
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-import { ROUTE_PATH } from '@/constants/routePath';
+import { openCvShareInNewTab, ROUTE_PATH } from '@/constants/routePath';
 
 import { formatDateOnly } from '@/pages/portfolio/utils/date';
 import {
@@ -24,7 +24,9 @@ import {
   type PortfolioCvListItem,
 } from '../../apis/cv';
 import useDeletePortfolioCvMutation from '../../hooks/useDeletePortfolioCvMutation';
+import usePatchPortfolioCvMutation from '../../hooks/usePatchPortfolioCvMutation';
 import CvPreviewModal from './CvPreviewModal';
+import { CvHtmlPublicSwitchControl } from './cvHtmlPublicUi';
 
 const CV_QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
 
@@ -60,6 +62,11 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
   const navigate = useNavigate();
   const [previewId, setPreviewId] = useState<number | null>(null);
   const deleteMutation = useDeletePortfolioCvMutation();
+  const patchMutation = usePatchPortfolioCvMutation();
+  const publishingId =
+    patchMutation.isPending && patchMutation.variables
+      ? patchMutation.variables.id
+      : null;
 
   const listQuery = useQuery({
     queryKey: [QUERY_KEYS.portfolioCv, 'list'] as const,
@@ -102,6 +109,36 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
   );
 
   const deletePending = deleteMutation.isPending;
+
+  const handleListHtmlPublicChange = useCallback(
+    (item: PortfolioCvListItem, next: boolean) => {
+      if (!String(item.public_token ?? '').trim()) {
+        toast.error('공개 토큰이 없습니다. 포트폴리오를 다시 저장해 주세요.', {
+          position: 'top-center',
+        });
+        return;
+      }
+      patchMutation.mutate(
+        { id: item.id, body: { is_public: next } },
+        {
+          onSuccess: () => {
+            toast.success(
+              next
+                ? 'HTML이 공개되었습니다. 「링크 열기」로 미리보기 할 수 있습니다.'
+                : '비공개로 전환했습니다.',
+              { position: 'top-center' },
+            );
+          },
+          onError: () => {
+            toast.error('공개 설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', {
+              position: 'top-center',
+            });
+          },
+        },
+      );
+    },
+    [patchMutation],
+  );
 
   return (
     <S.Root
@@ -190,6 +227,19 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
             onView={() => openPreview(item.id)}
             onRequestDelete={() => handleDeleteCv(item.id)}
             deletePending={deletePending}
+            onHtmlPublicChange={next => handleListHtmlPublicChange(item, next)}
+            publicToggleDisabled={
+              publishingId === item.id || !String(item.public_token ?? '').trim()
+            }
+            onOpenShareLink={() => {
+              const token = String(item.public_token ?? '').trim();
+              if (!token) return;
+              if (!openCvShareInNewTab(token)) {
+                toast.warn('새 창이 열리지 않았습니다. 팝업 차단을 해제해 주세요.', {
+                  position: 'top-center',
+                });
+              }
+            }}
           />
         ))}
       </S.ListArea>
@@ -214,11 +264,17 @@ function CvHistoryCard({
   onView,
   onRequestDelete,
   deletePending,
+  onHtmlPublicChange,
+  publicToggleDisabled,
+  onOpenShareLink,
 }: {
   item: PortfolioCvListItem;
   onView: () => void;
   onRequestDelete: () => void;
   deletePending: boolean;
+  onHtmlPublicChange: (next: boolean) => void;
+  publicToggleDisabled: boolean;
+  onOpenShareLink: () => void;
 }) {
   const kCount = keywordCount(item.additional_notes ?? '');
   const subLine =
@@ -285,6 +341,18 @@ function CvHistoryCard({
             />
           </Flex.Row>
         </Flex.Row>
+
+        <CvHtmlPublicSwitchControl
+          isPublic={Boolean(item.is_public)}
+          onPublicChange={onHtmlPublicChange}
+          disabled={publicToggleDisabled}
+          size="medium"
+          linkButton={{
+            onClick: onOpenShareLink,
+            disabled: !String(item.public_token ?? '').trim(),
+          }}
+        />
+
         <Text margin="0" color={palette.grey500} style={{ fontSize: '0.8125rem' }}>
           {subLine}
         </Text>

@@ -25,7 +25,6 @@ import type {
   PortfolioRepositoryItem,
   TechStackDomain,
 } from '../../apis/portfolio';
-import type { UserInfoResponse } from '../../apis/userInfo';
 import {
   normalizeTechStackDomainsForPersist,
   normalizeTechStackDomainsFromResponse,

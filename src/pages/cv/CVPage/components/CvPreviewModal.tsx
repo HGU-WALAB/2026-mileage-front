@@ -11,14 +11,16 @@ import EditIcon from '@mui/icons-material/Edit';
 import HtmlIcon from '@mui/icons-material/Html';
 import { Dialog, DialogContent, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useCallback, useEffect, useState, type FunctionComponent, type SVGProps } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FunctionComponent, type SVGProps } from 'react';
 import { toast } from 'react-toastify';
-
+import { openCvShareInNewTab } from '@/constants/routePath';
 import { formatDateOnly } from '@/pages/portfolio/utils/date';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 import type { PortfolioCvDetail } from '../../apis/cv';
 import usePatchPortfolioCvMutation from '../../hooks/usePatchPortfolioCvMutation';
+import { buildCvPreviewSrcDoc } from '../../utils/buildCvPreviewSrcDoc';
 import { sanitizeCvHtml } from '../../utils/sanitizeCvHtml';
+import { CvHtmlPublicSwitchControl } from './cvHtmlPublicUi';
 
 export interface CvPreviewModalProps {
   open: boolean;
@@ -106,8 +108,59 @@ const CvPreviewModal = ({
 
   const pills = data ? notesToPills(data.additional_notes ?? '') : [];
   const htmlRaw = isEditing ? editHtml : (data?.html_content ?? '');
+  const htmlPreviewSrcDoc = useMemo(() => {
+    const sanitized = sanitizeCvHtml(htmlRaw);
+    return buildCvPreviewSrcDoc(sanitized);
+  }, [htmlRaw]);
   const patchPending = patchMutation.isPending;
   const actionDisabled = patchPending || isDeletePending;
+  const publicToggleDisabled = patchPending || isDeletePending || isEditing;
+
+  const handleOpenPublicShare = useCallback(() => {
+    if (!data) return;
+    const token = String(data.public_token ?? '').trim();
+    if (!token) {
+      toast.error('공개 링크를 열 수 없습니다.', { position: 'top-center' });
+      return;
+    }
+    if (!openCvShareInNewTab(token)) {
+      toast.warn('새 창이 열리지 않았습니다. 팝업 차단을 해제하거나 주소를 직접 복사해 주세요.', {
+        position: 'top-center',
+      });
+    }
+  }, [data]);
+
+  const handleTogglePublic = useCallback(
+    (checked: boolean) => {
+      if (!data) return;
+      if (checked && !String(data.public_token ?? '').trim()) {
+        toast.error('공개 링크를 준비할 수 없습니다. 잠시 후 다시 시도해 주세요.', {
+          position: 'top-center',
+        });
+        return;
+      }
+      patchMutation.mutate(
+        { id: data.id, body: { is_public: checked } },
+        {
+          onSuccess: () => {
+            if (checked) {
+              toast.success('이력서가 공개되었습니다. 「링크 바로가기」로 미리보기 페이지를 열 수 있습니다.', {
+                position: 'top-center',
+              });
+            } else {
+              toast.success('비공개로 전환했습니다.', { position: 'top-center' });
+            }
+          },
+          onError: () => {
+            toast.error('공개 설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', {
+              position: 'top-center',
+            });
+          },
+        },
+      );
+    },
+    [data, patchMutation],
+  );
 
   const startEdit = useCallback(() => {
     if (!data) return;
@@ -365,43 +418,67 @@ const CvPreviewModal = ({
                 <S.PreWrapScrollable>{data.prompt || '—'}</S.PreWrapScrollable>
               </S.Section>
 
-              <S.Section direction="column" gap="0.5rem">
-                <Flex.Row align="center" justify="space-between" gap="0.75rem" wrap="wrap">
+              <S.Section direction="column" gap="0.65rem">
+                <Flex.Row align="center" justify="space-between" gap="0.75rem" wrap="wrap" width="100%">
                   <S.SectionTitle>AI 생성 결과 (HTML)</S.SectionTitle>
                   {!isEditing ? (
-                    <Button
-                      label={showHtmlPreview ? '소스 보기' : 'HTML 미리보기'}
-                      variant="outlined"
-                      color="blue"
-                      size="small"
-                      icon={showHtmlPreview ? CodeIconWrap : HtmlIconWrap}
-                      iconPosition="start"
-                      onClick={() => setShowHtmlPreview(v => !v)}
-                      disabled={!htmlRaw.trim()}
-                    />
+                    <Flex.Row align="center" gap="0.5rem" wrap="wrap" style={{ flexShrink: 0 }}>
+                      <Button
+                        label={showHtmlPreview ? '소스 보기' : 'HTML 미리보기'}
+                        variant="outlined"
+                        color="blue"
+                        size="small"
+                        icon={showHtmlPreview ? CodeIconWrap : HtmlIconWrap}
+                        iconPosition="start"
+                        onClick={() => setShowHtmlPreview(v => !v)}
+                        disabled={!htmlRaw.trim()}
+                      />
+                    </Flex.Row>
                   ) : null}
                 </Flex.Row>
-                {isEditing ? (
-                  <S.HtmlTextarea
-                    value={editHtml}
-                    onChange={e => setEditHtml(e.target.value)}
-                    aria-label="HTML 소스"
-                    rows={14}
+                {!isEditing ? (
+                  <CvHtmlPublicSwitchControl
+                    isPublic={Boolean(data.is_public)}
+                    onPublicChange={handleTogglePublic}
+                    disabled={publicToggleDisabled}
+                    size="small"
+                    linkButton={{
+                      label: '링크 바로가기',
+                      onClick: handleOpenPublicShare,
+                      disabled: publicToggleDisabled,
+                    }}
                   />
-                ) : showHtmlPreview ? (
-                  <S.HtmlPreviewShell>
-                    {/* iframe으로 격리: 삽입 HTML의 <style>이 앱 전체 html/body에 적용되지 않음 */}
-                    <iframe
-                      title="HTML 미리보기"
-                      srcDoc={htmlRaw}
-                      sandbox="allow-same-origin"
+                ) : null}
+                <Text
+                  margin="0"
+                  color={palette.grey600}
+                  style={{ fontSize: '0.75rem', lineHeight: 1.55 }}
+                >
+                  스위치로 HTML 공개 여부를 바꿀 수 있습니다. 공개 시 링크만으로 로그인 없이 미리보기가 가능합니다.
+                </Text>
+                <Flex.Column gap="0.5rem" width="100%" style={{ minWidth: 0 }}>
+                  {isEditing ? (
+                    <S.HtmlTextarea
+                      value={editHtml}
+                      onChange={e => setEditHtml(e.target.value)}
+                      aria-label="HTML 소스"
+                      rows={14}
                     />
-                  </S.HtmlPreviewShell>
-                ) : (
-                  <S.PreWrapScrollable>
-                    {htmlRaw.trim() ? htmlRaw : '—'}
-                  </S.PreWrapScrollable>
-                )}
+                  ) : showHtmlPreview ? (
+                    <S.HtmlPreviewShell>
+                      <iframe
+                        title="HTML 미리보기"
+                        srcDoc={htmlPreviewSrcDoc}
+                        sandbox=""
+                        referrerPolicy="no-referrer"
+                      />
+                    </S.HtmlPreviewShell>
+                  ) : (
+                    <S.PreWrapScrollable>
+                      {htmlRaw.trim() ? htmlRaw : '—'}
+                    </S.PreWrapScrollable>
+                  )}
+                </Flex.Column>
               </S.Section>
             </>
           ) : null}
@@ -490,7 +567,6 @@ const S = {
       min-height: min(42vh, 400px);
       height: min(50vh, 480px);
       border: none;
-      vertical-align: top;
     }
   `,
   Pill: styled('span')`
