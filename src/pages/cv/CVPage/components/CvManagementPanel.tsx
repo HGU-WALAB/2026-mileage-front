@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
-import { IconButton, LinearProgress } from '@mui/material';
+import { Dialog, DialogContent, IconButton, LinearProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, type FunctionComponent, type SVGProps } from 'react';
@@ -61,6 +61,7 @@ function keywordCount(notes: string): number {
 const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
   const navigate = useNavigate();
   const [previewId, setPreviewId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const deleteMutation = useDeletePortfolioCvMutation();
   const patchMutation = usePatchPortfolioCvMutation();
   const publishingId =
@@ -109,6 +110,13 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
   );
 
   const deletePending = deleteMutation.isPending;
+
+  const confirmDeleteCv = useCallback(() => {
+    if (deleteConfirmId == null) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
+    handleDeleteCv(id);
+  }, [deleteConfirmId, handleDeleteCv]);
 
   const handleListHtmlPublicChange = useCallback(
     (item: PortfolioCvListItem, next: boolean) => {
@@ -225,7 +233,7 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
             key={item.id}
             item={item}
             onView={() => openPreview(item.id)}
-            onRequestDelete={() => handleDeleteCv(item.id)}
+            onRequestDelete={() => setDeleteConfirmId(item.id)}
             deletePending={deletePending}
             onHtmlPublicChange={next => handleListHtmlPublicChange(item, next)}
             publicToggleDisabled={
@@ -251,10 +259,92 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
         isPending={previewId != null && detailQuery.isPending}
         isError={previewId != null && detailQuery.isError}
         onRequestDelete={
-          previewId != null ? () => handleDeleteCv(previewId) : undefined
+          previewId != null ? () => setDeleteConfirmId(previewId) : undefined
         }
         isDeletePending={deletePending}
       />
+
+      <Dialog
+        open={deleteConfirmId != null}
+        aria-labelledby="cv-delete-confirm-title"
+        onClose={() => {
+          if (deletePending) return;
+          setDeleteConfirmId(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '0.75rem',
+            border: `1px solid ${palette.grey200}`,
+            boxShadow: '0 4px 24px rgba(83, 127, 241, 0.15)',
+            width: '100%',
+            maxWidth: '26rem',
+            overflow: 'hidden',
+          },
+        }}
+        sx={{ zIndex: theme => theme.zIndex.modal + 2 }}
+      >
+        <DialogContent
+          sx={{
+            p: '1.25rem 1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
+        >
+          <Flex.Row align="flex-start" gap="0.5rem" width="100%" style={{ minWidth: 0 }}>
+            <DeleteOutlineIcon
+              sx={{ fontSize: 22, color: palette.red500, flexShrink: 0, marginTop: '0.125rem' }}
+              aria-hidden
+            />
+            <Flex.Column gap="0.5rem" style={{ flex: '1 1 auto', minWidth: 0 }}>
+              <Heading
+                as="h2"
+                margin="0"
+                color={palette.nearBlack}
+                id="cv-delete-confirm-title"
+                style={{
+                  fontSize: '1.125rem',
+                  fontWeight: 700,
+                  lineHeight: 1.5,
+                }}
+              >
+                포트폴리오를 삭제할까요?
+              </Heading>
+              <Text
+                margin="0"
+                color={palette.grey600}
+                style={{ fontSize: '0.875rem', lineHeight: 1.65, wordBreak: 'keep-all' }}
+              >
+                저장된 HTML·프롬프트·공개 링크 설정이 함께 사라지며, 되돌릴 수 없습니다.
+              </Text>
+            </Flex.Column>
+          </Flex.Row>
+          <S.DeleteDialogActions>
+            <Flex.Row align="center" justify="flex-end" gap="0.5rem" wrap="wrap" width="100%">
+              <Button
+                label="취소"
+                variant="outlined"
+                color="grey"
+                size="medium"
+                onClick={() => setDeleteConfirmId(null)}
+                disabled={deletePending}
+              />
+              <Button
+                label="삭제하기"
+                variant="outlined"
+                color="red"
+                size="medium"
+                icon={DeleteOutlineIconWrap}
+                iconPosition="start"
+                onClick={confirmDeleteCv}
+                disabled={deletePending}
+              />
+            </Flex.Row>
+          </S.DeleteDialogActions>
+        </DialogContent>
+      </Dialog>
     </S.Root>
   );
 };
@@ -432,5 +522,12 @@ const S = {
     border-radius: 0.5rem;
     border: 1px solid ${palette.grey200};
     word-break: break-word;
+  `,
+  DeleteDialogActions: styled('div')`
+    box-sizing: border-box;
+    margin: 0 -1.5rem -1.25rem;
+    padding: 0.85rem 1.5rem 1rem;
+    border-top: 1px solid ${palette.grey200};
+    background-color: ${palette.grey100};
   `,
 };
