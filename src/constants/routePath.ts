@@ -7,7 +7,7 @@ export const ROUTE_PATH = {
   awardArchive: '/mileage/award',
   portfolio: '/portfolio',
   cv: '/cv',
-  /** 공개 이력서 미리보기 (로그인 불필요) */
+  /** 공개 포폴 미리보기 (로그인 불필요) */
   cvShare: '/cv/share/:publicToken',
   myPage: '/my',
   githubCallback: '/auth/github/callback',
@@ -17,11 +17,11 @@ export const ROUTE_PATH = {
 export const PORTFOLIO_CV_PANEL_QUERY_KEY = 'cvPanel';
 export const PORTFOLIO_CV_PANEL_QUERY_VALUE = '1';
 
-/** 공개 이력서 페이지 경로 (`ROUTE_PATH.cvShare`와 동일한 세그먼트) */
+/** 공개 포폴 페이지 경로 (`ROUTE_PATH.cvShare`와 동일한 세그먼트) */
 export const cvSharePath = (publicToken: string) =>
   `/cv/share/${encodeURIComponent(publicToken)}`;
 
-/** 브라우저 주소창 기준 공개 이력서 전체 URL (`import.meta.env.BASE_URL` 반영) */
+/** 브라우저 주소창 기준 공개 포폴 전체 URL (`import.meta.env.BASE_URL` 반영) */
 export const getCvSharePageUrl = (publicToken: string): string => {
   const path = cvSharePath(publicToken);
   const base = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');

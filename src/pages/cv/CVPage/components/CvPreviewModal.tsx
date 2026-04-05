@@ -144,7 +144,7 @@ const CvPreviewModal = ({
         {
           onSuccess: () => {
             if (checked) {
-              toast.success('이력서가 공개되었습니다. 「링크 바로가기」로 미리보기 페이지를 열 수 있습니다.', {
+              toast.success('포트폴리오가 공개되었습니다.', {
                 position: 'top-center',
               });
             } else {

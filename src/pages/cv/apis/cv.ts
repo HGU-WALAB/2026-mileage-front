@@ -31,12 +31,72 @@ export interface PortfolioCvDetail extends PortfolioCvListItem {
   html_content: string;
 }
 
+function readCvId(o: Record<string, unknown>): number {
+  const v = o.id;
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v))) {
+    return Number(v);
+  }
+  return 0;
+}
+
+/** 일부 배포 서버는 `is_public` 대신 `_public`(Jackson 등)으로 내려줌 */
+function readCvIsPublic(o: Record<string, unknown>): boolean {
+  const v = o.is_public ?? o._public ?? o.isPublic;
+  return Boolean(v);
+}
+
+function normalizePortfolioCvListItem(raw: unknown): PortfolioCvListItem {
+  if (raw == null || typeof raw !== 'object') {
+    return {
+      id: 0,
+      title: '',
+      job_posting: '',
+      target_position: '',
+      additional_notes: '',
+      public_token: '',
+      created_at: '',
+      updated_at: '',
+      is_public: false,
+    };
+  }
+  const o = raw as Record<string, unknown>;
+  return {
+    id: readCvId(o),
+    title: String(o.title ?? ''),
+    job_posting: String(o.job_posting ?? ''),
+    target_position: String(o.target_position ?? ''),
+    additional_notes: String(o.additional_notes ?? ''),
+    public_token: String(o.public_token ?? ''),
+    created_at: String(o.created_at ?? ''),
+    updated_at: String(o.updated_at ?? ''),
+    is_public: readCvIsPublic(o),
+  };
+}
+
+export function normalizePortfolioCvDetail(raw: unknown): PortfolioCvDetail {
+  const base = normalizePortfolioCvListItem(raw);
+  const o =
+    raw != null && typeof raw === 'object'
+      ? (raw as Record<string, unknown>)
+      : {};
+  return {
+    ...base,
+    prompt: String(o.prompt ?? ''),
+    html_content: String(o.html_content ?? ''),
+  };
+}
+
 export const getPortfolioCvList = async () => {
-  return http.get<PortfolioCvListResponse>(ENDPOINT.PORTFOLIO_CV);
+  const raw = await http.get<{ cvs?: unknown[] }>(ENDPOINT.PORTFOLIO_CV);
+  return {
+    cvs: (raw.cvs ?? []).map(normalizePortfolioCvListItem),
+  } satisfies PortfolioCvListResponse;
 };
 
 export const getPortfolioCvById = async (id: number) => {
-  return http.get<PortfolioCvDetail>(`${ENDPOINT.PORTFOLIO_CV}/${id}`);
+  const raw = await http.get<unknown>(`${ENDPOINT.PORTFOLIO_CV}/${id}`);
+  return normalizePortfolioCvDetail(raw);
 };
 
 /** POST /api/portfolio/cv/build-prompt */
@@ -71,10 +131,11 @@ export interface PortfolioCvPatchRequest {
 }
 
 export const patchPortfolioCv = async (id: number, body: PortfolioCvPatchRequest) => {
-  return http.patch<PortfolioCvPatchRequest, PortfolioCvDetail>(
+  const raw = await http.patch<PortfolioCvPatchRequest, unknown>(
     `${ENDPOINT.PORTFOLIO_CV}/${id}`,
     body,
   );
+  return normalizePortfolioCvDetail(raw);
 };
 
 /** DELETE /api/portfolio/cv/{id} */

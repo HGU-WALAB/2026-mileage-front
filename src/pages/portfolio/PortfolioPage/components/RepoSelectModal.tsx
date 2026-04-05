@@ -1,4 +1,4 @@
-import { SearchIcon } from '@/assets';
+import { LoadingIcon, SearchIcon } from '@/assets';
 import { Button, Dropdown, Flex, Input, Modal, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import type { PortfolioRepositoryItem, PutRepositoryItem } from '../../apis/portfolio';
@@ -201,6 +201,11 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     }
   }, [selectedIds, queryParams, setRepos, onClose]);
 
+  const handleModalClose = useCallback(() => {
+    if (submitting) return;
+    onClose();
+  }, [submitting, onClose]);
+
   const filteredRepos = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return pageRepos;
@@ -271,11 +276,12 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   return (
     <Modal
       open={open}
-      toggleModal={onClose}
+      toggleModal={handleModalClose}
       size="large"
       hasCloseButton
       style={{ backgroundColor: theme.palette.background.default }}
     >
+      <S.ModalSurface aria-busy={submitting}>
       <Modal.Header position="start">레포지토리 선택</Modal.Header>
       <Modal.Body position="start" style={{ gap: '1rem', marginTop: '0.5rem' }}>
         <Flex.Row
@@ -540,7 +546,8 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
             label="취소"
             variant="outlined"
             size="large"
-            onClick={onClose}
+            disabled={submitting}
+            onClick={handleModalClose}
           />
           <Button
             label="확인"
@@ -552,6 +559,29 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           />
         </Flex.Row>
       </Modal.Footer>
+      {submitting ? (
+        <S.SubmitOverlay
+          align="center"
+          justify="center"
+          gap="0.75rem"
+          role="status"
+          aria-live="polite"
+          aria-label="레포지토리 정보를 추가하는 중"
+        >
+          <LoadingIcon width={88} height={88} aria-hidden />
+          <Text
+            style={{
+              margin: 0,
+              fontSize: '0.875rem',
+              color: theme.palette.grey[600],
+              textAlign: 'center',
+            }}
+          >
+            레포지토리 정보를 추가중입니다.
+          </Text>
+        </S.SubmitOverlay>
+      ) : null}
+      </S.ModalSurface>
     </Modal>
   );
 };
@@ -561,6 +591,19 @@ export default RepoSelectModal;
 const LIST_AREA_HEIGHT = '28rem';
 
 const S = {
+  ModalSurface: styled('div')`
+    position: relative;
+    width: 100%;
+  `,
+  SubmitOverlay: styled(Flex.Column)`
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    border-radius: 0.75rem;
+    background-color: rgba(250, 250, 252, 0.94);
+    box-sizing: border-box;
+    padding: 1.5rem;
+  `,
   FilterBar: styled('div')`
     display: flex;
     flex-direction: row;

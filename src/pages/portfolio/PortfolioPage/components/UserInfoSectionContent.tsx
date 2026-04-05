@@ -32,10 +32,15 @@ const getProfileImageUrl = (filename: string | null | undefined): string | null 
 
 interface UserInfoSectionContentProps {
   readOnly?: boolean;
+  /** 데스크톱에서 포트폴리오 관리 패널과 나란히 둘 때 자기소개 영역 높이 제한·스크롤 */
+  splitViewportLayout?: boolean;
 }
 
 /** 유저정보. 상단 고정, 타이틀 없음. name/department/major1·2 표시, bio만 수정 가능 */
-const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProps) => {
+const UserInfoSectionContent = ({
+  readOnly = false,
+  splitViewportLayout = false,
+}: UserInfoSectionContentProps) => {
   const { userInfo, setUserInfo, isUserInfoLoading } = usePortfolioContext();
   const promptProgress = usePortfolioPromptProgress();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
@@ -375,18 +380,23 @@ const UserInfoSectionContent = ({ readOnly = false }: UserInfoSectionContentProp
             ) : null}
           </Flex.Row>
           {!isEditingBio ? (
-            <Text
-              style={{
-                color: palette.grey600,
-                fontSize: '1.125rem',
-                margin: 0,
-              }}
-            >
-              {bio || '-'}
-            </Text>
+            <S.BioReadonlyWrap $clip={splitViewportLayout}>
+              <Text
+                style={{
+                  color: palette.grey600,
+                  fontSize: '1.125rem',
+                  margin: 0,
+                  lineHeight: 1.65,
+                  wordBreak: 'break-word',
+                }}
+              >
+                {bio || '-'}
+              </Text>
+            </S.BioReadonlyWrap>
           ) : !readOnly ? (
             <Flex.Column gap="0.5rem" style={{ width: '100%' }}>
               <S.BioTextarea
+                $clip={splitViewportLayout}
                 value={bioDraft}
                 onChange={e => setBioDraft(e.target.value)}
                 placeholder="한 줄 소개를 입력하세요"
@@ -1127,7 +1137,26 @@ const S = {
       color: ${palette.blue600};
     }
   `,
-  BioTextarea: styled('textarea')`
+  BioReadonlyWrap: styled('div', {
+    shouldForwardProp: p => p !== '$clip',
+  })<{ $clip: boolean }>`
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    ${({ $clip }) =>
+      $clip
+        ? `
+      max-height: min(11rem, 32vh);
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 0.125rem;
+    `
+        : ''}
+  `,
+  BioTextarea: styled('textarea', {
+    shouldForwardProp: p => p !== '$clip',
+  })<{ $clip?: boolean }>`
     width: 100%;
     min-width: 0;
     min-height: 5rem;
@@ -1139,6 +1168,15 @@ const S = {
     color: ${palette.nearBlack};
     resize: vertical;
     outline: none;
+    box-sizing: border-box;
+    ${({ $clip }) =>
+      $clip
+        ? `
+      max-height: min(11rem, 32vh);
+      overflow-x: auto;
+      overflow-y: auto;
+    `
+        : ''}
     &:focus {
       border-color: ${palette.blue500};
       box-shadow: 0 0 0 2px ${palette.blue300};

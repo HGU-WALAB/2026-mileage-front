@@ -198,7 +198,8 @@ const TechStackSectionContent = forwardRef<
     const domainCol = 'minmax(10.5rem, 12rem)';
     const tierTracks = hasTierColumns
       ? visibleTierIndices.map(() => 'minmax(5.25rem, 1fr)').join(' ')
-      : 'minmax(0, 1fr)';
+      : /* 스택 없음: 0 최소폭이면 분할 뷰에서 열이 붕괴됨 */
+        'minmax(11rem, 1fr)';
     const actionPart = readOnly ? '' : ' minmax(6.75rem, 7.5rem)';
     return `${domainCol} ${tierTracks}${actionPart}`;
   }, [hasTierColumns, visibleTierIndices, readOnly]);
@@ -446,9 +447,11 @@ const TechStackSectionContent = forwardRef<
                     }
                   >
                     {entries.length === 0 && !readOnly && !hasTierColumns ? (
-                      <S.EmptyTierCellHint style={{ color: headerLabelColor }}>
-                        기술 추가 시 단계별 열이 나뉩니다
-                      </S.EmptyTierCellHint>
+                      <S.EmptyTierHintScroll>
+                        <S.EmptyTierCellHint style={{ color: headerLabelColor }}>
+                          기술 추가 시 단계별 열이 나뉩니다
+                        </S.EmptyTierCellHint>
+                      </S.EmptyTierHintScroll>
                     ) : (
                       <S.TagCloudColumn>
                         {entries.map(({ skill, stackIndex }) => (
@@ -1001,14 +1004,24 @@ const S = {
     width: ${p => (p.$fitContent ? 'max-content' : '100%')};
     max-width: ${p => (p.$fitContent ? '100%' : 'none')};
   `,
-  EmptyTierCellHint: styled('span')`
-    display: block;
+  EmptyTierHintScroll: styled('div')`
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  `,
+  EmptyTierCellHint: styled('span')`
+    display: inline-block;
     margin: 0;
+    max-width: none;
     font-size: 12px;
     font-weight: 500;
     line-height: 1.45;
     letter-spacing: -0.01em;
+    white-space: nowrap;
   `,
   NotionTag: styled('div')<{ $readOnly?: boolean }>`
     display: inline-flex;

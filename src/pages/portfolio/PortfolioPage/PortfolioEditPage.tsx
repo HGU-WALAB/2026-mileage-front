@@ -163,7 +163,9 @@ const PortfolioEditPage = () => {
             progress={promptProgress}
             onSectionClick={handlePromptQualitySectionClick}
           />
-          <UserInfoSectionContent />
+          <UserInfoSectionContent
+            splitViewportLayout={cvPanelOpen && !isMobile}
+          />
           <Flex.Column gap="1rem" width="100%" style={{ minWidth: 0 }}>
         {sectionOrder.map(key => (
           <DraggableSection
