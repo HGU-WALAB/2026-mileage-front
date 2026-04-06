@@ -4,6 +4,7 @@ import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { boxShadow } from '@/styles/common';
 import { palette } from '@/styles/palette';
 import AddIcon from '@mui/icons-material/Add';
+import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -112,8 +113,10 @@ const CvManagementPanel = () => {
     handleDeleteCv(id);
   }, [deleteConfirmId, handleDeleteCv]);
 
-  const showPreviewPanel = previewId != null;
-  const showListColumn = !isMobile || !showPreviewPanel;
+  const hasPreviewSelection = previewId != null;
+  /** 모바일: 카드 선택 시에만 패널. 데스크톱: 항상 오른쪽 슬롯(미선택 시 빈 상태). */
+  const showPreviewColumn = !isMobile || hasPreviewSelection;
+  const showListColumn = !isMobile || !hasPreviewSelection;
 
   return (
     <S.Root
@@ -158,7 +161,7 @@ const CvManagementPanel = () => {
             gap="1rem"
             width="100%"
             style={{
-              flex: !isMobile && showPreviewPanel ? '1 1 0' : '1 1 100%',
+              flex: !isMobile ? '1 1 0' : '1 1 100%',
               minWidth: 0,
               minHeight: 0,
               overflow: 'hidden',
@@ -219,21 +222,42 @@ const CvManagementPanel = () => {
           </S.ListColumn>
         ) : null}
 
-        {showPreviewPanel ? (
+        {showPreviewColumn ? (
           <S.PreviewColumn $isMobile={isMobile} direction="column" width="100%">
-            <CvPreviewContent
-              active={showPreviewPanel}
-              layout="panel"
-              onClose={closePreview}
-              closeAriaLabel={isMobile ? '목록으로 돌아가기' : '미리보기 닫기'}
-              data={detailQuery.data}
-              isPending={detailQuery.isPending}
-              isError={detailQuery.isError}
-              onRequestDelete={
-                previewId != null ? () => setDeleteConfirmId(previewId) : undefined
-              }
-              isDeletePending={deletePending}
-            />
+            {hasPreviewSelection ? (
+              <CvPreviewContent
+                active={hasPreviewSelection}
+                layout="panel"
+                onClose={closePreview}
+                closeAriaLabel={isMobile ? '목록으로 돌아가기' : '선택 해제'}
+                data={detailQuery.data}
+                isPending={detailQuery.isPending}
+                isError={detailQuery.isError}
+                onRequestDelete={
+                  previewId != null ? () => setDeleteConfirmId(previewId) : undefined
+                }
+                isDeletePending={deletePending}
+              />
+            ) : (
+              <S.PreviewEmpty
+                align="center"
+                justify="center"
+                gap="0.75rem"
+                width="100%"
+                style={{ flex: 1, minHeight: 'min(12rem, 40vh)', padding: '1.5rem 1rem' }}
+              >
+                <VerticalSplitOutlinedIcon
+                  sx={{ fontSize: 46, color: palette.grey400, flexShrink: 0 }}
+                  aria-hidden
+                />
+                <S.EmptyTitle style={{ textAlign: 'center', wordBreak: 'keep-all' }}>
+                  왼쪽 목록에서 카드를 선택하면 상세 내용이 여기에 표시됩니다.
+                </S.EmptyTitle>
+                <S.EmptyHint style={{ textAlign: 'center', wordBreak: 'keep-all' }}>
+                  「보기」를 눌러 주세요.
+                </S.EmptyHint>
+              </S.PreviewEmpty>
+            )}
           </S.PreviewColumn>
         ) : null}
       </S.SplitRow>
@@ -486,6 +510,11 @@ const S = {
     border: 1px solid ${palette.grey200};
     background-color: ${({ theme }) => theme.palette.background.paper};
     overflow: hidden;
+  `,
+  PreviewEmpty: styled(Flex.Column)`
+    width: 100%;
+    box-sizing: border-box;
+    background-color: ${({ theme }) => theme.palette.grey[50]};
   `,
   ProgressWrap: styled('div')`
     width: 100%;
