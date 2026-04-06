@@ -20,6 +20,7 @@ const Header = () => {
       justify="space-between"
       padding="1rem"
       style={{
+        flexShrink: 0,
         position: 'sticky',
         top: 0,
         left: 0,

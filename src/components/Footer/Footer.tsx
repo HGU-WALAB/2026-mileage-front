@@ -29,7 +29,7 @@ export default Footer;
 const S = {
   Container: styled('footer')`
     border-top: 1px solid ${({ theme }) => theme.palette.grey[300]};
-    margin-top: 2rem;
+    margin-top: auto;
     padding: 2rem 1.5rem;
     width: 100%;
   `,
