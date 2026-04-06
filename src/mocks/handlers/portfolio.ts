@@ -56,7 +56,7 @@ let nextMileageId = Math.max(0, ...mileageStore.map(m => m.id)) + 1;
 const cvStore: PortfolioCvDetail[] = mockPortfolioCvDetails.map(c => ({ ...c }));
 let nextCvId = Math.max(0, ...cvStore.map(c => c.id)) + 1;
 
-/** 공개 이력서 share HTML API — 403/404 시 내려주는 안내 HTML (목) */
+/** 공개 포폴 share HTML API — 403/404 시 내려주는 안내 HTML (목) */
 const CV_SHARE_HTML_404 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>안내</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:2rem;max-width:36rem;line-height:1.65;color:#1a1a1a;background:#fafafa}</style></head><body><h1 style="font-size:1.2rem;margin:0 0 0.75rem">이력서를 찾을 수 없습니다</h1><p style="margin:0;color:#555">형식이 올바르지 않습니다. 링크를 다시 확인해 주세요.</p></body></html>`;
 
 const CV_SHARE_HTML_403 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>안내</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:2rem;max-width:36rem;line-height:1.65;color:#1a1a1a;background:#fafafa}</style></head><body><h1 style="font-size:1.2rem;margin:0 0 0.75rem">비공개 이력서입니다</h1><p style="margin:0;color:#555">작성자가 아직 공개로 설정하지 않았습니다. 필요하면 작성자에게 공개 요청을 해 주세요.</p></body></html>`;

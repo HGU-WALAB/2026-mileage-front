@@ -12,7 +12,7 @@ import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { patchRepository } from '../../apis/repositories';
 import { formatDateRange } from '../../utils/date';
 import {
-  portfolioRepoToRepoItem,
+  mergePortfolioRepoPatch,
   usePortfolioContext,
 } from '../context/PortfolioContext';
 import type { RepoItem } from '../../types/portfolioItems';
@@ -68,7 +68,7 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
       });
       setRepos(prev =>
         prev.map(r =>
-          r.repo_id === res.repo_id ? portfolioRepoToRepoItem(res) : r,
+          r.repo_id === res.repo_id ? mergePortfolioRepoPatch(r, res) : r,
         ),
       );
       toast.success('레포지토리 정보가 수정되었습니다.', {

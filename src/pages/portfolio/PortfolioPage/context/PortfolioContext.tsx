@@ -102,6 +102,33 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
   };
 }
 
+/**
+ * PATCH 응답이 제목·설명 등 일부 필드만 포함할 때, 기존 카드의 언어·통계·URL 등을 유지.
+ * (백엔드가 전체 엔티티가 아닌 DTO를 내려주면 `portfolioRepoToRepoItem`만 쓰면 스택이 비는 문제)
+ */
+export function mergePortfolioRepoPatch(
+  prev: RepoItem,
+  patch: PortfolioRepositoryItem,
+): RepoItem {
+  const next = portfolioRepoToRepoItem(patch);
+  return {
+    ...prev,
+    ...next,
+    languages: next.languages.length > 0 ? next.languages : prev.languages,
+    languageBreakdown:
+      next.languageBreakdown != null && next.languageBreakdown.length > 0
+        ? next.languageBreakdown
+        : prev.languageBreakdown,
+    commit_count: next.commit_count ?? prev.commit_count,
+    stargazers_count: next.stargazers_count ?? prev.stargazers_count,
+    forks_count: next.forks_count ?? prev.forks_count,
+    html_url: next.html_url !== '' ? next.html_url : prev.html_url,
+    owner: next.owner !== '' ? next.owner : prev.owner,
+    created_at: next.created_at !== '' ? next.created_at : prev.created_at,
+    updated_at: next.updated_at !== '' ? next.updated_at : prev.updated_at,
+  };
+}
+
 export function portfolioMileageToItem(
   p: import('../../apis/portfolio').PortfolioMileageItem,
 ): MileageItem {
