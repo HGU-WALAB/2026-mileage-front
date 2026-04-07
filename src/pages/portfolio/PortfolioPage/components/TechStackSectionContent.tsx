@@ -146,6 +146,9 @@ const TechStackSectionContent = forwardRef<
 
   const [addDomainOpen, setAddDomainOpen] = useState(false);
   const [domainNameInput, setDomainNameInput] = useState('');
+  const [editDomainOpen, setEditDomainOpen] = useState(false);
+  const [editDomainId, setEditDomainId] = useState<number | null>(null);
+  const [editDomainNameInput, setEditDomainNameInput] = useState('');
 
   const [addSkillOpen, setAddSkillOpen] = useState(false);
   const [skillDomainId, setSkillDomainId] = useState<number | null>(null);
@@ -216,6 +219,13 @@ const TechStackSectionContent = forwardRef<
   }, [addDomainOpen]);
 
   useEffect(() => {
+    if (!editDomainOpen) {
+      setEditDomainId(null);
+      setEditDomainNameInput('');
+    }
+  }, [editDomainOpen]);
+
+  useEffect(() => {
     if (!addSkillOpen) {
       setSkillDomainId(null);
       setSkillNameInput('');
@@ -273,6 +283,28 @@ const TechStackSectionContent = forwardRef<
     },
     [setTechStackDomains],
   );
+
+  const openEditDomainDialog = useCallback(
+    (domainId: number) => {
+      if (readOnly) return;
+      const d = techStackDomains.find(x => x.id === domainId);
+      if (!d) return;
+      setEditDomainId(domainId);
+      setEditDomainNameInput(d.name ?? '');
+      setEditDomainOpen(true);
+    },
+    [readOnly, techStackDomains],
+  );
+
+  const handleEditDomainSubmit = useCallback(() => {
+    if (editDomainId == null) return;
+    const nextName = editDomainNameInput.trim();
+    if (nextName === '') return;
+    setTechStackDomains(prev =>
+      prev.map(d => (d.id === editDomainId ? { ...d, name: nextName } : d)),
+    );
+    setEditDomainOpen(false);
+  }, [editDomainId, editDomainNameInput, setTechStackDomains]);
 
   const handleAddDomainSubmit = useCallback(() => {
     const name = domainNameInput.trim();
@@ -424,9 +456,21 @@ const TechStackSectionContent = forwardRef<
                     gap="0.5rem"
                     style={{ width: '100%', minWidth: 0 }}
                   >
-                    <S.DomainText style={{ flex: '1 1 auto', minWidth: 0 }}>
-                      {domain.name}
-                    </S.DomainText>
+                    {!readOnly && domain.id != null ? (
+                      <S.DomainEditButton
+                        type="button"
+                        onClick={() => openEditDomainDialog(domain.id!)}
+                        aria-label={`도메인 ${domain.name} 이름 수정`}
+                        title="도메인 이름 수정"
+                        style={{ flex: '1 1 auto', minWidth: 0 }}
+                      >
+                        <S.DomainText>{domain.name}</S.DomainText>
+                      </S.DomainEditButton>
+                    ) : (
+                      <S.DomainText style={{ flex: '1 1 auto', minWidth: 0 }}>
+                        {domain.name}
+                      </S.DomainText>
+                    )}
                     {!readOnly && domain.id != null && (
                       <S.IconGhostBtn
                         type="button"
@@ -567,15 +611,39 @@ const TechStackSectionContent = forwardRef<
                   <TextFieldsOutlinedIcon
                     sx={{ fontSize: 16, color: headerIconColor, flexShrink: 0 }}
                   />
-                  <S.HeadLabel
-                    style={{
-                      color: headerLabelColor,
-                      flex: '1 1 auto',
-                      minWidth: 0,
-                    }}
-                  >
-                    {domain.name}
-                  </S.HeadLabel>
+                  {!readOnly && domain.id != null ? (
+                    <S.DomainEditButton
+                      type="button"
+                      onClick={() => openEditDomainDialog(domain.id!)}
+                      aria-label={`도메인 ${domain.name} 이름 수정`}
+                      title="도메인 이름 수정"
+                      style={{
+                        flex: '1 1 auto',
+                        minWidth: 0,
+                        alignSelf: 'stretch',
+                      }}
+                    >
+                      <S.HeadLabel
+                        style={{
+                          color: headerLabelColor,
+                          flex: '1 1 auto',
+                          minWidth: 0,
+                        }}
+                      >
+                        {domain.name}
+                      </S.HeadLabel>
+                    </S.DomainEditButton>
+                  ) : (
+                    <S.HeadLabel
+                      style={{
+                        color: headerLabelColor,
+                        flex: '1 1 auto',
+                        minWidth: 0,
+                      }}
+                    >
+                      {domain.name}
+                    </S.HeadLabel>
+                  )}
                   {!readOnly && domain.id != null && (
                     <S.IconGhostBtn
                       type="button"
@@ -719,6 +787,79 @@ const TechStackSectionContent = forwardRef<
                 color="blue"
                 size="medium"
                 onClick={handleAddDomainSubmit}
+              />
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={editDomainOpen}
+            onClose={() => setEditDomainOpen(false)}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+              sx: { borderRadius: '0.75rem' },
+            }}
+          >
+            <DialogContent sx={{ pt: 3 }}>
+              <Flex.Column gap="1rem" style={{ width: '100%' }}>
+                <Flex.Column gap="0.25rem">
+                  <Text
+                    style={{
+                      ...theme.typography.h3,
+                      fontWeight: 700,
+                      margin: 0,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    도메인 이름 수정
+                  </Text>
+                  <Text
+                    style={{
+                      ...theme.typography.body2,
+                      color: theme.palette.grey[600],
+                      margin: 0,
+                    }}
+                  >
+                    기술 스택을 묶을 도메인(분야) 이름을 수정합니다.
+                  </Text>
+                </Flex.Column>
+                <S.FieldGroup>
+                  <Dropdown
+                    label="도메인"
+                    items={[...TECH_STACK_DOMAIN_PRESETS]}
+                    selectedItem={editDomainNameInput}
+                    setSelectedItem={setEditDomainNameInput}
+                    freeSolo
+                    freeSoloInputProps={{
+                      maxLength: INPUT_MAX_LENGTH.TECH_STACK_DOMAIN,
+                      'aria-label': '도메인',
+                      onKeyDown: e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleEditDomainSubmit();
+                        }
+                      },
+                    }}
+                    size="medium"
+                    width="100%"
+                  />
+                </S.FieldGroup>
+              </Flex.Column>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2, gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                label="취소"
+                variant="outlined"
+                color="blue"
+                size="medium"
+                onClick={() => setEditDomainOpen(false)}
+              />
+              <Button
+                label="저장"
+                variant="contained"
+                color="blue"
+                size="medium"
+                onClick={handleEditDomainSubmit}
               />
             </DialogActions>
           </Dialog>
@@ -989,6 +1130,29 @@ const S = {
     white-space: normal;
     overflow-wrap: anywhere;
     word-break: break-word;
+  `,
+  DomainEditButton: styled('button')`
+    display: inline-flex;
+    flex-direction: row;
+    align-items: flex-start;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-sizing: border-box;
+    &:hover {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    &:focus-visible {
+      outline: 2px solid ${palette.blue400};
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
   `,
   TagCloudColumn: styled('div')<{ $fitContent?: boolean }>`
     display: flex;
