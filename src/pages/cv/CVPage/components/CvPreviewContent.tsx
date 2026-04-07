@@ -1,5 +1,5 @@
 import { LoadingIcon } from '@/assets';
-import { Button, Flex, Text } from '@/components';
+import { Button, Flex, Input, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import BusinessIcon from '@mui/icons-material/Business';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -219,11 +219,34 @@ const CvPreviewContent = ({
             <Flex.Column gap="0.35rem" style={{ flex: '1 1 12rem', minWidth: 0 }}>
               <Flex.Row align="center" gap="0.5rem" style={{ minWidth: 0 }}>
                 <BusinessIcon sx={{ fontSize: 22, color: palette.blue500, flexShrink: 0 }} />
-                <S.TitleInput
+                <Input
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
-                  maxLength={200}
-                  aria-label="포트폴리오 제목"
+                  size="small"
+                  fullWidth
+                  inputProps={{
+                    maxLength: 200,
+                    'aria-label': '포트폴리오 제목',
+                  }}
+                  sx={{
+                    minWidth: 0,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '0.5rem',
+                      backgroundColor: palette.white,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      lineHeight: 1.35,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: palette.grey200,
+                    },
+                    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: palette.grey300,
+                    },
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: palette.blue500,
+                    },
+                  }}
                 />
               </Flex.Row>
               <Text
@@ -453,11 +476,38 @@ const CvPreviewContent = ({
               </Flex.Row>
               <Flex.Column gap="0.5rem" width="100%" style={{ minWidth: 0 }}>
                 {isEditing ? (
-                  <S.HtmlTextarea
+                  <Input
+                    multiline
                     value={editHtml}
                     onChange={e => setEditHtml(e.target.value)}
-                    aria-label="HTML 소스"
                     rows={14}
+                    size="small"
+                    fullWidth
+                    inputProps={{
+                      'aria-label': 'HTML 소스',
+                      style: { fontFamily: 'ui-monospace, monospace' },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '0.5rem',
+                        backgroundColor: palette.white,
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.grey200,
+                      },
+                      '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.grey300,
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.blue500,
+                      },
+                      '& textarea': {
+                        fontFamily: 'ui-monospace, monospace',
+                        fontSize: '0.8125rem',
+                        lineHeight: 1.5,
+                        resize: 'vertical',
+                      },
+                    }}
                   />
                 ) : showHtmlPreview ? (
                   <S.HtmlPreviewShell $layout={layout}>
@@ -593,43 +643,5 @@ const S = {
     background-color: ${palette.blue300};
     border: 1px solid ${palette.grey200};
     border-radius: 2rem;
-  `,
-  TitleInput: styled('input')`
-    flex: 1 1 auto;
-    min-width: 0;
-    box-sizing: border-box;
-    padding: 0.45rem 0.65rem;
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1.35;
-    color: ${palette.nearBlack};
-    border: 1.5px solid ${palette.blue400};
-    border-radius: 0.5rem;
-    background-color: ${palette.white};
-    outline: none;
-    &:focus {
-      border-color: ${palette.blue500};
-      box-shadow: 0 0 0 2px ${palette.blue300};
-    }
-  `,
-  HtmlTextarea: styled('textarea')`
-    width: 100%;
-    min-width: 0;
-    min-height: 10rem;
-    box-sizing: border-box;
-    padding: 0.65rem 0.85rem;
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    font-family: ui-monospace, monospace;
-    color: ${palette.nearBlack};
-    border: 1.5px solid ${palette.blue400};
-    border-radius: 0.5rem;
-    background-color: ${palette.white};
-    resize: vertical;
-    outline: none;
-    &:focus {
-      border-color: ${palette.blue500};
-      box-shadow: 0 0 0 2px ${palette.blue300};
-    }
   `,
 };
