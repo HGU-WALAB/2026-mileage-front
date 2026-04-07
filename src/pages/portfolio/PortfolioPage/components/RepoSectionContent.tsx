@@ -1,5 +1,6 @@
 import { Button, Flex, Input, Text } from '@/components';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
+import { ROUTE_PATH } from '@/constants/routePath';
 import { palette } from '@/styles/palette';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -7,6 +8,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useCallback, useMemo, useState } from 'react';
 import { styled, useTheme, useMediaQuery } from '@mui/material';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { patchRepository } from '../../apis/repositories';
@@ -16,6 +18,7 @@ import {
   usePortfolioContext,
 } from '../context/PortfolioContext';
 import type { RepoItem } from '../../types/portfolioItems';
+import useGetGitHubStatusQuery from '@/pages/profile/hooks/useGetGitHubStatusQuery';
 import {
   formatRepoStat,
   RepoLanguageBar,
@@ -32,6 +35,8 @@ interface RepoSectionContentProps {
 const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
+  const navigate = useNavigate();
+  const { data: githubStatus } = useGetGitHubStatusQuery();
   const { repos: contextRepos, setRepos } = usePortfolioContext();
   const repos = Array.isArray(contextRepos) ? contextRepos : [];
   const [page, setPage] = useState(0);
@@ -98,9 +103,27 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
   );
 
   if (!readOnly && displayRepos.length === 0) {
+    const isConnected = githubStatus?.connected ?? false;
     return (
       <S.ConnectCard>
-        <S.ConnectMessage>선택된 레포지토리가 없습니다.</S.ConnectMessage>
+        <Flex.Column gap="0.75rem" style={{ width: '100%' }}>
+          <S.ConnectMessage>
+            {isConnected
+              ? '선택된 레포지토리가 없습니다.'
+              : '깃허브 계정을 연결해 레포지토리를 추가해 주세요.'}
+          </S.ConnectMessage>
+          {!isConnected && (
+            <Flex.Row justify="flex-start" style={{ width: '100%' }}>
+              <Button
+                label="마이페이지로 이동"
+                variant="contained"
+                color="blue"
+                size="medium"
+                onClick={() => navigate(ROUTE_PATH.myPage)}
+              />
+            </Flex.Row>
+          )}
+        </Flex.Column>
       </S.ConnectCard>
     );
   }

@@ -934,7 +934,7 @@ const S = {
     width: 100%;
     box-sizing: border-box;
     align-items: stretch;
-    & > *:nth-child(${p => p.$columnCount}n) {
+    & > *:nth-of-type(${p => p.$columnCount}n) {
       border-right: none;
     }
   `,

@@ -76,7 +76,7 @@ const CvGenerateStep4 = ({
         <S.SummaryCell>
           <S.SummaryLabelRow>
             <BusinessIcon sx={{ fontSize: 18, color: palette.grey500 }} aria-hidden />
-            <S.SummaryLabelText>회사</S.SummaryLabelText>
+            <S.SummaryLabelText>기업</S.SummaryLabelText>
           </S.SummaryLabelRow>
           <S.SummaryValue>{companyDisplay}</S.SummaryValue>
         </S.SummaryCell>
