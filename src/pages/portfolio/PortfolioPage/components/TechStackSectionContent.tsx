@@ -986,9 +986,9 @@ const S = {
     color: ${palette.nearBlack};
     line-height: 1.4;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   `,
   TagCloudColumn: styled('div')<{ $fitContent?: boolean }>`
     display: flex;
