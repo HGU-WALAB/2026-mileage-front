@@ -12,6 +12,14 @@ const githubStatusStore = {
   status: { ...mockGitHubStatusConnected },
 };
 
+function getMockPortfolioState() {
+  const g = globalThis as unknown as {
+    __mockPortfolioState?: { repoSelectionReset?: boolean };
+  };
+  if (!g.__mockPortfolioState) g.__mockPortfolioState = {};
+  return g.__mockPortfolioState;
+}
+
 export const GitHubHandlers = [
   http.get(BASE_URL + ENDPOINT.GITHUB_STATUS, () => {
     const { is401Error, is500Error } = randomMswError();
@@ -62,6 +70,8 @@ export const GitHubHandlers = [
 
     // 연결 해제 성공 시 연결 해제된 상태 반환
     githubStatusStore.status = { ...mockGitHubStatusDisconnected };
+    // 포트폴리오 레포 선택 상태도 초기화된 것처럼 동작시키기 위한 플래그
+    getMockPortfolioState().repoSelectionReset = true;
     return HttpResponse.json({ ...githubStatusStore.status }, { status: 200 });
   }),
 ];

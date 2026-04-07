@@ -3,6 +3,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -30,6 +31,7 @@ import {
 } from '../../utils/techStackDomains';
 import type { ActivityItem, MileageItem, RepoItem, UserInfo } from '../../types/portfolioItems';
 import type { PortfolioState } from '../../types/portfolioState';
+import { getGitHubStatus } from '@/pages/profile/apis/github';
 
 const SAVED_TOAST_OPTIONS = {
   position: 'top-center' as const,
@@ -217,15 +219,32 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
   // ── 레포지토리 ─────────────────────────────────────────────────────────────
   const repoQueryKey = useMemo(() => [QUERY_KEYS.portfolioRepositories], []);
 
+  const githubStatusQuery = useQuery({
+    queryKey: [QUERY_KEYS.githubStatus],
+    queryFn: () => getGitHubStatus(),
+    ...QUERY_CONFIG,
+  });
+  const githubConnected = githubStatusQuery.data?.connected === true;
+
   const reposQuery = useQuery<RepoItem[]>({
     queryKey: repoQueryKey,
     queryFn: async () => {
       const { getAllRepositories } = await import('../../apis/portfolio');
-      const list = await getAllRepositories();
+      // 편집 화면 카드에는 선택(visible)된 레포만 필요합니다.
+      // 전체 목록은 선택 모달에서 별도로 불러옵니다.
+      const list = await getAllRepositories({ visible_only: true });
       return (list ?? []).map(portfolioRepoToRepoItem);
     },
+    enabled: githubConnected,
     ...QUERY_CONFIG,
   });
+
+  useEffect(() => {
+    if (githubConnected) return;
+    // 깃허브 연결 해제 상태면 레포 GET 자체를 막고, 캐시/데이터를 비웁니다.
+    queryClient.removeQueries({ queryKey: repoQueryKey });
+    queryClient.setQueryData<RepoItem[]>(repoQueryKey, []);
+  }, [githubConnected, queryClient, repoQueryKey]);
 
   const setRepos = useCallback(
     (v: RepoItem[] | ((p: RepoItem[]) => RepoItem[])) => {

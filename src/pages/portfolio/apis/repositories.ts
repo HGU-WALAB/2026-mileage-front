@@ -101,6 +101,7 @@ export const getAllRepositories = async (
 ): Promise<PortfolioRepositoryItem[]> => {
   const { perPage = 20, ...baseParams } = options;
   const BATCH = 5;
+  const MAX_PAGES = 100;
 
   // 1페이지를 먼저 가져와 데이터가 더 있는지 확인
   const firstRes = await getRepositories({ ...baseParams, page: 1, per_page: perPage });
@@ -111,6 +112,7 @@ export const getAllRepositories = async (
   let startPage = 2;
 
   for (;;) {
+    if (startPage > MAX_PAGES) break;
     // BATCH 개 페이지를 병렬로 요청
     const pages = Array.from({ length: BATCH }, (_, i) => startPage + i);
     const results = await Promise.all(

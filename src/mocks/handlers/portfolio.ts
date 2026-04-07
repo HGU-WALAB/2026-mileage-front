@@ -43,6 +43,14 @@ const repositoriesStore: PortfolioRepositoryItem[] = mockPortfolioRepositories.m
 );
 let nextRepoId = Math.max(0, ...repositoriesStore.map(r => r.id)) + 1;
 
+function getMockPortfolioState() {
+  const g = globalThis as unknown as {
+    __mockPortfolioState?: { repoSelectionReset?: boolean };
+  };
+  if (!g.__mockPortfolioState) g.__mockPortfolioState = {};
+  return g.__mockPortfolioState;
+}
+
 const mileageStore: PortfolioMileageItem[] = mockPortfolioMileage.map(m => ({
   ...m,
 }));
@@ -532,7 +540,10 @@ export const PortfolioHandlers = [
     const visibilityParam = url.searchParams.get('visibility') ?? 'all';
     const affiliationParam = url.searchParams.get('affiliation') ?? 'owner';
 
-    let list = [...repositoriesStore];
+    const resetSelection = Boolean(getMockPortfolioState().repoSelectionReset);
+    let list = resetSelection
+      ? repositoriesStore.map(r => ({ ...r, is_visible: false }))
+      : [...repositoriesStore];
 
     if (visibleOnly) {
       list = list.filter(r => r.is_visible);
@@ -570,6 +581,7 @@ export const PortfolioHandlers = [
 
   http.put(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, async ({ request }) => {
     const body = (await request.json()) as PutRepositoryItem[];
+    getMockPortfolioState().repoSelectionReset = false;
     const byRepoId = new Map(repositoriesStore.map(r => [r.repo_id, r]));
     repositoriesStore.length = 0;
     body.forEach((item, index) => {
