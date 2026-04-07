@@ -1,4 +1,4 @@
-import { Flex, Text, Title } from '@/components';
+import { Dropdown, Flex, Input, Text, Title } from '@/components';
 import { palette } from '@/styles/palette';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -21,6 +21,8 @@ import {
 import type { ActivityItem } from '../../types/portfolioItems';
 
 type ActivityEditDraft = Partial<ActivityItem> & { tagCompose?: string };
+
+const ACTIVITY_CATEGORY_PRESETS = ['동아리', '자격증', '수상', '봉사'] as const;
 
 function dedupeActivityTags(tags: string[] | undefined): string[] {
   if (!tags?.length) return [];
@@ -225,18 +227,22 @@ const ActivitiesSectionContent = forwardRef<
               }}
             >
               <S.FieldLabel>카테고리</S.FieldLabel>
-              <S.EditInput
-                value={editDraft.category ?? ''}
-                onChange={e =>
+              <Dropdown
+                items={[...ACTIVITY_CATEGORY_PRESETS]}
+                selectedItem={editDraft.category ?? ''}
+                setSelectedItem={v =>
                   setEditDraft(prev => ({
                     ...prev,
-                    category: e.target.value,
+                    category: v,
                   }))
                 }
-                placeholder="예: 수상"
-                maxLength={INPUT_MAX_LENGTH.ACTIVITY_CATEGORY}
-                aria-label="카테고리"
-                style={{ width: '100%' }}
+                freeSolo
+                freeSoloInputProps={{
+                  maxLength: INPUT_MAX_LENGTH.ACTIVITY_CATEGORY,
+                  'aria-label': '카테고리',
+                }}
+                width="100%"
+                size="small"
               />
             </Flex.Column>
             <Flex.Column
@@ -253,7 +259,7 @@ const ActivitiesSectionContent = forwardRef<
                 wrap="wrap"
                 style={{ width: '100%' }}
               >
-                <S.DateInput
+                <Input
                   type="date"
                   value={editDraft.start_date ?? ''}
                   onChange={e => {
@@ -267,10 +273,17 @@ const ActivitiesSectionContent = forwardRef<
                       };
                     });
                   }}
+                  inputProps={{ 'aria-label': '시작 기간' }}
+                  size="small"
                   style={{
                     flex: '1 1 6.75rem',
                     minWidth: '6.5rem',
                     maxWidth: '100%',
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: theme.palette.variant.default,
+                    },
                   }}
                 />
                 <Text
@@ -284,7 +297,7 @@ const ActivitiesSectionContent = forwardRef<
                 >
                   ~
                 </Text>
-                <S.DateInput
+                <Input
                   type="date"
                   value={editDraft.end_date ?? ''}
                   onChange={e => {
@@ -294,109 +307,25 @@ const ActivitiesSectionContent = forwardRef<
                       return {
                         ...prev,
                         end_date: end,
-                        start_date: start && end < start ? end : start,
+                        // 종료일만 지운 경우 시작일은 유지
+                        start_date: end === '' ? start : start && end < start ? end : start,
                       };
                     });
                   }}
+                  inputProps={{ 'aria-label': '종료 기간' }}
+                  size="small"
                   style={{
                     flex: '1 1 6.75rem',
                     minWidth: '6.5rem',
                     maxWidth: '100%',
                   }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: theme.palette.variant.default,
+                    },
+                  }}
                 />
               </Flex.Row>
-            </Flex.Column>
-            <Flex.Column
-              gap="0.25rem"
-              style={{
-                flex: '2 1 14rem',
-                minWidth: 'min(100%, 10rem)',
-              }}
-            >
-              <S.FieldLabel>태그 (입력 후 Enter)</S.FieldLabel>
-              <Flex.Column gap="0.375rem" style={{ width: '100%', minWidth: 0 }}>
-                <Flex.Row
-                  wrap="wrap"
-                  align="center"
-                  gap="0.375rem"
-                  style={{ width: '100%', minWidth: 0 }}
-                >
-                  {dedupeActivityTags(editDraft.tags).map((tag, i) => (
-                    <S.TagRemoveChip
-                      key={`${tag}-${i}`}
-                      type="button"
-                      onClick={() =>
-                        setEditDraft(prev => ({
-                          ...prev,
-                          tags: dedupeActivityTags(prev.tags).filter(
-                            t => t !== tag,
-                          ),
-                        }))
-                      }
-                      aria-label={`${tag} 태그 제거`}
-                    >
-                      <span>{tag}</span>
-                      <CloseIcon sx={{ fontSize: 14, flexShrink: 0 }} />
-                    </S.TagRemoveChip>
-                  ))}
-                </Flex.Row>
-                <S.TagEditorShell>
-                  <S.TagComposeInput
-                    value={editDraft.tagCompose ?? ''}
-                    onChange={e =>
-                      setEditDraft(prev => ({
-                        ...prev,
-                        tagCompose: e.target.value.slice(
-                          0,
-                          INPUT_MAX_LENGTH.TECH_STACK_TAG,
-                        ),
-                      }))
-                    }
-                    placeholder="예: 해커톤 — 입력 후 Enter"
-                    aria-label="태그 입력"
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        if (e.nativeEvent.isComposing) return;
-                        e.preventDefault();
-                        const input = e.target as HTMLInputElement;
-                        /* IME 확정 직후 React state와 어긋남 방지: 다음 프레임에서 input 값 사용 */
-                        window.requestAnimationFrame(() => {
-                          const piece = input.value
-                            .trim()
-                            .slice(0, INPUT_MAX_LENGTH.TECH_STACK_TAG);
-                          setEditDraft(prev => {
-                            if (!piece) {
-                              return { ...prev, tagCompose: '' };
-                            }
-                            const cur = dedupeActivityTags(prev.tags);
-                            if (cur.includes(piece)) {
-                              return { ...prev, tagCompose: '' };
-                            }
-                            return {
-                              ...prev,
-                              tags: [...cur, piece],
-                              tagCompose: '',
-                            };
-                          });
-                        });
-                        return;
-                      }
-                      if (e.key === 'Backspace') {
-                        if (e.nativeEvent.isComposing) return;
-                        const val = (e.target as HTMLInputElement).value;
-                        if (val === '') {
-                          setEditDraft(prev => {
-                            const cur = dedupeActivityTags(prev.tags);
-                            if (!cur.length) return prev;
-                            return { ...prev, tags: cur.slice(0, -1) };
-                          });
-                          e.preventDefault();
-                        }
-                      }
-                    }}
-                  />
-                </S.TagEditorShell>
-              </Flex.Column>
             </Flex.Column>
           </Flex.Row>
           <Flex.Column gap="0.25rem" style={{ width: '100%' }}>
@@ -414,6 +343,96 @@ const ActivitiesSectionContent = forwardRef<
               aria-label="제목"
               style={{ width: '100%' }}
             />
+          </Flex.Column>
+          <Flex.Column
+            gap="0.25rem"
+            style={{
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
+            <S.FieldLabel>태그 (입력 후 Enter)</S.FieldLabel>
+            <Flex.Column gap="0.375rem" style={{ width: '100%', minWidth: 0 }}>
+              <Flex.Row
+                wrap="wrap"
+                align="center"
+                gap="0.375rem"
+                style={{ width: '100%', minWidth: 0 }}
+              >
+                {dedupeActivityTags(editDraft.tags).map((tag, i) => (
+                  <S.TagRemoveChip
+                    key={`${tag}-${i}`}
+                    type="button"
+                    onClick={() =>
+                      setEditDraft(prev => ({
+                        ...prev,
+                        tags: dedupeActivityTags(prev.tags).filter(t => t !== tag),
+                      }))
+                    }
+                    aria-label={`${tag} 태그 제거`}
+                  >
+                    <span>{tag}</span>
+                    <CloseIcon sx={{ fontSize: 14, flexShrink: 0 }} />
+                  </S.TagRemoveChip>
+                ))}
+              </Flex.Row>
+              <S.TagEditorShell>
+                <S.TagComposeInput
+                  value={editDraft.tagCompose ?? ''}
+                  onChange={e =>
+                    setEditDraft(prev => ({
+                      ...prev,
+                      tagCompose: e.target.value.slice(
+                        0,
+                        INPUT_MAX_LENGTH.TECH_STACK_TAG,
+                      ),
+                    }))
+                  }
+                  placeholder="예: 해커톤 — 입력 후 Enter"
+                  aria-label="태그 입력"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      if (e.nativeEvent.isComposing) return;
+                      e.preventDefault();
+                      const input = e.target as HTMLInputElement;
+                      /* IME 확정 직후 React state와 어긋남 방지: 다음 프레임에서 input 값 사용 */
+                      window.requestAnimationFrame(() => {
+                        const piece = input.value
+                          .trim()
+                          .slice(0, INPUT_MAX_LENGTH.TECH_STACK_TAG);
+                        setEditDraft(prev => {
+                          if (!piece) {
+                            return { ...prev, tagCompose: '' };
+                          }
+                          const cur = dedupeActivityTags(prev.tags);
+                          if (cur.includes(piece)) {
+                            return { ...prev, tagCompose: '' };
+                          }
+                          return {
+                            ...prev,
+                            tags: [...cur, piece],
+                            tagCompose: '',
+                          };
+                        });
+                      });
+                      return;
+                    }
+                    if (e.key === 'Backspace') {
+                      if (e.nativeEvent.isComposing) return;
+                      const val = (e.target as HTMLInputElement).value;
+                      if (val === '') {
+                        setEditDraft(prev => {
+                          const cur = dedupeActivityTags(prev.tags);
+                          if (!cur.length) return prev;
+                          return { ...prev, tags: cur.slice(0, -1) };
+                        });
+                        e.preventDefault();
+                      }
+                    }
+                  }}
+                />
+              </S.TagEditorShell>
+            </Flex.Column>
           </Flex.Column>
           <Flex.Column gap="0.25rem" style={{ width: '100%' }}>
             <S.FieldLabel>상세 설명</S.FieldLabel>
@@ -752,19 +771,6 @@ const S = {
     font-size: 0.75rem;
     color: ${({ warn }) => (warn ? palette.pink500 : palette.grey400)};
     text-align: right;
-  `,
-  DateInput: styled('input')`
-    padding: 0.4rem 0.5rem;
-    border-radius: 0.375rem;
-    border: 1.5px solid ${palette.blue400};
-    font-size: 0.875rem;
-    outline: none;
-    flex-shrink: 0;
-    box-sizing: border-box;
-    &:focus {
-      border-color: ${palette.blue500};
-      box-shadow: 0 0 0 2px ${palette.blue300};
-    }
   `,
   EditButton: styled('button')`
     display: flex;
