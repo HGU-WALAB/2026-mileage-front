@@ -28,7 +28,7 @@ import {
 import useDeletePortfolioCvMutation from '../../hooks/useDeletePortfolioCvMutation';
 import CvPreviewContent from './CvPreviewContent';
 
-const CV_QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
+import { CV_QUERY_CONFIG } from '../../constants/cvQueryConfig';
 
 const AddIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <AddIcon sx={{ fontSize: 20 }} />

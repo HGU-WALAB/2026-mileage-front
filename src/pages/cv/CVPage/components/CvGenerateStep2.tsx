@@ -15,19 +15,13 @@ import {
 import { type FunctionComponent, type SVGProps } from 'react';
 
 import { CV_TARGET_POSITION_PRESETS } from '../../constants/cvTargetPositionOptions';
+import {
+  ADDITIONAL_NOTES_PLACEHOLDER,
+  JOB_INFO_MAX_LENGTH,
+  JOB_POSTING_PLACEHOLDER,
+} from '../../constants/cvGenerateStep2Constants';
 
 import { CvGeneratePageS as S } from '../cvGeneratePageStyles';
-
-const JOB_POSTING_PLACEHOLDER = `예) 회사: 카카오
-포지션: 백엔드 개발자 (인턴)
-자격요건: Java/Spring 경험, 알고리즘 실력
-우대사항: AWS 경험, 오픈소스 기여
-...`;
-
-const ADDITIONAL_NOTES_PLACEHOLDER =
-  '예) 프로젝트 경험 위주로 강조해줘, 간결하게 작성해줘 등';
-
-const JOB_INFO_MAX_LENGTH = 200;
 
 const AutoAwesomeIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <AutoAwesomeIcon sx={{ fontSize: 20 }} />

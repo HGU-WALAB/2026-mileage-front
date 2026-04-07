@@ -15,8 +15,7 @@ import { buildCvPreviewSrcDoc } from '../../utils/buildCvPreviewSrcDoc';
 import { extractCompanyLineFromJobPosting } from '../../utils/extractCompanyLineFromJobPosting';
 import { sanitizeCvHtml } from '../../utils/sanitizeCvHtml';
 import { CvGeneratePageS as WizS } from '../cvGeneratePageStyles';
-
-const HTML_PANE_HEIGHT = 'clamp(12rem, 45vh, 26rem)';
+import { HTML_PANE_HEIGHT } from '../../constants/cvGeneratePaneConstants';
 
 export interface CvGenerateStep4Props {
   htmlInput: string;
