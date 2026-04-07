@@ -37,6 +37,7 @@ import {
   PROFICIENCY_TIER_LABELS,
   tierToRepresentativeLevel,
 } from '../../utils/techStackLevel';
+import { TECH_STACK_DOMAIN_PRESETS } from '../../constants/techStackDomainPresets';
 import { usePortfolioContext } from '../context/PortfolioContext';
 
 interface TechStackSectionContentProps {
@@ -682,28 +683,24 @@ const TechStackSectionContent = forwardRef<
                   </Text>
                 </Flex.Column>
                 <S.FieldGroup>
-                  <Input
+                  <Dropdown
                     label="도메인"
-                    value={domainNameInput}
-                    onChange={e => setDomainNameInput(e.target.value)}
-                    placeholder="예: 프론트엔드, 백엔드, 인프라, 협업툴"
-                    inputProps={{
+                    items={[...TECH_STACK_DOMAIN_PRESETS]}
+                    selectedItem={domainNameInput}
+                    setSelectedItem={setDomainNameInput}
+                    freeSolo
+                    freeSoloInputProps={{
                       maxLength: INPUT_MAX_LENGTH.TECH_STACK_DOMAIN,
                       'aria-label': '도메인',
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddDomainSubmit();
-                      }
-                    }}
-                    fullWidth
-                    size="medium"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: theme.palette.variant.default,
+                      onKeyDown: e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddDomainSubmit();
+                        }
                       },
                     }}
+                    size="medium"
+                    width="100%"
                   />
                 </S.FieldGroup>
               </Flex.Column>
