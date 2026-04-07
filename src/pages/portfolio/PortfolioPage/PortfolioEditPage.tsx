@@ -38,11 +38,11 @@ import {
   type TechStackSectionContentHandle,
   UserInfoSectionContent,
 } from './components';
-import { useScrollPortfolioSection } from './hooks';
 import {
   PROMPT_QUALITY_SECTION_HINTS,
   usePortfolioPromptProgress,
 } from './utils/portfolioPromptProgress';
+import { useScrollPortfolioSection } from '../hooks';
 
 const AddPlusIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <AddIcon sx={{ fontSize: 20 }} />

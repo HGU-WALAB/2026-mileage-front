@@ -39,6 +39,11 @@ import {
 } from '../../utils/techStackLevel';
 import { TECH_STACK_DOMAIN_PRESETS } from '../../constants/techStackDomainPresets';
 import { usePortfolioContext } from '../context/PortfolioContext';
+import {
+  bucketStacksByTier,
+  bucketStacksForVisible,
+  sortTechStackDomains,
+} from '../../hooks/techStackSectionUtils';
 
 interface TechStackSectionContentProps {
   readOnly?: boolean;
@@ -51,35 +56,6 @@ export type TechStackSectionContentHandle = {
 const AddPlusButtonIcon: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <AddIcon sx={{ fontSize: 20 }} />
 );
-
-function sortDomains(domains: TechStackDomain[]): TechStackDomain[] {
-  return [...domains].sort((a, b) => a.order_index - b.order_index);
-}
-
-/** 칼럼별 스택 원본 인덱스 유지 (삭제용) */
-function bucketStacksByTier(stacks: TechStackSkill[]) {
-  const buckets: { skill: TechStackSkill; stackIndex: number }[][] = Array.from(
-    { length: PROFICIENCY_TIER_LABELS.length },
-    () => [],
-  );
-  stacks.forEach((skill, stackIndex) => {
-    const tier = levelToProficiencyTier(skill.level);
-    buckets[tier].push({ skill, stackIndex });
-  });
-  buckets.forEach(b =>
-    b.sort((a, c) => a.skill.name.localeCompare(c.skill.name, 'ko')),
-  );
-  return buckets;
-}
-
-/** 표에 그리는 칼럼(숙련도 단계)에 맞춰 버킷만 추림 */
-function bucketStacksForVisible(
-  stacks: TechStackSkill[],
-  visibleTiers: ProficiencyTierIndex[],
-) {
-  const full = bucketStacksByTier(stacks);
-  return visibleTiers.map(ti => full[ti]);
-}
 
 function NotionTag({
   item,
@@ -161,7 +137,7 @@ const TechStackSectionContent = forwardRef<
   } | null>(null);
 
   const sortedDomains = useMemo(
-    () => sortDomains(techStackDomains),
+    () => sortTechStackDomains(techStackDomains),
     [techStackDomains],
   );
 

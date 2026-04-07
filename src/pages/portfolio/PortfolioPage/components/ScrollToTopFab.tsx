@@ -6,7 +6,7 @@ import { useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useCallback } from 'react';
 
-import { scrollMainToTop, useMainScrollPast } from '../hooks';
+import { scrollMainToTop, useMainScrollPast } from '../../hooks';
 
 const SCROLL_THRESHOLD = 300;
 

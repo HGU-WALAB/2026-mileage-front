@@ -25,3 +25,4 @@ export function useMainScrollPast(thresholdPx: number) {
 export function scrollMainToTop() {
   getScrollMain()?.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
