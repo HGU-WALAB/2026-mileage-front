@@ -514,6 +514,9 @@ const S = {
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
+    @media (max-width: 429px) {
+      display: none;
+    }
   `,
   SearchButton: styled('button')`
     display: flex;

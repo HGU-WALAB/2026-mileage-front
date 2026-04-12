@@ -28,7 +28,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { styled, useTheme } from '@mui/material';
+import { styled, useMediaQuery, useTheme } from '@mui/material';
 import { toast } from 'react-toastify';
 
 interface RepoSelectModalProps {
@@ -55,6 +55,7 @@ const AFFILIATION_OPTIONS = [
 
 const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const theme = useTheme();
+  const compactRepoPagination = useMediaQuery('(max-width: 429px)');
   const { setRepos, repos: portfolioRepos } = usePortfolioContext();
   const [pageRepos, setPageRepos] = useState<PortfolioRepositoryItem[]>([]);
   const [loadedRepoById, setLoadedRepoById] = useState<
@@ -346,28 +347,30 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                 <SearchIcon />
               </S.SearchButton>
             </Flex.Row>
-            <Flex.Row
-              align="center"
-              justify="flex-end"
-              wrap="wrap"
-              gap="0.75rem"
-              style={{ flex: '1 1 auto', minWidth: 0 }}
-            >
-              <Dropdown
-                label="접근 권한"
-                items={VISIBILITY_OPTIONS.map(option => option.label)}
-                selectedItem={visibilityFilter}
-                setSelectedItem={setVisibilityFilterAndResetPage}
-                width="7rem"
-              />
-              <Dropdown
-                label="소유 유형"
-                items={AFFILIATION_OPTIONS.map(option => option.label)}
-                selectedItem={affiliationFilter}
-                setSelectedItem={setAffiliationFilterAndResetPage}
-                width="8.5rem"
-              />
-            </Flex.Row>
+            <S.FilterDropdowns>
+              <Flex.Row
+                align="center"
+                justify="flex-end"
+                wrap="wrap"
+                gap="0.75rem"
+                style={{ flex: '1 1 auto', minWidth: 0 }}
+              >
+                <Dropdown
+                  label="접근 권한"
+                  items={VISIBILITY_OPTIONS.map(option => option.label)}
+                  selectedItem={visibilityFilter}
+                  setSelectedItem={setVisibilityFilterAndResetPage}
+                  width="7rem"
+                />
+                <Dropdown
+                  label="소유 유형"
+                  items={AFFILIATION_OPTIONS.map(option => option.label)}
+                  selectedItem={affiliationFilter}
+                  setSelectedItem={setAffiliationFilterAndResetPage}
+                  width="8.5rem"
+                />
+              </Flex.Row>
+            </S.FilterDropdowns>
           </S.FilterBar>
         )}
         {!loading && selectedRepos.length > 0 && (
@@ -498,38 +501,83 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
             ))
             )}
           </S.List>
-          <S.PaginationBar justify="space-between" align="center" wrap="wrap">
-            <Button
-              label="이전"
-              variant="outlined"
-              size="medium"
-              icon={
-                ChevronLeftIcon as FunctionComponent<SVGProps<SVGSVGElement>>
-              }
-              iconPosition="start"
-              disabled={!hasPrevPage}
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-            />
+          <S.PaginationBar align="center" wrap="wrap">
+            {compactRepoPagination ? (
+              <S.PaginationIconSlot>
+                <Button
+                  label=""
+                  aria-label="이전 페이지"
+                  variant="outlined"
+                  size="medium"
+                  icon={
+                    ChevronLeftIcon as FunctionComponent<
+                      SVGProps<SVGSVGElement>
+                    >
+                  }
+                  iconPosition="start"
+                  disabled={!hasPrevPage}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                />
+              </S.PaginationIconSlot>
+            ) : (
+              <Button
+                label="이전"
+                variant="outlined"
+                size="medium"
+                icon={
+                  ChevronLeftIcon as FunctionComponent<
+                    SVGProps<SVGSVGElement>
+                  >
+                }
+                iconPosition="start"
+                disabled={!hasPrevPage}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              />
+            )}
             <Text
               style={{
                 ...theme.typography.body2,
                 color: theme.palette.grey[600],
                 margin: 0,
+                flex: '1 1 0',
+                minWidth: 0,
+                textAlign: 'center',
               }}
             >
               {page}페이지 · 페이지당 {REPOS_PER_PAGE}개
             </Text>
-            <Button
-              label="다음"
-              variant="outlined"
-              size="medium"
-              icon={
-                ChevronRightIcon as FunctionComponent<SVGProps<SVGSVGElement>>
-              }
-              iconPosition="end"
-              disabled={!hasNextPage}
-              onClick={() => setPage(p => p + 1)}
-            />
+            {compactRepoPagination ? (
+              <S.PaginationIconSlot>
+                <Button
+                  label=""
+                  aria-label="다음 페이지"
+                  variant="outlined"
+                  size="medium"
+                  icon={
+                    ChevronRightIcon as FunctionComponent<
+                      SVGProps<SVGSVGElement>
+                    >
+                  }
+                  iconPosition="end"
+                  disabled={!hasNextPage}
+                  onClick={() => setPage(p => p + 1)}
+                />
+              </S.PaginationIconSlot>
+            ) : (
+              <Button
+                label="다음"
+                variant="outlined"
+                size="medium"
+                icon={
+                  ChevronRightIcon as FunctionComponent<
+                    SVGProps<SVGSVGElement>
+                  >
+                }
+                iconPosition="end"
+                disabled={!hasNextPage}
+                onClick={() => setPage(p => p + 1)}
+              />
+            )}
           </S.PaginationBar>
           </>
           )}
@@ -635,6 +683,15 @@ const S = {
     gap: 0.75rem;
     width: 100%;
   `,
+  FilterDropdowns: styled('div')`
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+    @media (max-width: 429px) {
+      display: none;
+    }
+  `,
   SearchButton: styled('button')`
     display: flex;
     align-items: center;
@@ -690,6 +747,21 @@ const S = {
     margin-top: 0.25rem;
     border-top: 1px solid ${({ theme }) => theme.palette.grey[200]};
     gap: 0.5rem;
+    @media (max-width: 429px) {
+      flex-wrap: nowrap;
+    }
+  `,
+  PaginationIconSlot: styled('div')`
+    flex-shrink: 0;
+    & .MuiButton-root {
+      min-width: 2.25rem;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    & .MuiButton-startIcon,
+    & .MuiButton-endIcon {
+      margin: 0;
+    }
   `,
   Row: styled(Flex.Row)`
     align-items: flex-start;
