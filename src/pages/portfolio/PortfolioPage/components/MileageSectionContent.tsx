@@ -1,7 +1,9 @@
 import { Flex, Input, Text } from '@/components';
 import { palette } from '@/styles/palette';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EditIcon from '@mui/icons-material/Edit';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled, useTheme } from '@mui/material';
 import { toast } from 'react-toastify';
 
@@ -16,6 +18,8 @@ interface MileageSectionContentProps {
   readOnly?: boolean;
 }
 
+const ITEMS_PER_PAGE = 6;
+
 const MileageSectionContent = ({
   readOnly = false,
 }: MileageSectionContentProps) => {
@@ -23,8 +27,23 @@ const MileageSectionContent = ({
   const { mileageItems, setMileageItems } = usePortfolioContext();
   const [editingItem, setEditingItem] = useState<MileageItem | null>(null);
   const [editDraft, setEditDraft] = useState('');
+  const [page, setPage] = useState(0);
 
   const displayItems = mileageItems;
+
+  const totalPages = Math.ceil(displayItems.length / ITEMS_PER_PAGE) || 1;
+  const paginatedItems = useMemo(
+    () =>
+      displayItems.slice(
+        page * ITEMS_PER_PAGE,
+        page * ITEMS_PER_PAGE + ITEMS_PER_PAGE,
+      ),
+    [displayItems, page],
+  );
+
+  useEffect(() => {
+    setPage(p => Math.min(p, totalPages - 1));
+  }, [totalPages]);
 
   const handleStartEdit = useCallback((item: MileageItem) => {
     setEditingItem(item);
@@ -60,117 +79,168 @@ const MileageSectionContent = ({
   }, []);
 
   return (
-    <S.List>
-      {displayItems.map(row => (
-        <S.Row key={row.mileage_id}>
-          {/* 메타 행: 학기 + 카테고리 + 제목 */}
-          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-            <Text
-              as="span"
-              style={{
-                ...theme.typography.body2,
-                color: theme.palette.grey[600],
-                flexShrink: 0,
-                margin: 0,
-              }}
-            >
-              {row.semester}
-            </Text>
-            <S.CategoryTag>{row.category}</S.CategoryTag>
-            <Text
-              as="span"
-              style={{
-                ...theme.typography.body2,
-                fontWeight: 600,
-                margin: 0,
-                wordBreak: 'break-word',
-              }}
-            >
-              {row.item}
-            </Text>
-          </Flex.Row>
-          {/* 내용 행: 추가 설명 + 편집 버튼 */}
-          {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
-            <Flex.Row gap="0.5rem" align="flex-start" style={{ width: '100%' }}>
-              <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
-                <Input
-                  multiline
-                  value={editDraft}
-                  onChange={e => setEditDraft(e.target.value)}
-                  placeholder="마일리지 활동의 상세 내용을 입력해 주세요."
-                  autoFocus
-                  rows={2}
-                  inputProps={{
-                    maxLength: INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO,
-                    'aria-label': '유저 추가 설명',
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Escape') handleCancelEdit();
-                  }}
-                  size="small"
-                  fullWidth
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: theme.palette.variant.default,
-                    },
-                    '& textarea': {
-                      resize: 'vertical',
-                    },
-                  }}
-                />
-                <S.CharCount warn={editDraft.length >= INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO - 20}>
-                  {editDraft.length} / {INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
-                </S.CharCount>
-              </Flex.Column>
-              <Flex.Column gap="0.25rem" style={{ flexShrink: 0 }}>
-                <S.SmallButton type="button" onClick={handleSaveEdit}>
-                  저장
-                </S.SmallButton>
-                <S.SmallButton
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                >
-                  취소
-                </S.SmallButton>
-              </Flex.Column>
-            </Flex.Row>
-          ) : (
-            <Flex.Row align="center" justify="space-between" gap="0.5rem" style={{ width: '100%' }}>
+    <Flex.Column gap="1rem" style={{ width: '100%' }}>
+      <S.List>
+        {paginatedItems.map(row => (
+          <S.Row key={row.mileage_id}>
+            {/* 메타 행: 학기 + 카테고리 + 제목 */}
+            <Flex.Row align="center" gap="0.5rem" wrap="wrap">
               <Text
                 as="span"
                 style={{
                   ...theme.typography.body2,
                   color: theme.palette.grey[600],
+                  flexShrink: 0,
                   margin: 0,
-                  wordBreak: 'break-word',
-                  flex: 1,
-                  minWidth: 0,
                 }}
               >
-                {row.additional_info ? (
-                  <>{row.additional_info}</>
-                ) : (
-                  <span style={{ color: theme.palette.grey[400] }}>
-                    추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
-                  </span>
-                )}
+                {row.semester}
               </Text>
-              {!readOnly && (
-                <S.EditButton
-                  type="button"
-                  onClick={() => handleStartEdit(row)}
-                  aria-label="내용 수정"
-                  style={{ flexShrink: 0 }}
-                >
-                  <EditIcon sx={{ fontSize: 16 }} />
-                </S.EditButton>
-              )}
+              <S.CategoryTag>{row.category}</S.CategoryTag>
+              <Text
+                as="span"
+                style={{
+                  ...theme.typography.body2,
+                  fontWeight: 600,
+                  margin: 0,
+                  wordBreak: 'break-word',
+                }}
+              >
+                {row.item}
+              </Text>
             </Flex.Row>
-          )}
-        </S.Row>
-      ))}
-    </S.List>
+            {/* 내용 행: 추가 설명 + 편집 버튼 */}
+            {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
+              <Flex.Row
+                gap="0.5rem"
+                align="flex-start"
+                style={{ width: '100%' }}
+              >
+                <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
+                  <Input
+                    multiline
+                    value={editDraft}
+                    onChange={e => setEditDraft(e.target.value)}
+                    placeholder="마일리지 활동의 상세 내용을 입력해 주세요."
+                    autoFocus
+                    rows={2}
+                    inputProps={{
+                      maxLength: INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO,
+                      'aria-label': '유저 추가 설명',
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Escape') handleCancelEdit();
+                    }}
+                    size="small"
+                    fullWidth
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.variant.default,
+                      },
+                      '& textarea': {
+                        resize: 'vertical',
+                      },
+                    }}
+                  />
+                  <S.CharCount
+                    warn={
+                      editDraft.length >=
+                      INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO - 20
+                    }
+                  >
+                    {editDraft.length} /{' '}
+                    {INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
+                  </S.CharCount>
+                </Flex.Column>
+                <Flex.Column gap="0.25rem" style={{ flexShrink: 0 }}>
+                  <S.SmallButton type="button" onClick={handleSaveEdit}>
+                    저장
+                  </S.SmallButton>
+                  <S.SmallButton
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                  >
+                    취소
+                  </S.SmallButton>
+                </Flex.Column>
+              </Flex.Row>
+            ) : (
+              <Flex.Row
+                align="center"
+                justify="space-between"
+                gap="0.5rem"
+                style={{ width: '100%' }}
+              >
+                <Text
+                  as="span"
+                  style={{
+                    ...theme.typography.body2,
+                    color: theme.palette.grey[600],
+                    margin: 0,
+                    wordBreak: 'break-word',
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  {row.additional_info ? (
+                    <>{row.additional_info}</>
+                  ) : (
+                    <span style={{ color: theme.palette.grey[400] }}>
+                      추가 설명을 통해 더 나은 프롬프트 결과를 얻을 수 있습니다.
+                    </span>
+                  )}
+                </Text>
+                {!readOnly && (
+                  <S.EditButton
+                    type="button"
+                    onClick={() => handleStartEdit(row)}
+                    aria-label="내용 수정"
+                    style={{ flexShrink: 0 }}
+                  >
+                    <EditIcon sx={{ fontSize: 16 }} />
+                  </S.EditButton>
+                )}
+              </Flex.Row>
+            )}
+          </S.Row>
+        ))}
+      </S.List>
+      {totalPages > 1 && (
+        <S.Pagination align="center" gap="0.5rem">
+          <S.PageButton
+            type="button"
+            disabled={page === 0}
+            onClick={() => {
+              handleCancelEdit();
+              setPage(p => Math.max(0, p - 1));
+            }}
+            aria-label="이전 페이지"
+          >
+            <ChevronLeftIcon sx={{ fontSize: 20 }} />
+          </S.PageButton>
+          <Text
+            style={{
+              ...theme.typography.body2,
+              color: theme.palette.grey[600],
+            }}
+          >
+            {page + 1} / {totalPages}
+          </Text>
+          <S.PageButton
+            type="button"
+            disabled={page >= totalPages - 1}
+            onClick={() => {
+              handleCancelEdit();
+              setPage(p => Math.min(totalPages - 1, p + 1));
+            }}
+            aria-label="다음 페이지"
+          >
+            <ChevronRightIcon sx={{ fontSize: 20 }} />
+          </S.PageButton>
+        </S.Pagination>
+      )}
+    </Flex.Column>
   );
 };
 
@@ -240,6 +310,24 @@ const S = {
       variant === 'outline' ? palette.grey600 : palette.white};
     &:hover {
       opacity: 0.9;
+    }
+  `,
+  Pagination: styled(Flex.Row)`
+    margin-top: 0.5rem;
+  `,
+  PageButton: styled('button')`
+    padding: 0.25rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: ${({ theme }) => theme.palette.grey[600]};
+    border-radius: 0.25rem;
+    &:hover:not(:disabled) {
+      background-color: ${({ theme }) => theme.palette.grey[200]};
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
   `,
 };
