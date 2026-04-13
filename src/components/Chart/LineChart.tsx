@@ -46,10 +46,10 @@ const LineChart = ({
       <Flex.Column
         width="100%"
         height="100%"
-        minHeight={180}
         justify="center"
         align="center"
         gap="0.75rem"
+        style={{ minHeight: 180 }}
       >
         <EmptyBoxImg width={72} height={72} />
         <Heading as="h3" style={{ color: theme.palette.grey300 }}>
