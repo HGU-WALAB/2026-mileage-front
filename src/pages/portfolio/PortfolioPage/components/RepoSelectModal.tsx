@@ -92,6 +92,8 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   // 모달이 열리자마자 백그라운드에서 전체 레포 프리페치 시작
   // 확인 클릭 시 이미 완료된 Promise를 재사용해 대기 시간 최소화
   const allReposPromiseRef = useRef<Promise<PortfolioRepositoryItem[]> | null>(null);
+  const loadedRepoByIdRef = useRef(loadedRepoById);
+  loadedRepoByIdRef.current = loadedRepoById;
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const queryParams = useMemo(() => {
@@ -145,17 +147,19 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     );
   }, [open, portfolioRepos]);
 
-  // 모달이 열리거나 필터가 바뀌면 백그라운드에서 전체 레포 프리페치
+  // 모달이 열리거나 캐시가 갱신되면 백그라운드에서 전체 레포 프리페치
+  // visibility: 'all' 명시 + 검색 필터 없이 전체를 가져와야 PUT body가 완전해짐
   useEffect(() => {
     if (!open) {
       allReposPromiseRef.current = null;
       return;
     }
     allReposPromiseRef.current = getAllRepositories({
-      ...queryParams,
+      sort: DEFAULT_REPO_LIST_SORT,
+      visibility: 'all',
       perPage: REPOS_PER_PAGE,
     });
-  }, [open, queryParams, listVersion]);
+  }, [open, listVersion]);
 
   useEffect(() => {
     if (!open) return;
@@ -193,7 +197,8 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       await postGithubRepositoriesCacheRefresh();
       setListVersion(v => v + 1);
       allReposPromiseRef.current = getAllRepositories({
-        ...queryParams,
+        sort: DEFAULT_REPO_LIST_SORT,
+        visibility: 'all',
         perPage: REPOS_PER_PAGE,
       });
       toast.success('레포지토리 목록을 최신화했습니다.', {
@@ -204,7 +209,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     } finally {
       setRefreshing(false);
     }
-  }, [queryParams]);
+  }, []);
 
   const toggleRepo = useCallback((repoId: number) => {
     selectionTouchedRef.current = true;
@@ -222,9 +227,10 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     // 상태 반영·로딩 오버레이가 한 프레임 그려진 뒤 네트워크 대기 (미표시 방지)
     await Promise.resolve();
     try {
-      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용
+      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용 (visibility:'all', 검색 없이 전체 레포)
       const fullList = await (allReposPromiseRef.current ?? getAllRepositories({
-        ...queryParams,
+        sort: DEFAULT_REPO_LIST_SORT,
+        visibility: 'all',
         perPage: REPOS_PER_PAGE,
       }));
       setSubmitPhase('save');
@@ -234,6 +240,21 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
         description: p.description != null ? p.description : '',
         is_visible: selectedIds.has(p.repo_id),
       }));
+      // fullList에 없는 selectedIds(검색·타이밍 차이로 누락된 레포)도 PUT body에 포함
+      const fullListIdSet = new Set(fullList.map(p => p.repo_id));
+      for (const id of selectedIds) {
+        if (!fullListIdSet.has(id)) {
+          const repo =
+            loadedRepoByIdRef.current.get(id) ??
+            portfolioReposRef.current.find(r => r.repo_id === id);
+          putBody.push({
+            repo_id: id,
+            custom_title: repo?.custom_title ?? null,
+            description: repo?.description ?? '',
+            is_visible: true,
+          });
+        }
+      }
       const res = await putRepositories(putBody);
       setRepos((res.repositories ?? []).map(portfolioRepoToRepoItem));
       toast.success('변경사항이 저장되었습니다.', {
@@ -246,7 +267,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       setSubmitting(false);
       setSubmitPhase('fetchAll');
     }
-  }, [selectedIds, queryParams, setRepos, onClose]);
+  }, [selectedIds, setRepos, onClose]);
 
   const handleModalClose = useCallback(() => {
     if (submitting || refreshing) return;
