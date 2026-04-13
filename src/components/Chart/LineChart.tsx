@@ -1,26 +1,66 @@
+import EmptyBoxImg from '@/assets/imgs/emptyBox.svg?react';
+import Flex from '@/components/Flex/Flex';
+import Heading from '@/components/Heading/Heading';
 import { SemesterCapabilityResponse } from '@/pages/dashboard/types/capability';
 import { useTheme } from '@mui/material';
 import { ResponsiveLine } from '@nivo/line';
 import { useMemo } from 'react';
 
-const LineChart = ({ data }: { data: SemesterCapabilityResponse[] }) => {
+const toFiniteCount = (value: unknown) => {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+};
+
+const LineChart = ({
+  data,
+  emptyTitle = '학기별 마일리지 데이터가 없습니다',
+}: {
+  data: SemesterCapabilityResponse[];
+  emptyTitle?: string;
+}) => {
   const theme = useTheme();
+  const rows = useMemo(
+    () =>
+      (data ?? []).filter(
+        (row): row is SemesterCapabilityResponse =>
+          typeof row?.semester === 'string' && row.semester.trim().length > 0,
+      ),
+    [data],
+  );
+
   const formattedData = useMemo(
     () => [
       {
         id: 'Capability Points',
-        data: data.map(capability => ({
+        data: rows.map(capability => ({
           x: capability.semester,
-          y: capability.userMilestoneCount,
+          y: toFiniteCount(capability.userMilestoneCount),
         })),
       },
     ],
-    [data],
+    [rows],
   );
 
-  const minBaseLine = Math.min(
-    ...data.filter(a => a.userMilestoneCount).map(a => a.userMilestoneCount),
-  );
+  if (rows.length === 0) {
+    return (
+      <Flex.Column
+        width="100%"
+        height="100%"
+        justify="center"
+        align="center"
+        gap="0.75rem"
+        style={{ minHeight: 180 }}
+      >
+        <EmptyBoxImg width={72} height={72} />
+        <Heading as="h3" style={{ color: theme.palette.grey300 }}>
+          {emptyTitle}
+        </Heading>
+      </Flex.Column>
+    );
+  }
+
+  const yValues = rows.map(r => toFiniteCount(r.userMilestoneCount));
+  const maxY = Math.max(1, ...yValues);
 
   return (
     <ResponsiveLine
@@ -29,8 +69,8 @@ const LineChart = ({ data }: { data: SemesterCapabilityResponse[] }) => {
       xScale={{ type: 'point' }}
       yScale={{
         type: 'linear',
-        min: 'auto',
-        max: 'auto',
+        min: 0,
+        max: maxY,
         stacked: true,
         reverse: false,
       }}
@@ -56,7 +96,7 @@ const LineChart = ({ data }: { data: SemesterCapabilityResponse[] }) => {
       pointLabel="data.yFormatted"
       pointLabelYOffset={-12}
       enableArea={true}
-      areaBaselineValue={minBaseLine}
+      areaBaselineValue={0}
       enableTouchCrosshair={true}
       useMesh={true}
       tooltip={point => {
@@ -70,7 +110,7 @@ const LineChart = ({ data }: { data: SemesterCapabilityResponse[] }) => {
             }}
           >
             <strong>마일리지 건수: </strong>
-            {point.point.data.y.toString()}건
+            {String(point.point.data.y ?? 0)}건
           </div>
         );
       }}

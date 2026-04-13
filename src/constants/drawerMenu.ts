@@ -81,8 +81,8 @@ export const DRAWER_MENU_ENTRIES: DrawerMenuEntry[] = [
   {
     kind: 'group',
     id: 'portfolio-management',
-    text: '내 활동 관리',
-    shortText: '활동관리',
+    text: '활동 아카이브',
+    shortText: '활동',
     icon: BuildingIcon,
     selectedIcon: BuildingBlueIcon,
     isGroupActive: pathname =>
@@ -104,7 +104,7 @@ export const DRAWER_MENU_ENTRIES: DrawerMenuEntry[] = [
       },
       {
         id: 'cv-generate',
-        text: '포트폴리오 생성',
+        text: '포트폴리오 관리',
         shortText: '포폴',
         route: ROUTE_PATH.cv,
         icon: EditIcon,

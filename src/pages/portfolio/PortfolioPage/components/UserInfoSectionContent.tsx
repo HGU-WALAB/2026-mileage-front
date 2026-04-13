@@ -1,6 +1,6 @@
 import { BASE_URL } from '@/apis/config';
 import { ENDPOINT } from '@/apis/endPoint';
-import { Flex, Input, Text } from '@/components';
+import { Button, Flex, Input, Text } from '@/components';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { boxShadow } from '@/styles/common';
 import { palette } from '@/styles/palette';
@@ -395,26 +395,44 @@ const UserInfoSectionContent = ({
             </S.BioReadonlyWrap>
           ) : !readOnly ? (
             <Flex.Column gap="0.5rem" style={{ width: '100%' }}>
-              <S.BioTextarea
-                $clip={splitViewportLayout}
+              <Input
+                multiline
                 value={bioDraft}
                 onChange={e => setBioDraft(e.target.value)}
                 placeholder="한 줄 소개를 입력하세요"
                 rows={3}
-                maxLength={INPUT_MAX_LENGTH.BIO}
+                size="small"
+                fullWidth
+                inputProps={{
+                  maxLength: INPUT_MAX_LENGTH.BIO,
+                  'aria-label': '한 줄 소개',
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '0.5rem',
+                    backgroundColor: palette.white,
+                  },
+                  '& textarea': {
+                    resize: 'vertical',
+                  },
+                }}
               />
               <Flex.Row align="center" justify="space-between">
                 <Flex.Row gap="0.5rem">
-                  <S.SmallButton type="button" onClick={handleSaveBio}>
-                    저장
-                  </S.SmallButton>
-                  <S.SmallButton
-                    type="button"
-                    variant="outline"
+                  <Button
+                    label="저장"
+                    variant="contained"
+                    color="blue"
+                    size="small"
+                    onClick={handleSaveBio}
+                  />
+                  <Button
+                    label="취소"
+                    variant="outlined"
+                    color="grey"
+                    size="small"
                     onClick={handleCancelEditBio}
-                  >
-                    취소
-                  </S.SmallButton>
+                  />
                 </Flex.Row>
                 <S.CharCount warn={bioDraft.length >= INPUT_MAX_LENGTH.BIO - 20}>
                   {bioDraft.length} / {INPUT_MAX_LENGTH.BIO}
@@ -1153,34 +1171,6 @@ const S = {
       padding-right: 0.125rem;
     `
         : ''}
-  `,
-  BioTextarea: styled('textarea', {
-    shouldForwardProp: p => p !== '$clip',
-  })<{ $clip?: boolean }>`
-    width: 100%;
-    min-width: 0;
-    min-height: 5rem;
-    padding: 0.625rem 0.875rem;
-    border: 1.5px solid ${palette.blue400};
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    line-height: 1.6;
-    color: ${palette.nearBlack};
-    resize: vertical;
-    outline: none;
-    box-sizing: border-box;
-    ${({ $clip }) =>
-      $clip
-        ? `
-      max-height: min(11rem, 32vh);
-      overflow-x: auto;
-      overflow-y: auto;
-    `
-        : ''}
-    &:focus {
-      border-color: ${palette.blue500};
-      box-shadow: 0 0 0 2px ${palette.blue300};
-    }
   `,
   CharCount: styled('span')<{ warn?: boolean }>`
     font-size: 0.75rem;

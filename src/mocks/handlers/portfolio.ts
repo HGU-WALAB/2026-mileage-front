@@ -15,7 +15,6 @@ import type {
 import type { TechStackPutRequest } from '@/pages/portfolio/apis/portfolio';
 import { clampTechLevel } from '@/pages/portfolio/utils/techStackLevel';
 import type { PatchRepositoryBody } from '@/pages/portfolio/apis/repositories';
-import { DRAGGABLE_SECTION_ORDER } from '@/pages/portfolio/constants/constants';
 import { mockActivitiesResponse } from '@/mocks/fixtures/portfolioActivities';
 import { mockMileageList } from '@/mocks/fixtures/mileageList';
 import { mockPortfolioMileage } from '@/mocks/fixtures/portfolioMileage';
@@ -32,10 +31,6 @@ const techStackStore = {
   domains: mockTechStackResponse.domains.map(d => ({ ...d, tech_stacks: [...d.tech_stacks] })),
 };
 
-const settingsStore: { section_order: string[] } = {
-  section_order: [...DRAGGABLE_SECTION_ORDER],
-};
-
 const userInfoStore: UserInfoResponse = { ...mockUserInfoResponse };
 
 const activitiesStore: ActivityApiItem[] = mockActivitiesResponse.map(a => ({
@@ -48,6 +43,37 @@ const repositoriesStore: PortfolioRepositoryItem[] = mockPortfolioRepositories.m
 );
 let nextRepoId = Math.max(0, ...repositoriesStore.map(r => r.id)) + 1;
 
+function mockRepositoryMatchesSearch(
+  r: PortfolioRepositoryItem,
+  searchRaw: string | null,
+): boolean {
+  if (searchRaw == null || searchRaw.trim() === '') return true;
+  const tokens = searchRaw.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const langNames = (r.languages ?? []).map(l => (l.name ?? '').toLowerCase());
+  const parts = [
+    r.github_title,
+    r.owner,
+    r.html_url,
+    r.description,
+    r.github_description ?? '',
+    r.custom_title ?? '',
+    r.language ?? '',
+    ...langNames,
+    String(r.repo_id),
+  ];
+  const haystack = parts.join(' ').toLowerCase();
+  return tokens.every(t => haystack.includes(t.toLowerCase()));
+}
+
+function getMockPortfolioState() {
+  const g = globalThis as unknown as {
+    __mockPortfolioState?: { repoSelectionReset?: boolean };
+  };
+  if (!g.__mockPortfolioState) g.__mockPortfolioState = {};
+  return g.__mockPortfolioState;
+}
+
 const mileageStore: PortfolioMileageItem[] = mockPortfolioMileage.map(m => ({
   ...m,
 }));
@@ -56,7 +82,7 @@ let nextMileageId = Math.max(0, ...mileageStore.map(m => m.id)) + 1;
 const cvStore: PortfolioCvDetail[] = mockPortfolioCvDetails.map(c => ({ ...c }));
 let nextCvId = Math.max(0, ...cvStore.map(c => c.id)) + 1;
 
-/** 공개 이력서 share HTML API — 403/404 시 내려주는 안내 HTML (목) */
+/** 공개 포폴 share HTML API — 403/404 시 내려주는 안내 HTML (목) */
 const CV_SHARE_HTML_404 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>안내</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:2rem;max-width:36rem;line-height:1.65;color:#1a1a1a;background:#fafafa}</style></head><body><h1 style="font-size:1.2rem;margin:0 0 0.75rem">이력서를 찾을 수 없습니다</h1><p style="margin:0;color:#555">형식이 올바르지 않습니다. 링크를 다시 확인해 주세요.</p></body></html>`;
 
 const CV_SHARE_HTML_403 = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>안내</title><style>body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:2rem;max-width:36rem;line-height:1.65;color:#1a1a1a;background:#fafafa}</style></head><body><h1 style="font-size:1.2rem;margin:0 0 0.75rem">비공개 이력서입니다</h1><p style="margin:0;color:#555">작성자가 아직 공개로 설정하지 않았습니다. 필요하면 작성자에게 공개 요청을 해 주세요.</p></body></html>`;
@@ -129,24 +155,6 @@ export const PortfolioHandlers = [
           tech_stacks: d.tech_stacks.map(t => ({ ...t })),
         })),
       },
-      { status: 200 },
-    );
-  }),
-
-  http.get(BASE_URL + ENDPOINT.PORTFOLIO_SETTINGS, () => {
-    return HttpResponse.json(
-      { section_order: [...settingsStore.section_order] },
-      { status: 200 },
-    );
-  }),
-
-  http.put(BASE_URL + ENDPOINT.PORTFOLIO_SETTINGS, async ({ request }) => {
-    const body = (await request.json()) as { section_order: string[] };
-    settingsStore.section_order = Array.isArray(body.section_order)
-      ? [...body.section_order]
-      : [...DRAGGABLE_SECTION_ORDER];
-    return HttpResponse.json(
-      { section_order: [...settingsStore.section_order] },
       { status: 200 },
     );
   }),
@@ -481,6 +489,11 @@ export const PortfolioHandlers = [
   http.post(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/build-prompt`, async ({ request }) => {
     try {
       const body = (await request.json()) as PortfolioCvBuildPromptRequest;
+      const rawMode = body.mode;
+      if (rawMode != null && rawMode !== 'cv' && rawMode !== 'archive') {
+        return new HttpResponse(null, { status: 400 });
+      }
+      const mode: 'cv' | 'archive' = rawMode === 'archive' ? 'archive' : 'cv';
       const title = (body.title ?? '').trim();
       const job = (body.job_posting ?? '').trim();
       const pos = (body.target_position ?? '').trim();
@@ -490,6 +503,8 @@ export const PortfolioHandlers = [
       const r = body.selected_repo_ids ?? [];
       const prompt = [
         '# 맞춤 CV 프롬프트 (Mock)',
+        '',
+        `## mode: ${mode}`,
         '',
         '## 제목',
         title || '(미입력)',
@@ -551,13 +566,21 @@ export const PortfolioHandlers = [
     );
     const visibleOnly =
       url.searchParams.get('visible_only') === 'true' ? true : undefined;
+    const selectedOnly = url.searchParams.get('selected_only') === 'true';
     const sortParam = url.searchParams.get('sort') ?? 'updated';
     const visibilityParam = url.searchParams.get('visibility') ?? 'all';
-    const affiliationParam = url.searchParams.get('affiliation') ?? 'owner';
+    const searchParam = url.searchParams.get('search');
 
-    let list = [...repositoriesStore];
+    const resetSelection = Boolean(getMockPortfolioState().repoSelectionReset);
+    let list = resetSelection
+      ? repositoriesStore.map(r => ({ ...r, is_visible: false }))
+      : [...repositoriesStore];
 
     if (visibleOnly) {
+      list = list.filter(r => r.is_visible);
+    }
+
+    if (selectedOnly) {
       list = list.filter(r => r.is_visible);
     }
 
@@ -565,11 +588,7 @@ export const PortfolioHandlers = [
       list = list.filter(r => r.visibility === visibilityParam);
     }
 
-    // affiliationParam 은 실제로는 GitHub API에서만 의미가 있지만,
-    // 목 환경에서는 모든 레포지토리를 동일하게 취급합니다.
-    if (affiliationParam === 'owner') {
-      // 기본 mock 데이터가 모두 owner 라고 가정하고 추가 필터는 적용하지 않습니다.
-    }
+    list = list.filter(r => mockRepositoryMatchesSearch(r, searchParam));
 
     const sorted = [...list].sort((a, b) => {
       switch (sortParam) {
@@ -579,7 +598,7 @@ export const PortfolioHandlers = [
           // mock 데이터에는 pushed_at 이 없으므로 updated_at 기준으로 정렬
           return b.updated_at.localeCompare(a.updated_at);
         case 'full_name':
-          return a.name.localeCompare(b.name);
+          return a.github_title.localeCompare(b.github_title);
         case 'updated':
         default:
           return b.updated_at.localeCompare(a.updated_at);
@@ -593,6 +612,7 @@ export const PortfolioHandlers = [
 
   http.put(BASE_URL + ENDPOINT.PORTFOLIO_REPOSITORIES, async ({ request }) => {
     const body = (await request.json()) as PutRepositoryItem[];
+    getMockPortfolioState().repoSelectionReset = false;
     const byRepoId = new Map(repositoriesStore.map(r => [r.repo_id, r]));
     repositoriesStore.length = 0;
     body.forEach((item, index) => {
@@ -602,9 +622,10 @@ export const PortfolioHandlers = [
         repo_id: item.repo_id,
         custom_title: item.custom_title ?? null,
         description: item.description ?? '',
+        github_description: existing?.github_description ?? '',
         is_visible: item.is_visible ?? true,
         display_order: index,
-        name: existing?.name ?? '',
+        github_title: existing?.github_title ?? '',
         html_url: existing?.html_url ?? '',
         language: existing?.language ?? '',
         languages: existing?.languages ?? [],
@@ -641,6 +662,7 @@ export const PortfolioHandlers = [
         ...prev,
         custom_title: body.custom_title ?? prev.custom_title,
         description: body.description ?? prev.description,
+        github_description: prev.github_description ?? '',
         is_visible: body.is_visible ?? prev.is_visible,
         display_order: body.display_order ?? prev.display_order,
       };

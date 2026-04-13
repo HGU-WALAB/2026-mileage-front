@@ -7,7 +7,6 @@ export const QUERY_KEYS = {
   userInfo: 'userInfo',
   portfolioRepositories: 'portfolioRepositories',
   portfolioUserInfo: 'portfolioUserInfo',
-  portfolioSettings: 'portfolioSettings',
   portfolioTechStack: 'portfolioTechStack',
   portfolioMileage: 'portfolioMileage',
   portfolioActivities: 'portfolioActivities',

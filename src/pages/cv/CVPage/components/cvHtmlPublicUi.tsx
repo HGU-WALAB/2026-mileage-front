@@ -43,9 +43,12 @@ export type CvHtmlPublicLinkButtonProps = {
   label?: string;
 };
 
+export type CvHtmlPublicAppearance = 'filled' | 'plain';
+
 /**
  * HTML 공개 — 상태 문구 + 라벨 + Switch 토글, 공개 시 같은 줄(줄 바꿈 시 아래)에 링크 버튼.
  * 포트폴리오 카드 / 미리보기 모달 공통.
+ * @param appearance `filled`(기본) — 파란 톤 / `plain` — 흰 배경·목록 카드 안에서 사용
  */
 export function CvHtmlPublicSwitchControl({
   isPublic,
@@ -53,6 +56,7 @@ export function CvHtmlPublicSwitchControl({
   disabled,
   size = 'small',
   linkButton,
+  appearance = 'filled',
 }: {
   isPublic: boolean;
   onPublicChange: (next: boolean) => void;
@@ -60,13 +64,15 @@ export function CvHtmlPublicSwitchControl({
   size?: Size;
   /** 전달 시 비공개일 때도 자리만 확보해 높이·줄바꿈이 토글前后에 맞춰짐 */
   linkButton?: CvHtmlPublicLinkButtonProps;
+  appearance?: CvHtmlPublicAppearance;
 }) {
   const LinkIcon = size === 'medium' ? OpenInNewMedium : OpenInNewSmall;
   const labelFs = size === 'medium' ? '0.8125rem' : '0.75rem';
   const isMedium = size === 'medium';
+  const plain = appearance === 'plain';
 
   return (
-    <S.Bar $medium={isMedium}>
+    <S.Bar $medium={isMedium} $plain={plain}>
       <S.LeftCluster>
         <S.Status $on={isPublic} $medium={isMedium}>
           {isPublic ? '공개 중' : '비공개'}
@@ -111,8 +117,8 @@ export function CvHtmlPublicSwitchControl({
 
 const S = {
   Bar: styled('div', {
-    shouldForwardProp: p => p !== '$medium',
-  })<{ $medium: boolean }>`
+    shouldForwardProp: p => p !== '$medium' && p !== '$plain',
+  })<{ $medium: boolean; $plain: boolean }>`
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -124,8 +130,9 @@ const S = {
     padding: 0.55rem 0.75rem;
     border-radius: 0.75rem;
     border: 1px solid ${palette.grey200};
-    background-color: ${palette.blue300};
-    box-shadow: 0 1px 2px rgba(83, 127, 241, 0.08);
+    background-color: ${({ $plain }) => ($plain ? palette.white : palette.blue300)};
+    box-shadow: ${({ $plain }) =>
+      $plain ? 'none' : '0 1px 2px rgba(83, 127, 241, 0.08)'};
     /* 링크 버튼 유무와 관계없이 높이 통일 (Button small 30px / medium 36px 기준) */
     min-height: ${({ $medium }) =>
       $medium ? 'calc(0.55rem * 2 + 36px)' : 'calc(0.55rem * 2 + 30px)'};

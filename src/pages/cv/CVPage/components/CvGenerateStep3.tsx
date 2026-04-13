@@ -14,15 +14,7 @@ import { toast } from 'react-toastify';
 import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
 
 import { CvGeneratePageS as WizS } from '../cvGeneratePageStyles';
-
-/** 편집·미리보기 패널 공통 높이 (뷰포트에 맞추되 최소·최대 제한) */
-const PROMPT_PANE_HEIGHT = 'clamp(12rem, 50vh, 28rem)';
-
-const AI_SERVICES = [
-  { label: 'ChatGPT', href: 'https://chatgpt.com' },
-  { label: 'Claude', href: 'https://claude.ai' },
-  { label: 'Gemini', href: 'https://gemini.google.com' },
-] as const;
+import { AI_SERVICES, PROMPT_PANE_HEIGHT } from '../../constants/cvGeneratePaneConstants';
 
 const CopyIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <ContentCopyIcon sx={{ fontSize: 20 }} />

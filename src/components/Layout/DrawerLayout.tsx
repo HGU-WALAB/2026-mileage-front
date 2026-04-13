@@ -28,7 +28,9 @@ const DrawerLayout = () => {
       <Flex.Row justify="center">
         <Main open={isDrawerOpen} isMobile={isMobile}>
           <Header />
-          <ErrorResetBoundary />
+          <S.MainScroll>
+            <ErrorResetBoundary />
+          </S.MainScroll>
         </Main>
       </Flex.Row>
     </Flex.Column>
@@ -51,7 +53,9 @@ const MobileDrawerLayout = () => {
         isMobile={isMobile}
         mobileSubNavOffset={mobileSubNavOffset}
       >
-        <ErrorResetBoundary />
+        <S.MainScroll>
+          <ErrorResetBoundary />
+        </S.MainScroll>
       </Main>
       <S.MobileNavDock>
         <MobileNavGroupSubTabs />
@@ -62,6 +66,23 @@ const MobileDrawerLayout = () => {
 };
 
 const S = {
+  /** 로그인 등 `Layout` 경로는 제외 — 푸터 하단 고정용 스크롤 영역만 `Main` 안에 둡니다. */
+  MainScroll: styled('div')`
+    box-sizing: border-box;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    width: 100%;
+
+    & > * {
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+  `,
   MobileNavDock: styled('div')`
     bottom: 0;
     display: flex;

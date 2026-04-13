@@ -2,7 +2,6 @@ import { LoadingIcon } from '@/assets';
 import { ErrorBox, Flex, Heading, LineChart } from '@/components';
 import { useGetSemesterCapabilityQuery } from '@/pages/dashboard/hooks';
 import { boxShadow } from '@/styles/common';
-import { SemesterCapabilityResponse } from '@/pages/dashboard/types/capability';
 import { styled } from '@mui/material';
 
 const LineChartSection = () => {
@@ -29,7 +28,10 @@ const ChartSection = () => {
   if (isLoading) return <LoadingIcon width={100} height={100} />;
   if (isError) return <ErrorBox error={error} />;
   return (
-    <LineChart data={semesterCapability as SemesterCapabilityResponse[]} />
+    <LineChart
+      data={semesterCapability ?? []}
+      emptyTitle="학기별 역량·마일리지 데이터가 없습니다"
+    />
   );
 };
 

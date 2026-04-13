@@ -1,0 +1,691 @@
+import { LoadingIcon } from '@/assets';
+import { Button, Flex, Input, Text } from '@/components';
+import { palette } from '@/styles/palette';
+import BusinessIcon from '@mui/icons-material/Business';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CodeIcon from '@mui/icons-material/Code';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
+import HtmlIcon from '@mui/icons-material/Html';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { IconButton } from '@mui/material';
+import { styled } from '@mui/material/styles';
+import { useCallback, useEffect, useMemo, useState, type FunctionComponent, type SVGProps } from 'react';
+import { toast } from 'react-toastify';
+import { openCvShareInNewTab } from '@/constants/routePath';
+import { formatDateOnly } from '@/pages/portfolio/utils/date';
+import { copyTextToClipboard } from '@/utils/copyTextToClipboard';
+import { getPortfolioCvById, type PortfolioCvDetail } from '../../apis/cv';
+import usePatchPortfolioCvMutation from '../../hooks/usePatchPortfolioCvMutation';
+import { buildCvPreviewSrcDoc } from '../../utils/buildCvPreviewSrcDoc';
+import { downloadCvHtmlAsA4Pdf } from '../../utils/downloadCvHtmlAsA4Pdf';
+import { sanitizeCvHtml } from '../../utils/sanitizeCvHtml';
+import { CvHtmlPublicSwitchControl } from './cvHtmlPublicUi';
+
+export type CvPreviewContentLayout = 'modal' | 'panel';
+
+export interface CvPreviewContentProps {
+  /** false이면 편집·미리보기 토글 등 일시 상태를 초기화합니다 */
+  active: boolean;
+  layout?: CvPreviewContentLayout;
+  onClose: () => void;
+  closeAriaLabel?: string;
+  data: PortfolioCvDetail | undefined;
+  isPending: boolean;
+  isError: boolean;
+  onRequestDelete?: () => void;
+  isDeletePending?: boolean;
+}
+
+const CopyIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <ContentCopyIcon sx={{ fontSize: 18 }} />
+);
+const CodeIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <CodeIcon sx={{ fontSize: 16 }} />
+);
+const HtmlIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <HtmlIcon sx={{ fontSize: 16 }} />
+);
+const PictureAsPdfIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <PictureAsPdfIcon sx={{ fontSize: 16 }} />
+);
+const DeleteOutlineIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+);
+const EditIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <EditIcon sx={{ fontSize: 18 }} />
+);
+
+function notesToPills(notes: string): string[] {
+  if (!notes.trim()) return [];
+  return notes
+    .split(/[,，、]/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+const CvPreviewContent = ({
+  active,
+  layout = 'modal',
+  onClose,
+  closeAriaLabel = '닫기',
+  data,
+  isPending,
+  isError,
+  onRequestDelete,
+  isDeletePending = false,
+}: CvPreviewContentProps) => {
+  const [showHtmlPreview, setShowHtmlPreview] = useState(true);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editHtml, setEditHtml] = useState('');
+  const patchMutation = usePatchPortfolioCvMutation();
+
+  useEffect(() => {
+    if (!active) {
+      setShowHtmlPreview(false);
+      setPdfDownloading(false);
+      setIsEditing(false);
+    }
+  }, [active]);
+
+  useEffect(() => {
+    setShowHtmlPreview(true);
+    setPdfDownloading(false);
+    setIsEditing(false);
+  }, [data?.id]);
+
+  useEffect(() => {
+    if (!data) return;
+    setEditTitle(data.title);
+    setEditHtml(data.html_content ?? '');
+  }, [data?.id, data?.title, data?.html_content]);
+
+  const handleCopyPrompt = async () => {
+    if (!data?.prompt?.trim()) {
+      toast.info('복사할 프롬프트가 없습니다.', { position: 'top-center' });
+      return;
+    }
+    const ok = await copyTextToClipboard(data.prompt);
+    if (ok) {
+      toast.success('프롬프트가 복사되었습니다.', { position: 'top-center' });
+    } else {
+      toast.error(
+        '복사에 실패했습니다. HTTPS 접속인지 확인하거나 텍스트를 직접 선택해 복사해 주세요.',
+        { position: 'top-center' },
+      );
+    }
+  };
+
+  const pills = data ? notesToPills(data.additional_notes ?? '') : [];
+  const htmlRaw = isEditing ? editHtml : (data?.html_content ?? '');
+  const htmlPreviewSrcDoc = useMemo(() => {
+    const sanitized = sanitizeCvHtml(htmlRaw);
+    return buildCvPreviewSrcDoc(sanitized);
+  }, [htmlRaw]);
+  const patchPending = patchMutation.isPending;
+  const actionDisabled = patchPending || isDeletePending || pdfDownloading;
+  const publicToggleDisabled = patchPending || isDeletePending || isEditing;
+
+  const handleOpenPublicShare = useCallback(() => {
+    if (!data) return;
+    const token = String(data.public_token ?? '').trim();
+    if (!token) {
+      toast.error('공개 링크를 열 수 없습니다.', { position: 'top-center' });
+      return;
+    }
+    if (!openCvShareInNewTab(token)) {
+      toast.warn('새 창이 열리지 않았습니다. 팝업 차단을 해제하거나 주소를 직접 복사해 주세요.', {
+        position: 'top-center',
+      });
+    }
+  }, [data]);
+
+  const handleTogglePublic = useCallback(
+    (checked: boolean) => {
+      if (!data) return;
+      if (checked && !String(data.public_token ?? '').trim()) {
+        toast.error('공개 링크를 준비할 수 없습니다. 잠시 후 다시 시도해 주세요.', {
+          position: 'top-center',
+        });
+        return;
+      }
+      patchMutation.mutate(
+        { id: data.id, body: { is_public: checked } },
+        {
+          onSuccess: () => {
+            if (checked) {
+              toast.success('포트폴리오가 공개되었습니다.', {
+                position: 'top-center',
+              });
+            } else {
+              toast.success('비공개로 전환했습니다.', { position: 'top-center' });
+            }
+          },
+          onError: () => {
+            toast.error('공개 설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', {
+              position: 'top-center',
+            });
+          },
+        },
+      );
+    },
+    [data, patchMutation],
+  );
+
+  const startEdit = useCallback(() => {
+    if (!data) return;
+    setEditTitle(data.title);
+    setEditHtml(data.html_content ?? '');
+    setShowHtmlPreview(false);
+    setIsEditing(true);
+  }, [data]);
+
+  const cancelEdit = useCallback(() => {
+    if (!data) return;
+    setEditTitle(data.title);
+    setEditHtml(data.html_content ?? '');
+    setShowHtmlPreview(true);
+    setIsEditing(false);
+  }, [data]);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!data) return;
+    setPdfDownloading(true);
+    try {
+      const detail = await getPortfolioCvById(data.id);
+      const html = detail.html_content?.trim() ?? '';
+      if (!html) {
+        toast.info('다운로드할 HTML 내용이 없습니다.', { position: 'top-center' });
+        return;
+      }
+      await downloadCvHtmlAsA4Pdf({
+        htmlContent: html,
+        fileNameBase: detail.title || `portfolio-${detail.id}`,
+      });
+      toast.success('PDF를 저장했습니다.', { position: 'top-center' });
+    } catch {
+      toast.error('PDF를 만들지 못했습니다. 잠시 후 다시 시도해 주세요.', {
+        position: 'top-center',
+      });
+    } finally {
+      setPdfDownloading(false);
+    }
+  }, [data]);
+
+  const handleConfirmEdit = useCallback(() => {
+    if (!data) return;
+    const title = editTitle.trim();
+    if (!title) {
+      toast.warn('제목을 입력해 주세요.', { position: 'top-center' });
+      return;
+    }
+    const html_content = sanitizeCvHtml(editHtml);
+    patchMutation.mutate(
+      { id: data.id, body: { title, html_content } },
+      {
+        onSuccess: () => {
+          toast.success('저장되었습니다.', { position: 'top-center' });
+          setShowHtmlPreview(true);
+          setIsEditing(false);
+        },
+        onError: () => {
+          toast.error('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.', {
+            position: 'top-center',
+          });
+        },
+      },
+    );
+  }, [data, editHtml, editTitle, patchMutation]);
+
+  const subtitlePad = layout === 'panel' ? '1.25rem' : '1.75rem';
+
+  return (
+    <Flex.Column width="100%" style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
+      <S.HeaderBar direction="column" gap="0.5rem" $layout={layout}>
+        <Flex.Row align="flex-start" justify="space-between" gap="0.75rem" wrap="wrap">
+          {isEditing && data ? (
+            <Flex.Column gap="0.35rem" style={{ flex: '1 1 12rem', minWidth: 0 }}>
+              <Flex.Row align="center" gap="0.5rem" style={{ minWidth: 0 }}>
+                <BusinessIcon sx={{ fontSize: 22, color: palette.blue500, flexShrink: 0 }} />
+                <Input
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  size="small"
+                  fullWidth
+                  inputProps={{
+                    maxLength: 200,
+                    'aria-label': '포트폴리오 제목',
+                  }}
+                  sx={{
+                    minWidth: 0,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '0.5rem',
+                      backgroundColor: palette.white,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      lineHeight: 1.35,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: palette.grey200,
+                    },
+                    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: palette.grey300,
+                    },
+                    '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: palette.blue500,
+                    },
+                  }}
+                />
+              </Flex.Row>
+              <Text
+                margin="0"
+                color={palette.grey600}
+                style={{ fontSize: '0.875rem', paddingLeft: subtitlePad }}
+              >
+                — {data.target_position}
+              </Text>
+            </Flex.Column>
+          ) : (
+            <Flex.Row align="center" gap="0.5rem" style={{ flex: '1 1 auto', minWidth: 0 }}>
+              <BusinessIcon sx={{ fontSize: 22, color: palette.blue500, flexShrink: 0 }} />
+              <Text
+                as="h2"
+                margin="0"
+                bold
+                color={palette.nearBlack}
+                style={{ fontSize: '1.0625rem', lineHeight: 1.35, wordBreak: 'break-word' }}
+              >
+                {data ? `${data.title} — ${data.target_position}` : '포트폴리오 미리보기'}
+              </Text>
+            </Flex.Row>
+          )}
+          <Flex.Row
+            align="center"
+            gap="0.5rem"
+            wrap="wrap"
+            style={{ flexShrink: 0, justifyContent: 'flex-end' }}
+          >
+            {data && !isPending ? (
+              isEditing ? (
+                <>
+                  <Button
+                    label="취소"
+                    variant="outlined"
+                    color="grey"
+                    size="medium"
+                    onClick={cancelEdit}
+                    disabled={patchPending}
+                  />
+                  <Button
+                    label="확인"
+                    variant="outlined"
+                    color="blue"
+                    size="medium"
+                    onClick={handleConfirmEdit}
+                    disabled={patchPending}
+                  />
+                </>
+              ) : (
+                <>
+                  <Button
+                    label="수정"
+                    variant="outlined"
+                    color="blue"
+                    size="medium"
+                    icon={EditIconWrap}
+                    iconPosition="start"
+                    onClick={startEdit}
+                    disabled={actionDisabled}
+                  />
+                  {onRequestDelete ? (
+                    <Button
+                      label="삭제"
+                      variant="outlined"
+                      color="red"
+                      size="medium"
+                      icon={DeleteOutlineIconWrap}
+                      iconPosition="start"
+                      onClick={onRequestDelete}
+                      disabled={actionDisabled}
+                    />
+                  ) : null}
+                </>
+              )
+            ) : null}
+            <IconButton
+              type="button"
+              onClick={onClose}
+              aria-label={closeAriaLabel}
+              size="small"
+              sx={{
+                color: palette.grey600,
+                flexShrink: 0,
+                backgroundColor: palette.white,
+                border: `1px solid ${palette.grey200}`,
+                '&:hover': { backgroundColor: palette.grey100 },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Flex.Row>
+        </Flex.Row>
+
+        {data ? (
+          <Flex.Row align="center" gap="0.35rem" wrap="wrap">
+            <CalendarTodayIcon sx={{ fontSize: 18, color: palette.grey500 }} />
+            <Text margin="0" color={palette.grey600} style={{ fontSize: '0.875rem' }}>
+              {formatDateOnly(data.updated_at)}
+            </Text>
+            <Text margin="0" color={palette.grey400} style={{ fontSize: '0.75rem' }}>
+              (생성 {formatDateOnly(data.created_at)})
+            </Text>
+          </Flex.Row>
+        ) : null}
+      </S.HeaderBar>
+
+      <S.ScrollBody
+        direction="column"
+        gap="1.25rem"
+        $layout={layout}
+        $loading={isPending}
+      >
+        {isPending ? (
+          <S.LoadingArea
+            align="center"
+            justify="center"
+            gap="0.75rem"
+            width="100%"
+            role="status"
+            aria-live="polite"
+            $layout={layout}
+          >
+            <LoadingIcon width={88} height={88} aria-hidden />
+            <Text margin="0" color={palette.grey600} style={{ fontSize: '0.875rem' }}>
+              포트폴리오 정보를 불러오는 중입니다…
+            </Text>
+          </S.LoadingArea>
+        ) : null}
+        {isError ? (
+          <Text margin="0" color={palette.pink500} style={{ fontSize: '0.875rem' }}>
+            불러오지 못했습니다.
+          </Text>
+        ) : null}
+        {!isPending && data ? (
+          <>
+            <S.Section direction="column" gap="0.65rem">
+              <S.SectionTitle>HTML 공개 설정</S.SectionTitle>
+              {!isEditing ? (
+                <>
+                  <CvHtmlPublicSwitchControl
+                    isPublic={Boolean(data.is_public)}
+                    onPublicChange={handleTogglePublic}
+                    disabled={publicToggleDisabled}
+                    size="small"
+                    appearance="filled"
+                    linkButton={{
+                      label: '링크 바로가기',
+                      onClick: handleOpenPublicShare,
+                      disabled: publicToggleDisabled,
+                    }}
+                  />
+                  <Text
+                    margin="0"
+                    color={palette.grey600}
+                    style={{ fontSize: '0.75rem', lineHeight: 1.55 }}
+                  >
+                    스위치로 HTML 공개 여부를 바꿀 수 있습니다. 공개 시 링크만으로 로그인 없이
+                    미리보기가 가능합니다.
+                  </Text>
+                </>
+              ) : (
+                <Text margin="0" color={palette.grey500} style={{ fontSize: '0.8125rem' }}>
+                  HTML 본문을 수정하는 동안에는 공개 설정을 바꿀 수 없습니다.
+                </Text>
+              )}
+            </S.Section>
+
+            <S.Section direction="column" gap="0.5rem">
+              <S.SectionTitle>공고 정보</S.SectionTitle>
+              <S.BodyBox>{data.job_posting || '—'}</S.BodyBox>
+            </S.Section>
+
+            <S.Section direction="column" gap="0.5rem">
+              <S.SectionTitle>추가 요청사항</S.SectionTitle>
+              {pills.length > 0 ? (
+                <Flex.Row gap="0.5rem" wrap="wrap">
+                  {pills.map(tag => (
+                    <S.Pill key={tag}>{tag}</S.Pill>
+                  ))}
+                </Flex.Row>
+              ) : (
+                <Text margin="0" color={palette.grey500} style={{ fontSize: '0.8125rem' }}>
+                  —
+                </Text>
+              )}
+              {data.additional_notes && pills.length === 0 ? (
+                <S.BodyBox>{data.additional_notes}</S.BodyBox>
+              ) : null}
+            </S.Section>
+
+            <S.Section direction="column" gap="0.5rem">
+              <Flex.Row align="center" justify="space-between" gap="0.75rem" wrap="wrap">
+                <S.SectionTitle>프롬프트</S.SectionTitle>
+                <Button
+                  label="복사하기"
+                  variant="outlined"
+                  color="blue"
+                  size="small"
+                  icon={CopyIconWrap}
+                  iconPosition="start"
+                  onClick={handleCopyPrompt}
+                  disabled={!data.prompt?.trim()}
+                />
+              </Flex.Row>
+              <S.PreWrapScrollable $layout={layout}>{data.prompt || '—'}</S.PreWrapScrollable>
+            </S.Section>
+
+            <S.Section direction="column" gap="0.65rem">
+              <Flex.Row align="center" justify="space-between" gap="0.75rem" wrap="wrap" width="100%">
+                <S.SectionTitle>AI 생성 결과 (HTML)</S.SectionTitle>
+                {!isEditing ? (
+                  <Flex.Row align="center" gap="0.5rem" wrap="wrap" style={{ flexShrink: 0 }}>
+                    <Button
+                      label="PDF 다운로드"
+                      variant="outlined"
+                      color="blue"
+                      size="small"
+                      icon={PictureAsPdfIconWrap}
+                      iconPosition="start"
+                      onClick={handleDownloadPdf}
+                      disabled={
+                        !htmlRaw.trim() || pdfDownloading || !data
+                      }
+                    />
+                    <Button
+                      label={showHtmlPreview ? '소스 보기' : 'HTML 미리보기'}
+                      variant="outlined"
+                      color="blue"
+                      size="small"
+                      icon={showHtmlPreview ? CodeIconWrap : HtmlIconWrap}
+                      iconPosition="start"
+                      onClick={() => setShowHtmlPreview(v => !v)}
+                      disabled={!htmlRaw.trim() || pdfDownloading}
+                    />
+                  </Flex.Row>
+                ) : null}
+              </Flex.Row>
+              <Flex.Column gap="0.5rem" width="100%" style={{ minWidth: 0 }}>
+                {isEditing ? (
+                  <Input
+                    multiline
+                    value={editHtml}
+                    onChange={e => setEditHtml(e.target.value)}
+                    rows={14}
+                    size="small"
+                    fullWidth
+                    inputProps={{
+                      'aria-label': 'HTML 소스',
+                      style: { fontFamily: 'ui-monospace, monospace' },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: '0.5rem',
+                        backgroundColor: palette.white,
+                      },
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.grey200,
+                      },
+                      '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.grey300,
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.blue500,
+                      },
+                      '& textarea': {
+                        fontFamily: 'ui-monospace, monospace',
+                        fontSize: '0.8125rem',
+                        lineHeight: 1.5,
+                        resize: 'vertical',
+                      },
+                    }}
+                  />
+                ) : showHtmlPreview ? (
+                  <S.HtmlPreviewShell $layout={layout}>
+                    <iframe
+                      title="HTML 미리보기"
+                      srcDoc={htmlPreviewSrcDoc}
+                      sandbox=""
+                      referrerPolicy="no-referrer"
+                    />
+                  </S.HtmlPreviewShell>
+                ) : (
+                  <S.PreWrapScrollable $layout={layout}>
+                    {htmlRaw.trim() ? htmlRaw : '—'}
+                  </S.PreWrapScrollable>
+                )}
+              </Flex.Column>
+            </S.Section>
+          </>
+        ) : null}
+      </S.ScrollBody>
+    </Flex.Column>
+  );
+};
+
+export default CvPreviewContent;
+
+const S = {
+  HeaderBar: styled(Flex.Column, {
+    shouldForwardProp: p => p !== '$layout',
+  })<{ $layout: CvPreviewContentLayout }>`
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: ${palette.blue300};
+    border-bottom: 1px solid ${palette.grey200};
+    padding: ${({ $layout }) =>
+      $layout === 'panel' ? '0.875rem 1rem 0.75rem' : '1rem 2.75rem'};
+  `,
+  ScrollBody: styled(Flex.Column, {
+    shouldForwardProp: p => p !== '$loading' && p !== '$layout',
+  })<{ $layout: CvPreviewContentLayout; $loading?: boolean }>`
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: ${({ $loading }) => ($loading ? 'hidden' : 'auto')};
+    background-color: ${palette.white};
+    padding: ${({ $layout, $loading }) => {
+      if ($loading) return '0';
+      return $layout === 'panel' ? '1rem 1.25rem 1.25rem' : '1.25rem 2.75rem 1.5rem';
+    }};
+  `,
+  LoadingArea: styled(Flex.Column, {
+    shouldForwardProp: p => p !== '$layout',
+  })<{ $layout: CvPreviewContentLayout }>`
+    flex: 1 1 auto;
+    min-height: ${({ $layout }) =>
+      $layout === 'panel' ? 'min(40vh, 280px)' : 'min(52vh, 380px)'};
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1.5rem 1.25rem;
+  `,
+  Section: styled(Flex.Column)`
+    width: 100%;
+    min-width: 0;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid ${palette.grey200};
+    &:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+  `,
+  SectionTitle: styled('span')`
+    display: inline-block;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: ${palette.grey600};
+  `,
+  BodyBox: styled('div')`
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: ${palette.nearBlack};
+    background-color: ${palette.grey100};
+    border-radius: 0.5rem;
+    border: 1px solid ${palette.grey200};
+    white-space: pre-wrap;
+    word-break: break-word;
+  `,
+  PreWrapScrollable: styled('pre', {
+    shouldForwardProp: p => p !== '$layout',
+  })<{ $layout: CvPreviewContentLayout }>`
+    margin: 0;
+    padding: 0.75rem 1rem;
+    max-height: ${({ $layout }) =>
+      $layout === 'panel' ? 'min(36vh, 320px)' : 'min(42vh, 400px)'};
+    overflow: auto;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: ${palette.nearBlack};
+    background-color: ${palette.grey100};
+    border-radius: 0.5rem;
+    border: 1px solid ${palette.grey200};
+    font-family: ui-monospace, monospace;
+  `,
+  HtmlPreviewShell: styled('div', {
+    shouldForwardProp: p => p !== '$layout',
+  })<{ $layout: CvPreviewContentLayout }>`
+    border-radius: 0.5rem;
+    border: 1px solid ${palette.grey200};
+    overflow: hidden;
+    background-color: ${palette.white};
+    min-height: 3rem;
+    & > iframe {
+      display: block;
+      width: 100%;
+      min-height: ${({ $layout }) =>
+        $layout === 'panel' ? 'min(32vh, 280px)' : 'min(42vh, 400px)'};
+      height: ${({ $layout }) =>
+        $layout === 'panel' ? 'min(42vh, 360px)' : 'min(50vh, 480px)'};
+      border: none;
+    }
+  `,
+  Pill: styled('span')`
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: ${palette.nearBlack};
+    background-color: ${palette.blue300};
+    border: 1px solid ${palette.grey200};
+    border-radius: 2rem;
+  `,
+};

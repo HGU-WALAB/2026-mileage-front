@@ -100,7 +100,11 @@ export const getPortfolioCvById = async (id: number) => {
 };
 
 /** POST /api/portfolio/cv/build-prompt */
+export type PortfolioCvBuildPromptMode = 'cv' | 'archive';
+
 export interface PortfolioCvBuildPromptRequest {
+  /** 취업 준비 ON → `cv`, OFF → `archive` (서버 기본은 cv) */
+  mode: PortfolioCvBuildPromptMode;
   job_posting: string;
   target_position: string;
   additional_notes: string;

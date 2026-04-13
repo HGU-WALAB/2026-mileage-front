@@ -3,6 +3,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -14,7 +15,6 @@ import {
   deleteActivity as deleteActivityApi,
   getActivities,
   getPortfolioMileage,
-  getPortfolioSettings,
   getTechStack,
   getUserInfo,
   postActivity,
@@ -29,12 +29,12 @@ import {
   normalizeTechStackDomainsForPersist,
   normalizeTechStackDomainsFromResponse,
 } from '../../utils/techStackDomains';
-import {
-  DRAGGABLE_SECTION_ORDER,
-  type DraggableSectionKey,
-} from '../../constants/constants';
 import type { ActivityItem, MileageItem, RepoItem, UserInfo } from '../../types/portfolioItems';
 import type { PortfolioState } from '../../types/portfolioState';
+import {
+  getGitHubStatus,
+  readGitHubConnectedFromStorage,
+} from '@/pages/profile/apis/github';
 
 const SAVED_TOAST_OPTIONS = {
   position: 'top-center' as const,
@@ -75,6 +75,21 @@ function nonEmpty(s: string | null | undefined): string | null {
   return t !== undefined && t !== null && t !== '' ? t : null;
 }
 
+/** GET 응답에 snake_case / camelCase·숫자·문자열이 섞여 올 때 대비 */
+function repoItemIsVisible(p: PortfolioRepositoryItem): boolean {
+  const raw: unknown =
+    (p as { is_visible?: unknown }).is_visible ??
+    (p as { isVisible?: unknown }).isVisible;
+  if (raw === true || raw === 1) return true;
+  if (raw === false || raw === 0) return false;
+  if (typeof raw === 'string') {
+    const s = raw.trim().toLowerCase();
+    if (s === 'true' || s === '1') return true;
+    if (s === 'false' || s === '0' || s === '') return false;
+  }
+  return false;
+}
+
 export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
   const breakdown =
     p.languages && p.languages.length > 0 ? [...p.languages] : undefined;
@@ -86,10 +101,15 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
     id: p.id ?? undefined,
     repo_id: p.repo_id,
     custom_title: p.custom_title,
-    is_visible: p.is_visible,
+    is_visible: repoItemIsVisible(p),
     display_order: p.display_order,
-    name: nonEmpty(p.name) ?? nonEmpty(p.custom_title) ?? String(p.repo_id),
+    github_title: nonEmpty(p.github_title) ?? '',
+    name:
+      nonEmpty(p.github_title) ??
+      nonEmpty(p.custom_title) ??
+      String(p.repo_id),
     description: p.description ?? '',
+    github_description: p.github_description ?? '',
     created_at: p.created_at ?? '',
     updated_at: p.updated_at ?? '',
     languages: languageNames,
@@ -99,6 +119,35 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
     forks_count: p.forks_count,
     html_url: p.html_url ?? '',
     owner: p.owner ?? '',
+  };
+}
+
+/**
+ * PATCH 응답이 제목·설명 등 일부 필드만 포함할 때, 기존 카드의 언어·통계·URL 등을 유지.
+ * (백엔드가 전체 엔티티가 아닌 DTO를 내려주면 `portfolioRepoToRepoItem`만 쓰면 스택이 비는 문제)
+ */
+export function mergePortfolioRepoPatch(
+  prev: RepoItem,
+  patch: PortfolioRepositoryItem,
+): RepoItem {
+  const next = portfolioRepoToRepoItem(patch);
+  return {
+    ...prev,
+    ...next,
+    github_title:
+      next.github_title !== '' ? next.github_title : prev.github_title,
+    languages: next.languages.length > 0 ? next.languages : prev.languages,
+    languageBreakdown:
+      next.languageBreakdown != null && next.languageBreakdown.length > 0
+        ? next.languageBreakdown
+        : prev.languageBreakdown,
+    commit_count: next.commit_count ?? prev.commit_count,
+    stargazers_count: next.stargazers_count ?? prev.stargazers_count,
+    forks_count: next.forks_count ?? prev.forks_count,
+    html_url: next.html_url !== '' ? next.html_url : prev.html_url,
+    owner: next.owner !== '' ? next.owner : prev.owner,
+    created_at: next.created_at !== '' ? next.created_at : prev.created_at,
+    updated_at: next.updated_at !== '' ? next.updated_at : prev.updated_at,
   };
 }
 
@@ -133,6 +182,8 @@ interface PortfolioProviderProps {
 
 const QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
 
+const EMPTY_PORTFOLIO_REPOS: RepoItem[] = [];
+
 export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
   const queryClient = useQueryClient();
   const [activitiesNextId, setActivitiesNextId] = useState(-1);
@@ -157,31 +208,6 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
       queryClient.setQueryData<UserInfo | null>(
         [QUERY_KEYS.portfolioUserInfo],
         prev => (typeof v === 'function' ? v(prev ?? null) : v),
-      );
-    },
-    [queryClient],
-  );
-
-  // ── 섹션 순서 ──────────────────────────────────────────────────────────────
-  const settingsQuery = useQuery<DraggableSectionKey[]>({
-    queryKey: [QUERY_KEYS.portfolioSettings],
-    queryFn: async () => {
-      const res = await getPortfolioSettings();
-      const order = res.section_order ?? [];
-      const validKeys = order.filter((k): k is DraggableSectionKey =>
-        DRAGGABLE_SECTION_ORDER.includes(k as DraggableSectionKey),
-      );
-      const missing = DRAGGABLE_SECTION_ORDER.filter(k => !validKeys.includes(k));
-      return validKeys.length > 0 ? [...validKeys, ...missing] : DRAGGABLE_SECTION_ORDER;
-    },
-    ...QUERY_CONFIG,
-  });
-
-  const setSectionOrder = useCallback(
-    (v: DraggableSectionKey[] | ((p: DraggableSectionKey[]) => DraggableSectionKey[])) => {
-      queryClient.setQueryData<DraggableSectionKey[]>(
-        [QUERY_KEYS.portfolioSettings],
-        prev => (typeof v === 'function' ? v(prev ?? DRAGGABLE_SECTION_ORDER) : v),
       );
     },
     [queryClient],
@@ -219,15 +245,42 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
   // ── 레포지토리 ─────────────────────────────────────────────────────────────
   const repoQueryKey = useMemo(() => [QUERY_KEYS.portfolioRepositories], []);
 
+  const githubStatusQuery = useQuery({
+    queryKey: [QUERY_KEYS.githubStatus],
+    queryFn: () => getGitHubStatus(),
+    ...QUERY_CONFIG,
+  });
+  const githubConnectedFromApi = githubStatusQuery.data?.connected === true;
+  /** 상태 GET이 늦어도, 직전 세션에서 연결됐으면 레포 목록을 바로 요청 (새로고침 후 빈 화면 방지) */
+  const reposFetchEnabled =
+    githubConnectedFromApi ||
+    (githubStatusQuery.isPending && readGitHubConnectedFromStorage());
+
   const reposQuery = useQuery<RepoItem[]>({
     queryKey: repoQueryKey,
     queryFn: async () => {
       const { getAllRepositories } = await import('../../apis/portfolio');
-      const list = await getAllRepositories();
+      // 편집 화면 카드: 포트폴리오에 표시로 둔 레포만(is_visible). API는 visible_only 로 필터합니다.
+      // 전체 목록은 선택 모달에서 별도로 불러옵니다.
+      const list = await getAllRepositories({ visible_only: true });
       return (list ?? []).map(portfolioRepoToRepoItem);
     },
+    enabled: reposFetchEnabled,
     ...QUERY_CONFIG,
   });
+
+  useEffect(() => {
+    // 로딩 중에는 연결 여부 미확정 → 레포 캐시를 지우지 않음 (깃헙 상태보다 늦게 도착한 GET이 날아감)
+    if (githubStatusQuery.isPending) return;
+    if (githubConnectedFromApi) return;
+    queryClient.removeQueries({ queryKey: repoQueryKey });
+    queryClient.setQueryData<RepoItem[]>(repoQueryKey, []);
+  }, [
+    githubConnectedFromApi,
+    githubStatusQuery.isPending,
+    queryClient,
+    repoQueryKey,
+  ]);
 
   const setRepos = useCallback(
     (v: RepoItem[] | ((p: RepoItem[]) => RepoItem[])) => {
@@ -346,12 +399,10 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
       userInfo: userInfoQuery.data ?? null,
       setUserInfo,
       isUserInfoLoading: userInfoQuery.isLoading,
-      sectionOrder: settingsQuery.data ?? DRAGGABLE_SECTION_ORDER,
-      setSectionOrder,
       techStackDomains: techStackQuery.data ?? [],
       setTechStackDomains,
       isTechStackLoading: techStackQuery.isLoading,
-      repos: reposQuery.data ?? [],
+      repos: reposQuery.data ?? EMPTY_PORTFOLIO_REPOS,
       setRepos,
       isReposLoading: reposQuery.isLoading,
       mileageItems: mileageQuery.data ?? [],
@@ -370,8 +421,6 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
       userInfoQuery.data,
       userInfoQuery.isLoading,
       setUserInfo,
-      settingsQuery.data,
-      setSectionOrder,
       techStackQuery.data,
       techStackQuery.isLoading,
       setTechStackDomains,

@@ -30,7 +30,7 @@ const MaintenanceGate = () => {
   ) {
     // 로그인 전에는 로그인/콜백 경로는 허용해서,
     // 로그인 후 "허용 유저" 판정이 반영되면 통과할 수 있게 합니다.
-    // 공개 이력서 미리보기는 비로그인 방문이 있으므로 점검 중에도 허용합니다.
+    // 공개 포폴 미리보기는 비로그인 방문이 있으므로 점검 중에도 허용합니다.
     if (!isLogin && (isAuthRoute || isPublicCvShareRoute)) {
       return <Outlet />;
     }

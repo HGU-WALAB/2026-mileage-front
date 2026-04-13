@@ -15,17 +15,13 @@ import {
 import { type FunctionComponent, type SVGProps } from 'react';
 
 import { CV_TARGET_POSITION_PRESETS } from '../../constants/cvTargetPositionOptions';
+import {
+  ADDITIONAL_NOTES_PLACEHOLDER,
+  JOB_INFO_MAX_LENGTH,
+  JOB_POSTING_PLACEHOLDER,
+} from '../../constants/cvGenerateStep2Constants';
 
 import { CvGeneratePageS as S } from '../cvGeneratePageStyles';
-
-const JOB_POSTING_PLACEHOLDER = `예) 회사: 카카오
-포지션: 백엔드 개발자 (인턴)
-자격요건: Java/Spring 경험, 알고리즘 실력
-우대사항: AWS 경험, 오픈소스 기여
-...`;
-
-const ADDITIONAL_NOTES_PLACEHOLDER =
-  '예) 프로젝트 경험 위주로 강조해줘, 간결하게 작성해줘 등';
 
 const AutoAwesomeIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <AutoAwesomeIcon sx={{ fontSize: 20 }} />
@@ -76,8 +72,8 @@ const CvGenerateStep2 = ({
     ? '공고 정보 (선택)'
     : '관심있는 기업 정보 (선택)';
   const jobHelperText = preparingEmployment
-    ? '회사명, 공고 제목, 우대사항, 자격요건 등 — 비워도 진행할 수 있습니다.'
-    : '관심 있는 회사·산업, 진로와 관련된 메모 등 — 비워도 진행할 수 있습니다.';
+    ? '회사명, 공고 제목, 우대사항, 자격요건 등'
+    : '관심 있는 회사·산업, 진로와 관련된 메모 등';
   const introText = preparingEmployment
     ? '지원 직무는 필수입니다. 공고 정보·추가 요청사항은 선택입니다.'
     : '관심 직무는 필수입니다. 기업 정보·추가 요청사항은 선택입니다.';
@@ -208,14 +204,47 @@ const CvGenerateStep2 = ({
             <TextField
               fullWidth
               label={jobInfoLabel}
-              helperText={jobHelperText}
+              helperText={
+                <Flex.Row
+                  align="center"
+                  justify="space-between"
+                  gap="0.75rem"
+                  wrap="nowrap"
+                  width="100%"
+                  style={{ minWidth: 0 }}
+                >
+                  <Text
+                    as="span"
+                    margin="0"
+                    style={{
+                      ...theme.typography.caption,
+                      color: theme.palette.grey[600],
+                      flex: '1 1 auto',
+                      minWidth: 0,
+                    }}
+                  >
+                    {jobHelperText}
+                  </Text>
+                  <Text
+                    as="span"
+                    margin="0"
+                    style={{
+                      ...theme.typography.caption,
+                      color: theme.palette.grey[600],
+                      flexShrink: 0,
+                    }}
+                  >
+                    {jobPosting.length} / {JOB_INFO_MAX_LENGTH}
+                  </Text>
+                </Flex.Row>
+              }
               placeholder={JOB_POSTING_PLACEHOLDER}
               value={jobPosting}
               onChange={e => onJobPostingChange(e.target.value)}
               multiline
               minRows={isMobile ? 6 : 8}
               inputProps={{
-                maxLength: 12000,
+                maxLength: JOB_INFO_MAX_LENGTH,
                 'aria-label': preparingEmployment ? '공고 정보' : '관심있는 기업 정보',
               }}
             />

@@ -13,9 +13,12 @@ export interface PortfolioRepositoryItem {
   repo_id: number;
   custom_title: string | null;
   description: string;
+  /** GitHub 원본 설명 (커스텀 description 비우면 UI에서 fallback으로 사용) */
+  github_description?: string;
   is_visible: boolean;
   display_order: number;
-  name: string;
+  /** GitHub 저장소 이름 (REST `name`에 해당) */
+  github_title: string;
   html_url: string;
   /** 단일 대표 언어(하위 호환). `languages`가 있으면 우선 사용 */
   language?: string;
@@ -61,7 +64,8 @@ export interface GetRepositoriesParams {
   visible_only?: boolean;
   sort?: string;
   visibility?: string;
-  affiliation?: string;
+  /** 레포 이름·owner·URL·설명·언어·repo_id·커스텀 제목/설명 (공백 AND) */
+  search?: string;
 }
 
 /** GitHub 레포 캐시 갱신 (마이페이지 연결 직후·모달에서 수동 호출) */
@@ -86,7 +90,9 @@ export const getRepositories = async (params?: GetRepositoriesParams) => {
   }
   if (params?.sort != null) searchParams.set('sort', params.sort);
   if (params?.visibility != null) searchParams.set('visibility', params.visibility);
-  if (params?.affiliation != null) searchParams.set('affiliation', params.affiliation);
+  if (params?.search != null && params.search.trim() !== '') {
+    searchParams.set('search', params.search.trim());
+  }
   const query = searchParams.toString();
   const url = query ? `${ENDPOINT.PORTFOLIO_REPOSITORIES}?${query}` : ENDPOINT.PORTFOLIO_REPOSITORIES;
   const response = await http.get<RepositoriesResponse>(url);
@@ -99,6 +105,7 @@ export const getAllRepositories = async (
 ): Promise<PortfolioRepositoryItem[]> => {
   const { perPage = 20, ...baseParams } = options;
   const BATCH = 5;
+  const MAX_PAGES = 100;
 
   // 1페이지를 먼저 가져와 데이터가 더 있는지 확인
   const firstRes = await getRepositories({ ...baseParams, page: 1, per_page: perPage });
@@ -109,6 +116,7 @@ export const getAllRepositories = async (
   let startPage = 2;
 
   for (;;) {
+    if (startPage > MAX_PAGES) break;
     // BATCH 개 페이지를 병렬로 요청
     const pages = Array.from({ length: BATCH }, (_, i) => startPage + i);
     const results = await Promise.all(

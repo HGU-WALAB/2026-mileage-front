@@ -5,6 +5,18 @@ import { GitHubStatusResponse } from '../types/github';
 
 const GITHUB_STORAGE_KEY = 'github-storage';
 
+/** OAuth 직후·새로고침 직전 등 GET 응답 전에 연결 여부를 추정할 때 사용 */
+export function readGitHubConnectedFromStorage(): boolean {
+  try {
+    const raw = localStorage.getItem(GITHUB_STORAGE_KEY);
+    if (!raw) return false;
+    const j = JSON.parse(raw) as { state?: { connected?: boolean } };
+    return j?.state?.connected === true;
+  } catch {
+    return false;
+  }
+}
+
 export function syncGitHubStorage(status: GitHubStatusResponse) {
   try {
     const payload = {

@@ -1,5 +1,6 @@
-import { Button, Flex, Text } from '@/components';
+import { Button, Flex, Input, Text } from '@/components';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
+import { ROUTE_PATH } from '@/constants/routePath';
 import { palette } from '@/styles/palette';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -7,15 +8,17 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useCallback, useMemo, useState } from 'react';
 import { styled, useTheme, useMediaQuery } from '@mui/material';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 import { INPUT_MAX_LENGTH } from '../../constants/inputLimits';
 import { patchRepository } from '../../apis/repositories';
 import { formatDateRange } from '../../utils/date';
 import {
-  portfolioRepoToRepoItem,
+  mergePortfolioRepoPatch,
   usePortfolioContext,
 } from '../context/PortfolioContext';
 import type { RepoItem } from '../../types/portfolioItems';
+import useGetGitHubStatusQuery from '@/pages/profile/hooks/useGetGitHubStatusQuery';
 import {
   formatRepoStat,
   RepoLanguageBar,
@@ -32,6 +35,8 @@ interface RepoSectionContentProps {
 const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
+  const navigate = useNavigate();
+  const { data: githubStatus } = useGetGitHubStatusQuery();
   const { repos: contextRepos, setRepos } = usePortfolioContext();
   const repos = Array.isArray(contextRepos) ? contextRepos : [];
   const [page, setPage] = useState(0);
@@ -45,7 +50,7 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     setEditTitle(
       (repo.custom_title != null && repo.custom_title.trim() !== '')
         ? repo.custom_title.trim()
-        : repo.name,
+        : repo.github_title || repo.name,
     );
     setEditDescription(repo.description ?? '');
   }, []);
@@ -61,14 +66,15 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     setSubmitting(true);
     try {
       const res = await patchRepository(editingRepo.id, {
-        custom_title: editTitle.trim() || editingRepo.name,
+        custom_title:
+          editTitle.trim() || editingRepo.github_title || editingRepo.name,
         description: editDescription.trim(),
         is_visible: editingRepo.is_visible,
         display_order: editingRepo.display_order ?? 0,
       });
       setRepos(prev =>
         prev.map(r =>
-          r.repo_id === res.repo_id ? portfolioRepoToRepoItem(res) : r,
+          r.repo_id === res.repo_id ? mergePortfolioRepoPatch(r, res) : r,
         ),
       );
       toast.success('레포지토리 정보가 수정되었습니다.', {
@@ -97,67 +103,103 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     [displayRepos, page],
   );
 
-  if (!readOnly && displayRepos.length === 0) {
-    return (
-      <S.ConnectCard>
-        <S.ConnectMessage>선택된 레포지토리가 없습니다.</S.ConnectMessage>
-      </S.ConnectCard>
-    );
+  const isConnected = githubStatus?.connected ?? false;
+
+  const connectCard = (
+    <S.ConnectCard>
+      <Flex.Column gap="0.75rem" style={{ width: '100%' }}>
+        <S.ConnectMessage>
+          {isConnected
+            ? '선택된 레포지토리가 없습니다.'
+            : '깃허브 계정을 연결해 레포지토리를 추가해 주세요.'}
+        </S.ConnectMessage>
+        {!readOnly && !isConnected && (
+          <Flex.Row justify="flex-start" style={{ width: '100%' }}>
+            <Button
+              label="마이페이지로 이동"
+              variant="contained"
+              color="blue"
+              size="medium"
+              onClick={() => navigate(ROUTE_PATH.myPage)}
+            />
+          </Flex.Row>
+        )}
+      </Flex.Column>
+    </S.ConnectCard>
+  );
+
+  // 깃허브가 연결 해제된 상태라면, 선택된 레포가 있더라도 표시하지 않습니다.
+  if (!isConnected) {
+    return connectCard;
   }
 
-  const displayName = (repo: {
-    custom_title: string | null;
-    name: string;
-    repo_id: number;
-  }) =>
+  if (!readOnly && displayRepos.length === 0) {
+    return connectCard;
+  }
+
+  const displayName = (repo: RepoItem) =>
     (repo.custom_title != null && repo.custom_title.trim() !== '')
       ? repo.custom_title.trim()
-      : (repo.name != null && repo.name.trim() !== '')
-        ? repo.name.trim()
-        : String(repo.repo_id);
+      : (repo.github_title != null && repo.github_title.trim() !== '')
+        ? repo.github_title.trim()
+        : (repo.name != null && repo.name.trim() !== '')
+          ? repo.name.trim()
+          : String(repo.repo_id);
+
+  const displayDescription = (repo: RepoItem) => {
+    const custom = (repo.description ?? '').trim();
+    if (custom !== '') return custom;
+    const gh = (repo.github_description ?? '').trim();
+    return gh;
+  };
 
   return (
     <Flex.Column gap="1rem">
       <S.Grid $isMobile={isMobile}>
         {paginatedRepos.map(repo => {
           const isEditing = editingRepo?.repo_id === repo.repo_id;
+          const githubDescriptionPlaceholder =
+            (repo.github_description ?? '').trim() || '설명을 입력하세요';
           return (
             <S.Card key={repo.repo_id} $isMobile={isMobile}>
               {isEditing ? (
                 <Flex.Column gap="0.5rem">
-                  <input
-                    type="text"
+                  <Input
                     value={editTitle}
                     onChange={e => setEditTitle(e.target.value)}
                     placeholder={displayName(repo)}
-                    maxLength={INPUT_MAX_LENGTH.REPO_TITLE}
-                    style={{
-                      width: '100%',
-                      padding: '0.35rem 0.5rem',
-                      borderRadius: '0.5rem',
-                      border: `1px solid ${theme.palette.grey[300]}`,
-                      fontSize: '0.875rem',
-                      boxSizing: 'border-box',
+                    size="small"
+                    fullWidth
+                    inputProps={{
+                      maxLength: INPUT_MAX_LENGTH.REPO_TITLE,
+                      'aria-label': '레포지토리 제목',
                     }}
-                    aria-label="레포지토리 제목"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.variant.default,
+                      },
+                    }}
                   />
-                  <textarea
+                  <Input
+                    multiline
                     value={editDescription}
                     onChange={e => setEditDescription(e.target.value)}
-                    placeholder="설명을 입력하세요"
-                    maxLength={INPUT_MAX_LENGTH.REPO_DESCRIPTION}
+                    placeholder={githubDescriptionPlaceholder}
                     rows={2}
-                    style={{
-                      width: '100%',
-                      padding: '0.35rem 0.5rem',
-                      borderRadius: '0.5rem',
-                      border: `1px solid ${theme.palette.grey[300]}`,
-                      fontSize: '0.875rem',
-                      resize: 'none',
-                      boxSizing: 'border-box',
-                      minHeight: '2.5rem',
+                    size="small"
+                    fullWidth
+                    inputProps={{
+                      maxLength: INPUT_MAX_LENGTH.REPO_DESCRIPTION,
+                      'aria-label': '레포지토리 설명',
                     }}
-                    aria-label="레포지토리 설명"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: theme.palette.variant.default,
+                      },
+                      '& textarea': {
+                        resize: 'vertical',
+                      },
+                    }}
                   />
                   <Flex.Row gap="0.5rem" justify="flex-end">
                     <Button
@@ -206,14 +248,14 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
                       </S.EditButton>
                     )}
                   </Flex.Row>
-                  {(repo.description?.trim() ?? '') !== '' && (
+                  {displayDescription(repo) !== '' && (
                     <Text
                       style={{
                         ...theme.typography.body2,
                         color: theme.palette.grey[600],
                       }}
                     >
-                      {repo.description}
+                      {displayDescription(repo)}
                     </Text>
                   )}
                   <Flex.Row

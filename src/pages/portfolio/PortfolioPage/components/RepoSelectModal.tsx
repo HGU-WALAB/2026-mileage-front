@@ -28,7 +28,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { styled, useTheme } from '@mui/material';
+import { styled, useMediaQuery, useTheme } from '@mui/material';
 import { toast } from 'react-toastify';
 
 interface RepoSelectModalProps {
@@ -40,6 +40,8 @@ interface RepoSelectModalProps {
 const REPOS_PER_PAGE = 10;
 /** 정렬 UI 제거 시 API 기본 정렬 */
 const DEFAULT_REPO_LIST_SORT = 'updated' as const;
+/** 입력 디바운스 후 GET `search` 반영 (ms) */
+const SEARCH_DEBOUNCE_MS = 200;
 
 const VISIBILITY_OPTIONS = [
   { label: 'all', value: 'all' },
@@ -47,14 +49,19 @@ const VISIBILITY_OPTIONS = [
   { label: 'Private', value: 'private' },
 ] as const;
 
-const AFFILIATION_OPTIONS = [
-  { label: 'owner', value: 'owner' },
-  { label: '협업 레포', value: 'collaborator' },
-  { label: '조직 레포', value: 'organization_member' },
-] as const;
+function portfolioRepoListTitle(repo: PortfolioRepositoryItem): string {
+  if (repo.custom_title != null && repo.custom_title.trim() !== '') {
+    return repo.custom_title.trim();
+  }
+  if (repo.github_title != null && repo.github_title.trim() !== '') {
+    return repo.github_title.trim();
+  }
+  return String(repo.repo_id);
+}
 
 const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const theme = useTheme();
+  const compactRepoPagination = useMediaQuery('(max-width: 429px)');
   const { setRepos, repos: portfolioRepos } = usePortfolioContext();
   const [pageRepos, setPageRepos] = useState<PortfolioRepositoryItem[]>([]);
   const [loadedRepoById, setLoadedRepoById] = useState<
@@ -63,40 +70,69 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  /** 디바운스(또는 검색 버튼·Enter 즉시) 확정값 → queryParams.search */
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [visibilityFilter, setVisibilityFilter] = useState<string>(
     VISIBILITY_OPTIONS[0].label,
   );
-  const [affiliationFilter, setAffiliationFilter] = useState<string>(
-    AFFILIATION_OPTIONS[0].label,
-  );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  /** 확인 클릭 후: 전체 목록 fetch → PUT 저장 단계 구분(오버레이 문구) */
+  const [submitPhase, setSubmitPhase] = useState<'fetchAll' | 'save'>(
+    'fetchAll',
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [listVersion, setListVersion] = useState(0);
 
+  /** 사용자가 체크박스를 건드린 뒤에는 컨텍스트 동기화로 선택을 덮어쓰지 않음 */
+  const selectionTouchedRef = useRef(false);
   const portfolioReposRef = useRef(portfolioRepos);
   portfolioReposRef.current = portfolioRepos;
 
   // 모달이 열리자마자 백그라운드에서 전체 레포 프리페치 시작
   // 확인 클릭 시 이미 완료된 Promise를 재사용해 대기 시간 최소화
   const allReposPromiseRef = useRef<Promise<PortfolioRepositoryItem[]> | null>(null);
+  const loadedRepoByIdRef = useRef(loadedRepoById);
+  loadedRepoByIdRef.current = loadedRepoById;
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const queryParams = useMemo(() => {
     const sort = DEFAULT_REPO_LIST_SORT;
     const visibility =
       VISIBILITY_OPTIONS.find(option => option.label === visibilityFilter)
         ?.value ?? VISIBILITY_OPTIONS[0].value;
-    const affiliation =
-      AFFILIATION_OPTIONS.find(option => option.label === affiliationFilter)
-        ?.value ?? AFFILIATION_OPTIONS[0].value;
-    return { sort, visibility, affiliation };
-  }, [visibilityFilter, affiliationFilter]);
+    const search =
+      appliedSearch.trim() === '' ? undefined : appliedSearch.trim();
+    return { sort, visibility, search };
+  }, [visibilityFilter, appliedSearch]);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = window.setTimeout(() => {
+      setAppliedSearch(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [searchQuery, open]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [appliedSearch]);
+
+  /** 디바운스 기다리지 않고 즉시 검색(Enter·버튼) */
+  const runSearch = useCallback(() => {
+    if (loading) return;
+    setAppliedSearch(searchQuery.trim());
+    setPage(1);
+    queueMicrotask(() => searchInputRef.current?.focus());
+  }, [searchQuery, loading]);
 
   useLayoutEffect(() => {
     if (!open) return;
+    selectionTouchedRef.current = false;
     setPage(1);
     setLoadedRepoById(new Map());
     setSearchQuery('');
+    setAppliedSearch('');
     setSelectedIds(
       new Set(
         portfolioReposRef.current.filter(r => r.is_visible).map(r => r.repo_id),
@@ -104,29 +140,38 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     );
   }, [open]);
 
-  // 모달이 열리거나 필터가 바뀌면 백그라운드에서 전체 레포 프리페치
+  useEffect(() => {
+    if (!open || selectionTouchedRef.current) return;
+    setSelectedIds(
+      new Set(portfolioRepos.filter(r => r.is_visible).map(r => r.repo_id)),
+    );
+  }, [open, portfolioRepos]);
+
+  // 모달이 열리거나 캐시가 갱신되면 백그라운드에서 전체 레포 프리페치
+  // visibility: 'all' 명시 + 검색 필터 없이 전체를 가져와야 PUT body가 완전해짐
   useEffect(() => {
     if (!open) {
       allReposPromiseRef.current = null;
       return;
     }
     allReposPromiseRef.current = getAllRepositories({
-      ...queryParams,
+      sort: DEFAULT_REPO_LIST_SORT,
+      visibility: 'all',
       perPage: REPOS_PER_PAGE,
     });
-  }, [open, queryParams, listVersion]);
+  }, [open, listVersion]);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    const { sort, visibility, affiliation } = queryParams;
+    const { sort, visibility, search } = queryParams;
 
     getRepositories({
       page,
       per_page: REPOS_PER_PAGE,
       sort,
       visibility,
-      affiliation,
+      search,
     })
       .then(res => {
         const list = res.repositories ?? [];
@@ -152,7 +197,8 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       await postGithubRepositoriesCacheRefresh();
       setListVersion(v => v + 1);
       allReposPromiseRef.current = getAllRepositories({
-        ...queryParams,
+        sort: DEFAULT_REPO_LIST_SORT,
+        visibility: 'all',
         perPage: REPOS_PER_PAGE,
       });
       toast.success('레포지토리 목록을 최신화했습니다.', {
@@ -163,9 +209,10 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     } finally {
       setRefreshing(false);
     }
-  }, [queryParams]);
+  }, []);
 
   const toggleRepo = useCallback((repoId: number) => {
+    selectionTouchedRef.current = true;
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(repoId)) next.delete(repoId);
@@ -175,19 +222,39 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   }, []);
 
   const handleConfirm = useCallback(async () => {
+    setSubmitPhase('fetchAll');
     setSubmitting(true);
+    // 상태 반영·로딩 오버레이가 한 프레임 그려진 뒤 네트워크 대기 (미표시 방지)
+    await Promise.resolve();
     try {
-      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용
+      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용 (visibility:'all', 검색 없이 전체 레포)
       const fullList = await (allReposPromiseRef.current ?? getAllRepositories({
-        ...queryParams,
+        sort: DEFAULT_REPO_LIST_SORT,
+        visibility: 'all',
         perPage: REPOS_PER_PAGE,
       }));
+      setSubmitPhase('save');
       const putBody: PutRepositoryItem[] = fullList.map(p => ({
         repo_id: p.repo_id,
         custom_title: p.custom_title != null ? p.custom_title : '',
         description: p.description != null ? p.description : '',
         is_visible: selectedIds.has(p.repo_id),
       }));
+      // fullList에 없는 selectedIds(검색·타이밍 차이로 누락된 레포)도 PUT body에 포함
+      const fullListIdSet = new Set(fullList.map(p => p.repo_id));
+      for (const id of selectedIds) {
+        if (!fullListIdSet.has(id)) {
+          const repo =
+            loadedRepoByIdRef.current.get(id) ??
+            portfolioReposRef.current.find(r => r.repo_id === id);
+          putBody.push({
+            repo_id: id,
+            custom_title: repo?.custom_title ?? null,
+            description: repo?.description ?? '',
+            is_visible: true,
+          });
+        }
+      }
       const res = await putRepositories(putBody);
       setRepos((res.repositories ?? []).map(portfolioRepoToRepoItem));
       toast.success('변경사항이 저장되었습니다.', {
@@ -198,24 +265,14 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       toast.error('레포지토리 저장에 실패했습니다.');
     } finally {
       setSubmitting(false);
+      setSubmitPhase('fetchAll');
     }
-  }, [selectedIds, queryParams, setRepos, onClose]);
+  }, [selectedIds, setRepos, onClose]);
 
   const handleModalClose = useCallback(() => {
-    if (submitting) return;
+    if (submitting || refreshing) return;
     onClose();
-  }, [submitting, onClose]);
-
-  const filteredRepos = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return pageRepos;
-    return pageRepos.filter(
-      r =>
-        (r.name ?? '').toLowerCase().includes(q) ||
-        (r.custom_title?.toLowerCase().includes(q) ?? false) ||
-        (r.description?.toLowerCase().includes(q) ?? false),
-    );
-  }, [pageRepos, searchQuery]);
+  }, [submitting, refreshing, onClose]);
 
   const selectedRepos = useMemo(() => {
     return [...selectedIds]
@@ -227,8 +284,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           return {
             repo_id: pr.repo_id,
             custom_title: pr.custom_title,
-            name: pr.name,
+            github_title: pr.github_title,
             description: pr.description,
+            github_description: pr.github_description,
             is_visible: pr.is_visible,
             display_order: pr.display_order ?? 0,
             html_url: pr.html_url ?? '',
@@ -244,8 +302,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
         return {
           repo_id: id,
           custom_title: null,
-          name: String(id),
+          github_title: '',
           description: '',
+          github_description: '',
           is_visible: false,
           display_order: 0,
           html_url: '',
@@ -266,11 +325,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     setVisibilityFilter(label);
     setPage(1);
   }, []);
-  const setAffiliationFilterAndResetPage = useCallback((label: string) => {
-    setAffiliationFilter(label);
-    setPage(1);
-  }, []);
-
   const selectedCount = selectedIds.size;
 
   return (
@@ -281,7 +335,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       hasCloseButton
       style={{ backgroundColor: theme.palette.background.default }}
     >
-      <S.ModalSurface aria-busy={submitting}>
+      <S.ModalSurface aria-busy={submitting || refreshing}>
       <Modal.Header position="start">레포지토리 선택</Modal.Header>
       <Modal.Body position="start" style={{ gap: '1rem', marginTop: '0.5rem' }}>
         <Flex.Row
@@ -315,25 +369,40 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
             style={{ flexShrink: 0, marginLeft: 'auto' }}
           />
         </Flex.Row>
-        {!loading && (
-          <S.FilterBar>
-            <Flex.Row gap="0.5rem" align="center" style={{ flexShrink: 0 }}>
-              <Input
-                placeholder="레포지토리 검색..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  maxWidth: '20rem',
-                  backgroundColor:
-                    theme.palette.variant?.default ?? theme.palette.grey[50],
-                }}
-                inputProps={{ 'aria-label': '레포지토리 검색' }}
-              />
-              <S.SearchButton type="button" aria-label="검색">
-                <SearchIcon />
-              </S.SearchButton>
-            </Flex.Row>
+        <S.FilterBar>
+          <Flex.Row gap="0.5rem" align="center" style={{ flexShrink: 0 }}>
+            <Input
+              placeholder="레포지토리 검색..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  runSearch();
+                }
+              }}
+              inputRef={searchInputRef}
+              style={{
+                width: '100%',
+                maxWidth: '20rem',
+                backgroundColor:
+                  theme.palette.variant?.default ?? theme.palette.grey[50],
+              }}
+              inputProps={{ 'aria-label': '레포지토리 검색' }}
+            />
+            <S.SearchButton
+              type="button"
+              aria-label="검색"
+              disabled={loading}
+              onMouseDown={e => {
+                if (!loading) e.preventDefault();
+              }}
+              onClick={runSearch}
+            >
+              <SearchIcon />
+            </S.SearchButton>
+          </Flex.Row>
+          <S.FilterDropdowns>
             <Flex.Row
               align="center"
               justify="flex-end"
@@ -347,18 +416,12 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                 selectedItem={visibilityFilter}
                 setSelectedItem={setVisibilityFilterAndResetPage}
                 width="7rem"
-              />
-              <Dropdown
-                label="소유 유형"
-                items={AFFILIATION_OPTIONS.map(option => option.label)}
-                selectedItem={affiliationFilter}
-                setSelectedItem={setAffiliationFilterAndResetPage}
-                width="8.5rem"
+                disabled={loading}
               />
             </Flex.Row>
-          </S.FilterBar>
-        )}
-        {!loading && selectedRepos.length > 0 && (
+          </S.FilterDropdowns>
+        </S.FilterBar>
+        {selectedRepos.length > 0 && (
           <S.SelectedTags wrap="wrap" gap="0.5rem">
             {selectedRepos.map(repo => (
               <S.SelectedTag
@@ -369,9 +432,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   e.stopPropagation();
                   toggleRepo(repo.repo_id);
                 }}
-                aria-label={`${(repo.custom_title?.trim() && repo.custom_title) || repo.name || repo.repo_id} 선택 해제`}
+                aria-label={`${portfolioRepoListTitle(repo)} 선택 해제`}
               >
-                <span>{(repo.custom_title != null && repo.custom_title.trim() !== '') ? repo.custom_title.trim() : (repo.name != null && repo.name.trim() !== '') ? repo.name.trim() : String(repo.repo_id)}</span>
+                <span>{portfolioRepoListTitle(repo)}</span>
                 <S.TagRemove aria-hidden>×</S.TagRemove>
               </S.SelectedTag>
             ))}
@@ -395,14 +458,14 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           ) : (
           <>
           <S.List>
-            {filteredRepos.length === 0 ? (
+            {pageRepos.length === 0 ? (
               <S.EmptyHint>
-                {searchQuery.trim()
-                  ? '이 페이지에서 검색 결과가 없습니다.'
+                {appliedSearch.trim()
+                  ? '검색 결과가 없습니다.'
                   : '표시할 레포지토리가 없습니다.'}
               </S.EmptyHint>
             ) : (
-            filteredRepos.map(repo => (
+            pageRepos.map(repo => (
               <S.Row
                 key={repo.repo_id}
                 role="button"
@@ -438,11 +501,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                         color: theme.palette.text.primary,
                       }}
                     >
-                      {(repo.custom_title != null && repo.custom_title.trim() !== '')
-                        ? repo.custom_title.trim()
-                        : (repo.name != null && repo.name.trim() !== '')
-                          ? repo.name.trim()
-                          : String(repo.repo_id)}
+                      {portfolioRepoListTitle(repo)}
                     </S.RepoNameLink>
                   ) : (
                     <Text
@@ -453,11 +512,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                         color: theme.palette.text.primary,
                       }}
                     >
-                      {(repo.custom_title != null && repo.custom_title.trim() !== '')
-                        ? repo.custom_title.trim()
-                        : (repo.name != null && repo.name.trim() !== '')
-                          ? repo.name.trim()
-                          : String(repo.repo_id)}
+                      {portfolioRepoListTitle(repo)}
                     </Text>
                   )}
                   {repo.description && (
@@ -486,38 +541,83 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
             ))
             )}
           </S.List>
-          <S.PaginationBar justify="space-between" align="center" wrap="wrap">
-            <Button
-              label="이전"
-              variant="outlined"
-              size="medium"
-              icon={
-                ChevronLeftIcon as FunctionComponent<SVGProps<SVGSVGElement>>
-              }
-              iconPosition="start"
-              disabled={!hasPrevPage}
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-            />
+          <S.PaginationBar align="center" wrap="wrap">
+            {compactRepoPagination ? (
+              <S.PaginationIconSlot>
+                <Button
+                  label=""
+                  aria-label="이전 페이지"
+                  variant="outlined"
+                  size="medium"
+                  icon={
+                    ChevronLeftIcon as FunctionComponent<
+                      SVGProps<SVGSVGElement>
+                    >
+                  }
+                  iconPosition="start"
+                  disabled={!hasPrevPage}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                />
+              </S.PaginationIconSlot>
+            ) : (
+              <Button
+                label="이전"
+                variant="outlined"
+                size="medium"
+                icon={
+                  ChevronLeftIcon as FunctionComponent<
+                    SVGProps<SVGSVGElement>
+                  >
+                }
+                iconPosition="start"
+                disabled={!hasPrevPage}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              />
+            )}
             <Text
               style={{
                 ...theme.typography.body2,
                 color: theme.palette.grey[600],
                 margin: 0,
+                flex: '1 1 0',
+                minWidth: 0,
+                textAlign: 'center',
               }}
             >
               {page}페이지 · 페이지당 {REPOS_PER_PAGE}개
             </Text>
-            <Button
-              label="다음"
-              variant="outlined"
-              size="medium"
-              icon={
-                ChevronRightIcon as FunctionComponent<SVGProps<SVGSVGElement>>
-              }
-              iconPosition="end"
-              disabled={!hasNextPage}
-              onClick={() => setPage(p => p + 1)}
-            />
+            {compactRepoPagination ? (
+              <S.PaginationIconSlot>
+                <Button
+                  label=""
+                  aria-label="다음 페이지"
+                  variant="outlined"
+                  size="medium"
+                  icon={
+                    ChevronRightIcon as FunctionComponent<
+                      SVGProps<SVGSVGElement>
+                    >
+                  }
+                  iconPosition="end"
+                  disabled={!hasNextPage}
+                  onClick={() => setPage(p => p + 1)}
+                />
+              </S.PaginationIconSlot>
+            ) : (
+              <Button
+                label="다음"
+                variant="outlined"
+                size="medium"
+                icon={
+                  ChevronRightIcon as FunctionComponent<
+                    SVGProps<SVGSVGElement>
+                  >
+                }
+                iconPosition="end"
+                disabled={!hasNextPage}
+                onClick={() => setPage(p => p + 1)}
+              />
+            )}
           </S.PaginationBar>
           </>
           )}
@@ -546,7 +646,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
             label="취소"
             variant="outlined"
             size="large"
-            disabled={submitting}
+            disabled={submitting || refreshing}
             onClick={handleModalClose}
           />
           <Button
@@ -559,14 +659,20 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           />
         </Flex.Row>
       </Modal.Footer>
-      {submitting ? (
+      {submitting || refreshing ? (
         <S.SubmitOverlay
           align="center"
           justify="center"
           gap="0.75rem"
           role="status"
           aria-live="polite"
-          aria-label="레포지토리 정보를 추가하는 중"
+          aria-label={
+            refreshing
+              ? '레포지토리 목록을 최신화하는 중'
+              : submitPhase === 'fetchAll'
+                ? '전체 레포지토리 목록을 불러오는 중'
+                : '레포지토리 정보를 추가하는 중'
+          }
         >
           <LoadingIcon width={88} height={88} aria-hidden />
           <Text
@@ -577,7 +683,11 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
               textAlign: 'center',
             }}
           >
-            레포지토리 정보를 추가중입니다.
+            {refreshing
+              ? '레포지토리 목록을 최신화하는 중입니다.'
+              : submitPhase === 'fetchAll'
+                ? '전체 레포지토리 목록을 불러오는 중입니다.'
+                : '레포지토리 정보를 추가중입니다.'}
           </Text>
         </S.SubmitOverlay>
       ) : null}
@@ -613,6 +723,15 @@ const S = {
     gap: 0.75rem;
     width: 100%;
   `,
+  FilterDropdowns: styled('div')`
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
+    @media (max-width: 429px) {
+      display: none;
+    }
+  `,
   SearchButton: styled('button')`
     display: flex;
     align-items: center;
@@ -624,9 +743,13 @@ const S = {
     padding: 0.8rem 1.25rem;
     cursor: pointer;
     color: ${palette.white};
-    &:hover,
-    &:active {
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
       background-color: ${palette.blue600};
+    }
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
   `,
   ListWrap: styled('div')`
@@ -668,6 +791,21 @@ const S = {
     margin-top: 0.25rem;
     border-top: 1px solid ${({ theme }) => theme.palette.grey[200]};
     gap: 0.5rem;
+    @media (max-width: 429px) {
+      flex-wrap: nowrap;
+    }
+  `,
+  PaginationIconSlot: styled('div')`
+    flex-shrink: 0;
+    & .MuiButton-root {
+      min-width: 2.25rem;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    & .MuiButton-startIcon,
+    & .MuiButton-endIcon {
+      margin: 0;
+    }
   `,
   Row: styled(Flex.Row)`
     align-items: flex-start;

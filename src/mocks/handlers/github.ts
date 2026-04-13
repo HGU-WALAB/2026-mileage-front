@@ -8,6 +8,18 @@ import {
 } from '@/mocks/fixtures/github';
 import { Error401, Error500, randomMswError } from '@/utils/mswError';
 
+const githubStatusStore = {
+  status: { ...mockGitHubStatusConnected },
+};
+
+function getMockPortfolioState() {
+  const g = globalThis as unknown as {
+    __mockPortfolioState?: { repoSelectionReset?: boolean };
+  };
+  if (!g.__mockPortfolioState) g.__mockPortfolioState = {};
+  return g.__mockPortfolioState;
+}
+
 export const GitHubHandlers = [
   http.get(BASE_URL + ENDPOINT.GITHUB_STATUS, () => {
     const { is401Error, is500Error } = randomMswError();
@@ -15,8 +27,8 @@ export const GitHubHandlers = [
     if (is401Error) return Error401();
     if (is500Error) return Error500();
 
-    // 연결 성공 상태로 반환 (로컬 스토리지 동기화용)
-    return HttpResponse.json(mockGitHubStatusConnected, { status: 200 });
+    // 현재 상태로 반환 (연결/해제 후에도 상태 유지)
+    return HttpResponse.json({ ...githubStatusStore.status }, { status: 200 });
   }),
 
   http.get(BASE_URL + ENDPOINT.GITHUB_CONNECT, () => {
@@ -36,15 +48,18 @@ export const GitHubHandlers = [
     const error = url.searchParams.get('error');
 
     if (error) {
-      return HttpResponse.json(mockGitHubStatusDisconnected, { status: 200 });
+      githubStatusStore.status = { ...mockGitHubStatusDisconnected };
+      return HttpResponse.json({ ...githubStatusStore.status }, { status: 200 });
     }
 
     if (code) {
       // code가 있으면 연결 성공 → 클라이언트에서 github-storage 동기화
-      return HttpResponse.json(mockGitHubStatusConnected, { status: 200 });
+      githubStatusStore.status = { ...mockGitHubStatusConnected };
+      return HttpResponse.json({ ...githubStatusStore.status }, { status: 200 });
     }
 
-    return HttpResponse.json(mockGitHubStatusDisconnected, { status: 200 });
+    githubStatusStore.status = { ...mockGitHubStatusDisconnected };
+    return HttpResponse.json({ ...githubStatusStore.status }, { status: 200 });
   }),
 
   http.delete(BASE_URL + ENDPOINT.GITHUB_CONNECT, () => {
@@ -54,7 +69,10 @@ export const GitHubHandlers = [
     if (is500Error) return Error500();
 
     // 연결 해제 성공 시 연결 해제된 상태 반환
-    return HttpResponse.json(mockGitHubStatusDisconnected, { status: 200 });
+    githubStatusStore.status = { ...mockGitHubStatusDisconnected };
+    // 포트폴리오 레포 선택 상태도 초기화된 것처럼 동작시키기 위한 플래그
+    getMockPortfolioState().repoSelectionReset = true;
+    return HttpResponse.json({ ...githubStatusStore.status }, { status: 200 });
   }),
 ];
 

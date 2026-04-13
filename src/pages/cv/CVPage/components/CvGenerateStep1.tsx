@@ -328,7 +328,7 @@ const CvGenerateStep1 = ({
         </S.HighlightSection>
 
         <SelectableSection
-          title="마일리지 항목"
+          title="마일리지 항목 ( SW중심대학 인증 )"
           countLabel={`${selectedMileageIds.length}개 선택`}
           itemCount={mileageItems.length}
           icon={<MenuBookIcon sx={{ fontSize: 20, color: palette.grey600 }} />}

@@ -1,14 +1,16 @@
 import { Button, Flex, Heading, Text } from '@/components';
 import { QUERY_KEYS } from '@/constants/queryKeys';
+import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
+import { boxShadow } from '@/styles/common';
 import { palette } from '@/styles/palette';
 import AddIcon from '@mui/icons-material/Add';
-import BusinessIcon from '@mui/icons-material/Business';
+import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
-import { Dialog, DialogContent, IconButton, LinearProgress } from '@mui/material';
+import { Dialog, DialogContent, LinearProgress, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, type FunctionComponent, type SVGProps } from 'react';
@@ -24,11 +26,9 @@ import {
   type PortfolioCvListItem,
 } from '../../apis/cv';
 import useDeletePortfolioCvMutation from '../../hooks/useDeletePortfolioCvMutation';
-import usePatchPortfolioCvMutation from '../../hooks/usePatchPortfolioCvMutation';
-import CvPreviewModal from './CvPreviewModal';
-import { CvHtmlPublicSwitchControl } from './cvHtmlPublicUi';
+import CvPreviewContent from './CvPreviewContent';
 
-const CV_QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
+import { CV_QUERY_CONFIG } from '../../constants/cvQueryConfig';
 
 const AddIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <AddIcon sx={{ fontSize: 20 }} />
@@ -39,10 +39,9 @@ const VisibilityIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
 const DeleteOutlineIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
   <DeleteOutlineIcon sx={{ fontSize: 18 }} />
 );
-
-export interface CvManagementPanelProps {
-  onClose: () => void;
-}
+const OpenInNewIconWrap: FunctionComponent<SVGProps<SVGSVGElement>> = () => (
+  <OpenInNewIcon sx={{ fontSize: 18 }} />
+);
 
 function truncateText(s: string, max: number): string {
   const t = s.replace(/\s+/g, ' ').trim();
@@ -58,16 +57,12 @@ function keywordCount(notes: string): number {
     .filter(Boolean).length;
 }
 
-const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
+const CvManagementPanel = () => {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const deleteMutation = useDeletePortfolioCvMutation();
-  const patchMutation = usePatchPortfolioCvMutation();
-  const publishingId =
-    patchMutation.isPending && patchMutation.variables
-      ? patchMutation.variables.id
-      : null;
 
   const listQuery = useQuery({
     queryKey: [QUERY_KEYS.portfolioCv, 'list'] as const,
@@ -118,151 +113,154 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
     handleDeleteCv(id);
   }, [deleteConfirmId, handleDeleteCv]);
 
-  const handleListHtmlPublicChange = useCallback(
-    (item: PortfolioCvListItem, next: boolean) => {
-      if (!String(item.public_token ?? '').trim()) {
-        toast.error('공개 토큰이 없습니다. 포트폴리오를 다시 저장해 주세요.', {
-          position: 'top-center',
-        });
-        return;
-      }
-      patchMutation.mutate(
-        { id: item.id, body: { is_public: next } },
-        {
-          onSuccess: () => {
-            toast.success(
-              next
-                ? 'HTML이 공개되었습니다. 「링크 열기」로 미리보기 할 수 있습니다.'
-                : '비공개로 전환했습니다.',
-              { position: 'top-center' },
-            );
-          },
-          onError: () => {
-            toast.error('공개 설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', {
-              position: 'top-center',
-            });
-          },
-        },
-      );
-    },
-    [patchMutation],
-  );
+  const hasPreviewSelection = previewId != null;
+  /** 모바일: 카드 선택 시에만 패널. 데스크톱: 항상 오른쪽 슬롯(미선택 시 빈 상태). */
+  const showPreviewColumn = !isMobile || hasPreviewSelection;
+  const showListColumn = !isMobile || !hasPreviewSelection;
 
   return (
     <S.Root
+      direction="column"
+      gap="1.5rem"
       width="100%"
-      style={{ flex: 1, minHeight: 0, minWidth: 0 }}
-      gap="0"
+      style={{ flex: 1, minHeight: 0, minWidth: 0, boxSizing: 'border-box' }}
     >
-      <S.HeaderRow
-        align="center"
-        justify="space-between"
-        wrap="wrap"
-        gap="0.75rem"
-        padding="0.75rem 1rem"
-      >
-        <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-          <Heading
-            as="h3"
-            margin="0"
-            color={palette.nearBlack}
-            style={{
-              fontWeight: 700,
-              fontSize: '1.125rem',
-              lineHeight: 1.5,
-            }}
-          >
-            포트폴리오 관리
-          </Heading>
-        </Flex.Row>
-        <Flex.Row align="center" gap="0.5rem" wrap="wrap">
-          <Button
-            label="포트폴리오 생성"
-            variant="contained"
-            color="blue"
-            size="medium"
-            icon={AddIconWrap}
-            iconPosition="start"
-            onClick={() => {
-              onClose();
-              navigate(ROUTE_PATH.cv);
-            }}
-          />
-          <IconButton
-            type="button"
-            onClick={onClose}
-            aria-label="포트폴리오 패널 닫기"
-            size="small"
-            sx={{ color: palette.grey600 }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Flex.Row>
-      </S.HeaderRow>
+      <Flex.Row align="center" gap="1rem" wrap="wrap" width="100%" style={{ minWidth: 0 }}>
+        <S.GuideText>
+          저장한 HTML과 공개 링크는 여기서 확인하고, 새 포트폴리오는 생성기에서 만든 뒤 이 목록에
+          쌓입니다.
+        </S.GuideText>
+        <Button
+          label="포트폴리오 생성"
+          variant="contained"
+          color="blue"
+          size="large"
+          icon={AddIconWrap}
+          iconPosition="start"
+          onClick={() => navigate(ROUTE_PATH.cvGenerate)}
+          style={{ flexShrink: 0 }}
+        />
+      </Flex.Row>
 
-      {listQuery.isPending ? <LinearProgress /> : null}
+      {listQuery.isPending ? (
+        <S.ProgressWrap>
+          <LinearProgress />
+        </S.ProgressWrap>
+      ) : null}
 
-      <S.ListArea
-        direction="column"
-        gap="1rem"
-        padding="1rem"
+      <S.SplitRow
+        align="stretch"
+        gap="1.25rem"
         width="100%"
-        style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'auto' }}
+        wrap="nowrap"
+        style={{ flex: 1, minHeight: 0, minWidth: 0 }}
       >
-        <Text
-          // as="h5"
-          margin="0"
-          bold
-          color={palette.grey600}
-          style={{ fontSize: '0.875rem' }}
-        >
-          히스토리 ({cvs.length})
-        </Text>
-        {listQuery.isError ? (
-          <Text margin="0" color={palette.pink500} style={{ fontSize: '0.875rem' }}>
-            목록을 불러오지 못했습니다.
-          </Text>
-        ) : null}
-        {!listQuery.isPending && cvs.length === 0 ? (
-          <S.EmptyConnectCard>
-            <S.EmptyConnectMessage>저장된 포트폴리오가 없습니다.</S.EmptyConnectMessage>
-          </S.EmptyConnectCard>
-        ) : null}
-        {cvs.map(item => (
-          <CvHistoryCard
-            key={item.id}
-            item={item}
-            onView={() => openPreview(item.id)}
-            onRequestDelete={() => setDeleteConfirmId(item.id)}
-            deletePending={deletePending}
-            onHtmlPublicChange={next => handleListHtmlPublicChange(item, next)}
-            publicToggleDisabled={
-              publishingId === item.id || !String(item.public_token ?? '').trim()
-            }
-            onOpenShareLink={() => {
-              const token = String(item.public_token ?? '').trim();
-              if (!token) return;
-              if (!openCvShareInNewTab(token)) {
-                toast.warn('새 창이 열리지 않았습니다. 팝업 차단을 해제해 주세요.', {
-                  position: 'top-center',
-                });
-              }
+        {showListColumn ? (
+          <S.ListColumn
+            direction="column"
+            gap="1rem"
+            width="100%"
+            style={{
+              flex: !isMobile ? '1 1 0' : '1 1 100%',
+              minWidth: 0,
+              minHeight: 0,
+              overflow: 'hidden',
             }}
-          />
-        ))}
-      </S.ListArea>
+          >
+            <S.ListStack
+              direction="column"
+              gap="1rem"
+              width="100%"
+              style={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'auto' }}
+            >
+              <Flex.Row align="center" gap="0.5rem" wrap="wrap">
+                <Text
+                  margin="0"
+                  color={palette.grey600}
+                  style={{ fontSize: '0.8125rem', fontWeight: 600 }}
+                >
+                  전체 {cvs.length}건
+                </Text>
+              </Flex.Row>
 
-      <CvPreviewModal
-        open={previewId != null}
-        onClose={closePreview}
-        data={detailQuery.data}
-        isPending={previewId != null && detailQuery.isPending}
-        isError={previewId != null && detailQuery.isError}
-        onRequestDelete={
-          previewId != null ? () => setDeleteConfirmId(previewId) : undefined
-        }
-        isDeletePending={deletePending}
-      />
+              {listQuery.isError ? (
+                <Text margin="0" color={palette.pink500} style={{ fontSize: '0.875rem' }}>
+                  목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                </Text>
+              ) : null}
+
+              {!listQuery.isPending && cvs.length === 0 ? (
+                <S.EmptyState>
+                  <S.EmptyTitle>아직 저장된 포트폴리오가 없습니다</S.EmptyTitle>
+                  <S.EmptyHint>
+                    「포트폴리오 생성」으로 생성기에 들어가 프롬프트와 HTML을 저장하면 이곳에
+                    표시됩니다.
+                  </S.EmptyHint>
+                </S.EmptyState>
+              ) : null}
+
+              {cvs.map(item => (
+                <CvHistoryCard
+                  key={item.id}
+                  item={item}
+                  isSelected={previewId === item.id}
+                  onView={() => openPreview(item.id)}
+                  onRequestDelete={() => setDeleteConfirmId(item.id)}
+                  deletePending={deletePending}
+                  onOpenShareLink={() => {
+                    const token = String(item.public_token ?? '').trim();
+                    if (!token) return;
+                    if (!openCvShareInNewTab(token)) {
+                      toast.warn('새 창이 열리지 않았습니다. 팝업 차단을 해제해 주세요.', {
+                        position: 'top-center',
+                      });
+                    }
+                  }}
+                />
+              ))}
+            </S.ListStack>
+          </S.ListColumn>
+        ) : null}
+
+        {showPreviewColumn ? (
+          <S.PreviewColumn $isMobile={isMobile} direction="column" width="100%">
+            {hasPreviewSelection ? (
+              <CvPreviewContent
+                active={hasPreviewSelection}
+                layout="panel"
+                onClose={closePreview}
+                closeAriaLabel={isMobile ? '목록으로 돌아가기' : '선택 해제'}
+                data={detailQuery.data}
+                isPending={detailQuery.isPending}
+                isError={detailQuery.isError}
+                onRequestDelete={
+                  previewId != null ? () => setDeleteConfirmId(previewId) : undefined
+                }
+                isDeletePending={deletePending}
+              />
+            ) : (
+              <S.PreviewEmpty
+                align="center"
+                justify="center"
+                gap="0.75rem"
+                width="100%"
+                style={{ flex: 1, minHeight: 'min(12rem, 40vh)', padding: '1.5rem 1rem' }}
+              >
+                <VerticalSplitOutlinedIcon
+                  sx={{ fontSize: 46, color: palette.grey400, flexShrink: 0 }}
+                  aria-hidden
+                />
+                <S.EmptyTitle style={{ textAlign: 'center', wordBreak: 'keep-all' }}>
+                  왼쪽 목록에서 카드를 선택하면 상세 내용이 여기에 표시됩니다.
+                </S.EmptyTitle>
+                <S.EmptyHint style={{ textAlign: 'center', wordBreak: 'keep-all' }}>
+                  「보기」를 눌러 주세요.
+                </S.EmptyHint>
+              </S.PreviewEmpty>
+            )}
+          </S.PreviewColumn>
+        ) : null}
+      </S.SplitRow>
 
       <Dialog
         open={deleteConfirmId != null}
@@ -351,21 +349,22 @@ const CvManagementPanel = ({ onClose }: CvManagementPanelProps) => {
 
 function CvHistoryCard({
   item,
+  isSelected,
   onView,
   onRequestDelete,
   deletePending,
-  onHtmlPublicChange,
-  publicToggleDisabled,
   onOpenShareLink,
 }: {
   item: PortfolioCvListItem;
+  isSelected: boolean;
   onView: () => void;
   onRequestDelete: () => void;
   deletePending: boolean;
-  onHtmlPublicChange: (next: boolean) => void;
-  publicToggleDisabled: boolean;
   onOpenShareLink: () => void;
 }) {
+  const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
+  const btnSize = isMobile ? 'small' : 'medium';
+
   const kCount = keywordCount(item.additional_notes ?? '');
   const subLine =
     kCount > 0
@@ -378,77 +377,97 @@ function CvHistoryCard({
       .filter(Boolean)
       .join(' · ') || '미리보기 내용이 없습니다.';
   const snippet = truncateText(snippetSource, 140);
+  const isHtmlPublic = Boolean(item.is_public);
+  const hasShareToken = Boolean(String(item.public_token ?? '').trim());
 
   return (
-    <S.Card>
-      <Flex.Column gap="0.65rem" width="100%" style={{ minWidth: 0 }}>
-        <Flex.Row
-          align="flex-start"
-          justify="space-between"
-          gap="0.75rem"
-          wrap="wrap"
-          width="100%"
-          style={{ minWidth: 0 }}
-        >
-          <Flex.Row align="center" gap="0.75rem" wrap="wrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
+    <S.HistoryCard $selected={isSelected}>
+      <Flex.Row
+        align="flex-start"
+        justify="space-between"
+        gap="0.75rem"
+        wrap="wrap"
+        width="100%"
+        style={{ minWidth: 0 }}
+      >
+        <Flex.Column gap="0.5rem" style={{ flex: '1 1 14rem', minWidth: 0 }}>
+          <Text
+            margin="0"
+            bold
+            color={palette.nearBlack}
+            style={{
+              fontSize: '1rem',
+              lineHeight: 1.4,
+              wordBreak: 'break-word',
+            }}
+          >
+            {item.title?.trim() ? item.title : '제목 없음'}
+          </Text>
+          <Flex.Row align="center" gap="0.5rem" wrap="wrap">
             <S.MetaChip>
-              <BusinessIcon sx={{ fontSize: 16, color: palette.grey500 }} />
-              <span>{item.title || '—'}</span>
+              <WorkOutlineIcon sx={{ fontSize: 15, color: palette.grey500 }} aria-hidden />
+              <span>{item.target_position?.trim() || '직무 미입력'}</span>
             </S.MetaChip>
             <S.MetaChip>
-              <WorkOutlineIcon sx={{ fontSize: 16, color: palette.grey500 }} />
-              <span>{item.target_position || '—'}</span>
-            </S.MetaChip>
-            <S.MetaChip>
-              <CalendarTodayIcon sx={{ fontSize: 16, color: palette.grey500 }} />
+              <CalendarTodayIcon sx={{ fontSize: 15, color: palette.grey500 }} aria-hidden />
               <span>{formatDateOnly(item.updated_at)}</span>
             </S.MetaChip>
+            <S.HtmlPublicStatusTag $public={isHtmlPublic}>
+              {isHtmlPublic ? 'HTML 공개 중' : 'HTML 비공개'}
+            </S.HtmlPublicStatusTag>
           </Flex.Row>
-          <Flex.Row
-            align="center"
-            gap="0.5rem"
-            wrap="wrap"
-            style={{ flexShrink: 0 }}
-          >
-            <Button
-              label="보기"
-              variant="outlined"
-              color="blue"
-              size="medium"
-              icon={VisibilityIconWrap}
-              iconPosition="start"
-              onClick={onView}
-            />
-            <Button
-              label="삭제"
-              variant="outlined"
-              color="red"
-              size="medium"
-              icon={DeleteOutlineIconWrap}
-              iconPosition="start"
-              onClick={onRequestDelete}
-              disabled={deletePending}
-            />
-          </Flex.Row>
-        </Flex.Row>
-
-        <CvHtmlPublicSwitchControl
-          isPublic={Boolean(item.is_public)}
-          onPublicChange={onHtmlPublicChange}
-          disabled={publicToggleDisabled}
-          size="medium"
-          linkButton={{
-            onClick: onOpenShareLink,
-            disabled: !String(item.public_token ?? '').trim(),
+        </Flex.Column>
+        <Flex.Row
+          align="center"
+          gap="0.5rem"
+          wrap="wrap"
+          style={{
+            flexShrink: 0,
+            width: isMobile ? '100%' : 'auto',
+            justifyContent: isMobile ? 'flex-end' : 'flex-start',
           }}
-        />
+        >
+          <Button
+            label="보기"
+            variant="outlined"
+            color="blue"
+            size={btnSize}
+            icon={VisibilityIconWrap}
+            iconPosition="start"
+            onClick={onView}
+          />
+          {isHtmlPublic ? (
+            <Button
+              label="링크 열기"
+              variant="outlined"
+              color="grey"
+              size={btnSize}
+              icon={OpenInNewIconWrap}
+              iconPosition="start"
+              onClick={onOpenShareLink}
+              disabled={!hasShareToken}
+            />
+          ) : null}
+          <Button
+            label="삭제"
+            variant="outlined"
+            color="red"
+            size={btnSize}
+            icon={DeleteOutlineIconWrap}
+            iconPosition="start"
+            onClick={onRequestDelete}
+            disabled={deletePending}
+          />
+        </Flex.Row>
+      </Flex.Row>
 
-        <Text margin="0" color={palette.grey500} style={{ fontSize: '0.8125rem' }}>
+      <Flex.Column gap="0.35rem" width="100%" style={{ minWidth: 0 }}>
+        <Text margin="0" color={palette.grey500} style={{ fontSize: '0.75rem', fontWeight: 600 }}>
           {subLine}
         </Text>
-        <S.SnippetBox>{snippet}</S.SnippetBox>
+        <S.Snippet>{snippet}</S.Snippet>
       </Flex.Column>
-    </S.Card>
+    </S.HistoryCard>
   );
 }
 
@@ -456,71 +475,154 @@ export default CvManagementPanel;
 
 const S = {
   Root: styled(Flex.Column)`
-    border: 1px solid ${palette.grey200};
-    border-radius: 0.75rem;
-    background-color: ${palette.white};
-    box-shadow: 0 1px 4px rgba(83, 127, 241, 0.12);
+    width: 100%;
+    min-width: 0;
   `,
-  HeaderRow: styled(Flex.Row)`
-    flex-shrink: 0;
-    border-bottom: 1px solid ${palette.grey200};
+  GuideText: styled(Text)`
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+    color: ${palette.grey600};
     background-color: ${palette.blue300};
+    border-left: 3px solid ${palette.blue500};
+    border-radius: 0 0.5rem 0.5rem 0;
+    flex: 1 1 16rem;
+    min-width: 0;
   `,
-  ListArea: styled(Flex.Column)`
-    flex-shrink: 0;
-    background-color: ${palette.grey100};
+  SplitRow: styled(Flex.Row)`
+    min-width: 0;
   `,
-  /** `ListArea`(grey100) 위에서 카드처럼 떠 보이도록 히스토리 카드(`S.Card`)와 동일한 면·테두리·그림자 */
-  EmptyConnectCard: styled('div')`
-    padding: 2rem 1.5rem;
+  ListColumn: styled(Flex.Column)`
+    min-width: 0;
+  `,
+  PreviewColumn: styled(Flex.Column, {
+    shouldForwardProp: p => p !== '$isMobile',
+  })<{ $isMobile: boolean }>`
+    flex: ${({ $isMobile }) => ($isMobile ? '1 1 auto' : '1 1 0')};
+    min-width: 0;
+    min-height: 0;
+    max-height: 100%;
+    box-sizing: border-box;
+    ${boxShadow};
     border-radius: 0.75rem;
-    background-color: ${palette.white};
     border: 1px solid ${palette.grey200};
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    background-color: ${({ theme }) => theme.palette.background.paper};
+    overflow: hidden;
+  `,
+  PreviewEmpty: styled(Flex.Column)`
+    width: 100%;
+    box-sizing: border-box;
+    background-color: ${({ theme }) => theme.palette.grey[50]};
+  `,
+  ProgressWrap: styled('div')`
+    width: 100%;
+    box-sizing: border-box;
+  `,
+  ListStack: styled(Flex.Column)`
+    width: 100%;
+    min-width: 0;
+  `,
+  EmptyState: styled('div')`
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
+    padding: 2.25rem 1.25rem;
+    border-radius: 0.75rem;
+    background-color: ${({ theme }) => theme.palette.grey[50]};
+    border: 1px dashed ${palette.grey200};
     width: 100%;
     box-sizing: border-box;
-    min-height: 7.5rem;
-  `,
-  EmptyConnectMessage: styled('p')`
-    margin: 0;
-    font-size: 1rem;
-    line-height: 1.65;
-    letter-spacing: 0.01em;
-    color: ${palette.grey600};
-    font-weight: 500;
     text-align: center;
   `,
-  Card: styled('div')`
+  EmptyTitle: styled('p')`
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: ${palette.grey600};
+  `,
+  EmptyHint: styled('p')`
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: ${palette.grey500};
+    max-width: 22rem;
+  `,
+  HistoryCard: styled('article', {
+    shouldForwardProp: p => p !== '$selected',
+  })<{ $selected?: boolean }>`
     display: flex;
     flex-direction: column;
-    padding: 1rem 1.1rem;
-    border-radius: 0.75rem;
-    background-color: ${palette.white};
-    border: 1px solid ${palette.grey200};
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    gap: 0.875rem;
+    width: 100%;
     box-sizing: border-box;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    background-color: ${({ theme }) => theme.palette.background.paper};
+    border: 1px solid
+      ${({ theme, $selected }) =>
+        $selected ? palette.blue400 : theme.palette.grey[200]};
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    &:hover {
+      border-color: ${({ theme, $selected }) =>
+        $selected ? palette.blue400 : theme.palette.grey[300]};
+      box-shadow: 0 2px 6px rgba(16, 24, 40, 0.08);
+    }
   `,
   MetaChip: styled('span')`
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    font-size: 0.8125rem;
+    gap: 0.3rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: ${palette.nearBlack};
+    color: ${palette.grey600};
   `,
-  SnippetBox: styled('div')`
+  HtmlPublicStatusTag: styled('span', {
+    shouldForwardProp: p => p !== '$public',
+  })<{ $public: boolean }>`
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-sizing: border-box;
+    background-color: ${({ theme }) => theme.palette.background.paper};
+    border: 1px solid
+      ${({ $public }) => ($public ? palette.blue400 : palette.grey300)};
+    color: ${({ $public }) => ($public ? palette.blue600 : palette.grey600)};
+    box-shadow: ${({ $public }) =>
+      $public ? '0 1px 2px rgba(83, 127, 241, 0.1)' : '0 1px 2px rgba(16, 24, 40, 0.05)'};
+  `,
+  HtmlPublicLabelTag: styled('span')`
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+    box-sizing: border-box;
+    color: ${palette.nearBlack};
+    background-color: ${({ theme }) => theme.palette.background.paper};
+    border: 1px solid ${palette.grey200};
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  `,
+  Snippet: styled('div')`
     margin: 0;
     padding: 0.65rem 0.85rem;
     font-size: 0.8125rem;
-    line-height: 1.5;
+    line-height: 1.55;
     color: ${palette.grey600};
-    background-color: ${palette.grey100};
+    background-color: ${({ theme }) => theme.palette.grey[50]};
     border-radius: 0.5rem;
-    border: 1px solid ${palette.grey200};
     word-break: break-word;
   `,
   DeleteDialogActions: styled('div')`

@@ -2,11 +2,7 @@ import { BASE_URL } from '@/apis/config';
 import { ENDPOINT } from '@/apis/endPoint';
 import { LoadingIcon } from '@/assets';
 import { Flex, Heading, Text } from '@/components';
-import {
-  ROUTE_PATH,
-  PORTFOLIO_CV_PANEL_QUERY_KEY,
-  PORTFOLIO_CV_PANEL_QUERY_VALUE,
-} from '@/constants/routePath';
+import { ROUTE_PATH } from '@/constants/routePath';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { useTrackPageView } from '@/service/amplitude/useTrackPageView';
 import useCvWizardStore, { getValidatedWizardStep } from '@/stores/useCvWizardStore';
@@ -192,7 +188,7 @@ const CvGeneratePage = () => {
   ]);
 
   const handleBack = useCallback(() => {
-    navigate(ROUTE_PATH.portfolio);
+    navigate(ROUTE_PATH.cv);
   }, [navigate]);
 
   const handleNextFromStep1 = useCallback(() => {
@@ -239,12 +235,7 @@ const CvGeneratePage = () => {
       {
         onSuccess: () => {
           toast.success('히스토리에 저장되었습니다.');
-          navigate({
-            pathname: ROUTE_PATH.portfolio,
-            search: new URLSearchParams({
-              [PORTFOLIO_CV_PANEL_QUERY_KEY]: PORTFOLIO_CV_PANEL_QUERY_VALUE,
-            }).toString(),
-          });
+          navigate(ROUTE_PATH.cv);
         },
         onError: () => {
           toast.error('저장에 실패했습니다. 잠시 후 다시 시도해 주세요.');
@@ -263,6 +254,7 @@ const CvGeneratePage = () => {
     const ids = getCommittedSelection();
     buildPromptMutation.mutate(
       {
+        mode: employmentPrepChecked ? 'cv' : 'archive',
         title: '',
         job_posting: jp,
         target_position: tp,
@@ -286,6 +278,7 @@ const CvGeneratePage = () => {
   }, [
     additionalNotes,
     buildPromptMutation,
+    employmentPrepChecked,
     getCommittedSelection,
     jobPosting,
     setGeneratedPrompt,
@@ -324,7 +317,7 @@ const CvGeneratePage = () => {
           type="button"
           variant="outlined"
           onClick={handleBack}
-          aria-label="내 활동 관리로 뒤로가기"
+          aria-label="포트폴리오 관리로 뒤로가기"
           startIcon={<ArrowBackIcon sx={{ fontSize: 20, color: 'inherit' }} />}
         >
           뒤로가기

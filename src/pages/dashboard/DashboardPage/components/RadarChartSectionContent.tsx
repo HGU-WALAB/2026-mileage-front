@@ -1,5 +1,6 @@
-import { RadarChart } from '@/components';
+import { RadarChart, Text } from '@/components';
 import { useGetUserInfoQuery } from '@/pages/auth/hooks';
+import { useTheme } from '@mui/material';
 import {
   CapabilityResponse,
   CompareCapabilityResponse,
@@ -11,11 +12,17 @@ import {
   useGetCapabilityQuery,
 } from '@/pages/dashboard/hooks';
 
+const finiteOrZero = (value: unknown) => {
+  const n = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+};
+
 export const RadarChartSectionContent = ({
   compareOption,
 }: {
   compareOption: string[];
 }) => {
+  const theme = useTheme();
   const { data: userInfo } = useGetUserInfoQuery();
   const { data: capability = [] as CapabilityResponse[] } =
     useGetCapabilityQuery();
@@ -45,8 +52,12 @@ export const RadarChartSectionContent = ({
     major: selectedMajor,
   });
 
-  const capabilityData: RadarCapability[] = capability.map(
-    (cap: CapabilityResponse) => {
+  const capabilityData: RadarCapability[] = capability
+    .filter(
+      (cap: CapabilityResponse) =>
+        typeof cap.capabilityName === 'string' && cap.capabilityName.trim().length > 0,
+    )
+    .map((cap: CapabilityResponse) => {
       const matchedCompare = compareCapability.find(
         (other: CompareCapabilityResponse) =>
           other.capabilityId === cap.capabilityId,
@@ -55,21 +66,21 @@ export const RadarChartSectionContent = ({
       return {
         capabilityId: cap.capabilityId,
         capabilityName: cap.capabilityName,
-        '나의 마일리지': cap.milestoneCount,
-        '비교 대상 평균 마일리지': matchedCompare?.averageMilestoneCount ?? 0,
+        '나의 마일리지': finiteOrZero(cap.milestoneCount),
+        '비교 대상 평균 마일리지': finiteOrZero(matchedCompare?.averageMilestoneCount),
       };
-    },
-  );
+    });
 
-  const safeData = capabilityData.filter(row =>
-    Number.isFinite(row['나의 마일리지'] as number) &&
-    Number.isFinite(row['비교 대상 평균 마일리지'] as number),
-  );
-
-  if (safeData.length === 0) return null;
+  if (capabilityData.length === 0) {
+    return (
+      <Text style={{ color: theme.palette.text.secondary, textAlign: 'center' }}>
+        표시할 역량 비교 데이터가 없습니다.
+      </Text>
+    );
+  }
   return (
     <RadarChart
-      data={safeData}
+      data={capabilityData}
       keys={['나의 마일리지', '비교 대상 평균 마일리지']}
     />
   );

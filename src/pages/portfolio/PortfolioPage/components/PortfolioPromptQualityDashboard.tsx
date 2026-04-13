@@ -67,20 +67,20 @@ const PortfolioPromptQualityDashboard = ({
           percent={progress.repo}
         />
         <MiniCard
-          sectionKey="activities"
-          onSectionClick={onSectionClick}
-          icon={<EmojiEventsIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
-          title="활동"
-          hint={PROMPT_QUALITY_SECTION_HINTS.activities}
-          percent={progress.activities}
-        />
-        <MiniCard
           sectionKey="mileage"
           onSectionClick={onSectionClick}
           icon={<MenuBookIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
           title="마일리지"
           hint={PROMPT_QUALITY_SECTION_HINTS.mileage}
           percent={progress.mileage}
+        />
+        <MiniCard
+          sectionKey="activities"
+          onSectionClick={onSectionClick}
+          icon={<EmojiEventsIcon sx={{ fontSize: 18, color: palette.blue600 }} />}
+          title="활동"
+          hint={PROMPT_QUALITY_SECTION_HINTS.activities}
+          percent={progress.activities}
         />
         </S.Grid>
       </S.GridScroll>

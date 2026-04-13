@@ -1,4 +1,4 @@
-import { Flex, Text } from '@/components';
+import { Flex, Input, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import EditIcon from '@mui/icons-material/Edit';
 import { useCallback, useState } from 'react';
@@ -93,15 +93,29 @@ const MileageSectionContent = ({
           {!readOnly && editingItem?.mileage_id === row.mileage_id ? (
             <Flex.Row gap="0.5rem" align="flex-start" style={{ width: '100%' }}>
               <Flex.Column gap="0.25rem" style={{ flex: 1, minWidth: 0 }}>
-                <S.EditTextarea
+                <Input
+                  multiline
                   value={editDraft}
                   onChange={e => setEditDraft(e.target.value)}
                   placeholder="마일리지 활동의 상세 내용을 입력해 주세요."
                   autoFocus
                   rows={2}
-                  maxLength={INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO}
+                  inputProps={{
+                    maxLength: INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO,
+                    'aria-label': '유저 추가 설명',
+                  }}
                   onKeyDown={e => {
                     if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                  size="small"
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: theme.palette.variant.default,
+                    },
+                    '& textarea': {
+                      resize: 'vertical',
+                    },
                   }}
                 />
                 <S.CharCount warn={editDraft.length >= INPUT_MAX_LENGTH.MILEAGE_ADDITIONAL_INFO - 20}>
@@ -204,23 +218,6 @@ const S = {
     &:hover {
       color: ${palette.blue500};
       background-color: ${palette.blue300};
-    }
-  `,
-  EditTextarea: styled('textarea')`
-    width: 100%;
-    min-width: 8rem;
-    min-height: 4rem;
-    padding: 0.4rem 0.625rem;
-    border-radius: 0.375rem;
-    border: 1.5px solid ${palette.blue400};
-    font-size: 0.875rem;
-    line-height: 1.5;
-    resize: vertical;
-    outline: none;
-    font-family: inherit;
-    &:focus {
-      border-color: ${palette.blue500};
-      box-shadow: 0 0 0 2px ${palette.blue300};
     }
   `,
   CharCount: styled('span')<{ warn?: boolean }>`

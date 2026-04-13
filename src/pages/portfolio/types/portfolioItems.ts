@@ -8,9 +8,14 @@ export interface RepoItem {
   custom_title: string | null;
   is_visible: boolean;
   display_order?: number;
+  /** GitHub 저장소 이름 (API `github_title`) */
+  github_title: string;
+  /** 표시·fallback용 (github_title·custom_title 등 조합) */
   name: string;
   owner?: string;
   description: string;
+  /** GitHub 원본 설명 (커스텀 description 비우면 UI에서 fallback으로 사용) */
+  github_description?: string;
   created_at: string;
   updated_at: string;
   /** 마크다운 등에 쓰는 언어 이름 목록 */

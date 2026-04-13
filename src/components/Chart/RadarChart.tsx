@@ -1,6 +1,7 @@
 import { RadarCapability } from '@/pages/dashboard/types/capability';
 import { styled, useTheme } from '@mui/material';
 import { ResponsiveRadar } from '@nivo/radar';
+import { useMemo } from 'react';
 
 const RadarChart = ({
   data,
@@ -15,11 +16,23 @@ const RadarChart = ({
       ? [theme.palette.primary.main, theme.palette.secondary.main]
       : [theme.palette.primary.main];
 
+  const maxValue = useMemo(() => {
+    let max = 0;
+    for (const row of data) {
+      for (const key of keys) {
+        const raw = row[key];
+        const n = typeof raw === 'number' ? raw : Number(raw);
+        if (Number.isFinite(n)) max = Math.max(max, n);
+      }
+    }
+    return max > 0 ? max * 1.05 : 1;
+  }, [data, keys]);
+
   return (
     <S.RadarChartWrapper>
       <ResponsiveRadar
         data={data}
-        maxValue="auto"
+        maxValue={maxValue}
         keys={keys}
         indexBy="capabilityName"
         margin={{ top: 60, right: 50, bottom: 50, left: 50 }}
@@ -67,7 +80,7 @@ const RadarChart = ({
             <strong>역량: </strong>
             {point.data.map(d => (
               <p key={String(d.id)}>
-                {d.id} : {Number(d.value).toFixed(0)}
+                {d.id} : {Number.isFinite(Number(d.value)) ? Number(d.value).toFixed(0) : '0'}
               </p>
             ))}
           </div>

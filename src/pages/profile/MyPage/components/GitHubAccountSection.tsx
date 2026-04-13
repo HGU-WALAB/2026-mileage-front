@@ -1,18 +1,34 @@
-import { BoxSkeleton, Flex, Heading, Text } from '@/components';
+import { BoxSkeleton, Button, Flex, Heading, Text } from '@/components';
 import { boxShadow } from '@/styles/common';
+import { palette } from '@/styles/palette';
 import LinkIcon from '@mui/icons-material/Link';
 import CloseIcon from '@mui/icons-material/Close';
-import { styled, useTheme, useMediaQuery } from '@mui/material';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import {
+  Dialog,
+  DialogContent,
+  styled,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { MAX_RESPONSIVE_WIDTH } from '@/constants/system';
 import { getGitHubConnect } from '@/pages/profile/apis/github';
 import useGetGitHubStatusQuery from '@/pages/profile/hooks/useGetGitHubStatusQuery';
 import useDeleteGitHubConnectMutation from '@/pages/profile/hooks/useDeleteGitHubConnectMutation';
+import { useEffect, useState } from 'react';
+
+const DeleteOutlineIconWrap: React.FunctionComponent<
+  React.SVGProps<SVGSVGElement>
+> = () => <DeleteOutlineIcon sx={{ fontSize: 18 }} />;
 
 const GitHubAccountSection = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(MAX_RESPONSIVE_WIDTH);
   const { data: githubStatus, isLoading } = useGetGitHubStatusQuery();
-  const { mutate: deleteGitHubConnect } = useDeleteGitHubConnectMutation();
+  const { mutate: deleteGitHubConnect, isPending: isDisconnecting } =
+    useDeleteGitHubConnectMutation();
+
+  const [disconnectConfirmOpen, setDisconnectConfirmOpen] = useState(false);
 
   const handleConnect = () => {
     getGitHubConnect();
@@ -20,8 +36,14 @@ const GitHubAccountSection = () => {
   };
 
   const handleDisconnect = () => {
-    deleteGitHubConnect();
+    setDisconnectConfirmOpen(true);
   };
+
+  useEffect(() => {
+    if (disconnectConfirmOpen && !githubStatus?.connected) {
+      setDisconnectConfirmOpen(false);
+    }
+  }, [disconnectConfirmOpen, githubStatus?.connected]);
 
   if (isLoading) return <BoxSkeleton height={150} />;
 
@@ -174,6 +196,92 @@ const GitHubAccountSection = () => {
           </Text>
         )}
       </S.InfoRow>
+
+      <Dialog
+        open={disconnectConfirmOpen}
+        aria-labelledby="github-disconnect-confirm-title"
+        onClose={() => {
+          if (isDisconnecting) return;
+          setDisconnectConfirmOpen(false);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '0.75rem',
+            border: `1px solid ${palette.grey200}`,
+            boxShadow: '0 4px 24px rgba(83, 127, 241, 0.15)',
+            width: '100%',
+            maxWidth: '26rem',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            p: '1.25rem 1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+          }}
+        >
+          <Flex.Row align="flex-start" gap="0.5rem" width="100%" style={{ minWidth: 0 }}>
+            <DeleteOutlineIcon
+              sx={{ fontSize: 22, color: palette.red500, flexShrink: 0, marginTop: '0.125rem' }}
+              aria-hidden
+            />
+            <Flex.Column gap="0.5rem" style={{ flex: '1 1 auto', minWidth: 0 }}>
+              <Heading
+                as="h2"
+                margin="0"
+                color={palette.nearBlack}
+                id="github-disconnect-confirm-title"
+                style={{
+                  fontSize: '1.125rem',
+                  fontWeight: 700,
+                  lineHeight: 1.5,
+                }}
+              >
+                깃허브 계정 연결을 해제할까요?
+              </Heading>
+              <Text
+                margin="0"
+                color={palette.grey600}
+                style={{ fontSize: '0.875rem', lineHeight: 1.65, wordBreak: 'keep-all' }}
+              >
+                연결을 해제하면 선택했던 레포지토리 정보 및 변경사항이 전부 사라지며, 되돌릴 수
+                없습니다.
+              </Text>
+            </Flex.Column>
+          </Flex.Row>
+          <S.ConfirmDialogActions>
+            <Flex.Row align="center" justify="flex-end" gap="0.5rem" wrap="wrap" width="100%">
+              <Button
+                label="취소"
+                variant="outlined"
+                color="grey"
+                size="medium"
+                onClick={() => setDisconnectConfirmOpen(false)}
+                disabled={isDisconnecting}
+              />
+              <Button
+                label="연결 해제"
+                variant="outlined"
+                color="red"
+                size="medium"
+                icon={DeleteOutlineIconWrap}
+                iconPosition="start"
+                onClick={() => {
+                  deleteGitHubConnect(undefined, {
+                    onSuccess: () => setDisconnectConfirmOpen(false),
+                  });
+                }}
+                disabled={isDisconnecting}
+              />
+            </Flex.Row>
+          </S.ConfirmDialogActions>
+        </DialogContent>
+      </Dialog>
     </S.Container>
   );
 };
@@ -228,6 +336,13 @@ const S = {
     &:hover {
       opacity: 0.9;
     }
+  `,
+  ConfirmDialogActions: styled('div')`
+    box-sizing: border-box;
+    margin: 0 -1.5rem -1.25rem;
+    padding: 0.85rem 1.5rem 1rem;
+    border-top: 1px solid ${palette.grey200};
+    background-color: ${palette.grey100};
   `,
 };
 

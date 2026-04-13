@@ -31,7 +31,6 @@ export const ENDPOINT = {
   PORTFOLIO_REPOSITORIES: `/api/portfolio/repositories`,
   /** POST — GitHub 레포 메타 캐시 갱신 (GitHub list API) */
   PORTFOLIO_REPOSITORIES_GITHUB_CACHE_REFRESH: `/api/portfolio/repositories/github-cache/refresh`,
-  PORTFOLIO_SETTINGS: `/api/portfolio/settings`,
   PORTFOLIO_MILEAGE: `/api/portfolio/mileage`,
   PORTFOLIO_CV: `/api/portfolio/cv`,
   /** GET /api/portfolio/share/cv/{publicToken}/html — 인증 없이 공개 HTML */

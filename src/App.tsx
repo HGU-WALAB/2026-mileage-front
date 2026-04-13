@@ -27,7 +27,8 @@ const queryClient = new QueryClient({
       },
     },
     queries: {
-      staleTime: 20 * 60 * 1000,
+      staleTime: Infinity,
+      refetchOnWindowFocus: false,
     },
   },
 });

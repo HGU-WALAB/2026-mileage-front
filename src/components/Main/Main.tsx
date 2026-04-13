@@ -17,6 +17,9 @@ const Main = styled('main', {
   mobileSubNavOffset?: number;
 }>(({ theme, isMobile, mobileSubNavOffset = 0 }) => ({
   flexGrow: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
   transition: theme.transitions.create('margin', {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -30,7 +33,7 @@ const Main = styled('main', {
   maxWidth: `100%`,
   margin: `.5rem`,
   backgroundColor: theme.palette.background.default,
-  overflowY: 'scroll',
+  overflow: 'hidden',
   position: 'relative',
   borderRadius: '.5rem',
   variants: [

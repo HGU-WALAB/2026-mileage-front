@@ -20,6 +20,8 @@ const PortfolioLayout = React.lazy(
 const PortfolioEditPage = React.lazy(
   () => import('@/pages/portfolio/PortfolioPage/PortfolioEditPage'),
 );
+const CvRoutesLayout = React.lazy(() => import('@/pages/cv/CVPage/CvRoutesLayout'));
+const CvManagePage = React.lazy(() => import('@/pages/cv/CVPage/CvManagePage'));
 const CvGeneratePage = React.lazy(() => import('@/pages/cv/CVPage/CvGeneratePage'));
 const CvSharePage = React.lazy(() => import('@/pages/cv/CVPage/CvSharePage'));
 const GitHubCallbackPage = React.lazy(
@@ -67,7 +69,11 @@ const router = createBrowserRouter(
                 },
                 {
                   path: ROUTE_PATH.cv,
-                  element: <CvGeneratePage />,
+                  element: <CvRoutesLayout />,
+                  children: [
+                    { index: true, element: <CvManagePage /> },
+                    { path: 'generate', element: <CvGeneratePage /> },
+                  ],
                 },
               ],
             },

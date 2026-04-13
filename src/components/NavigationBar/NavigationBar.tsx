@@ -10,7 +10,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const MOBILE_NAV_ORDER: string[] = [
   '대시보드',
   '마일리지',
-  '활동관리',
+  '활동',
   '프로필',
 ];
 

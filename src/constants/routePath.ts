@@ -6,14 +6,17 @@ export const ROUTE_PATH = {
   scholarship: '/scholarship/apply',
   awardArchive: '/mileage/award',
   portfolio: '/portfolio',
+  /** 저장된 포트폴리오 목록·공개 설정 (`CvManagementPanel`) */
   cv: '/cv',
+  /** HTML 생성 마법사 (`CvGeneratePage`) */
+  cvGenerate: '/cv/generate',
   /** 공개 포폴 미리보기 (로그인 불필요) */
   cvShare: '/cv/share/:publicToken',
   myPage: '/my',
   githubCallback: '/auth/github/callback',
 };
 
-/** 내 활동 관리에서 포트폴리오 관리 패널을 연 상태로 진입 (`?cvPanel=1`) */
+/** 예전 링크 호환: 이 쿼리가 있으면 `/cv`로 리다이렉트 */
 export const PORTFOLIO_CV_PANEL_QUERY_KEY = 'cvPanel';
 export const PORTFOLIO_CV_PANEL_QUERY_VALUE = '1';
 

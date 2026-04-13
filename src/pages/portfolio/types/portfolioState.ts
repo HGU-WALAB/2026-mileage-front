@@ -1,4 +1,3 @@
-import type { DraggableSectionKey } from '../constants/constants';
 import type { TechStackDomain } from '../apis/techStack';
 import type { ActivityItem, MileageItem, RepoItem, UserInfo } from './portfolioItems';
 
@@ -9,11 +8,6 @@ export interface PortfolioState {
   userInfo: UserInfo | null;
   setUserInfo: (v: UserInfo | null | ((p: UserInfo | null) => UserInfo | null)) => void;
   isUserInfoLoading: boolean;
-
-  sectionOrder: DraggableSectionKey[];
-  setSectionOrder: (
-    v: DraggableSectionKey[] | ((p: DraggableSectionKey[]) => DraggableSectionKey[]),
-  ) => void;
 
   techStackDomains: TechStackDomain[];
   setTechStackDomains: (
