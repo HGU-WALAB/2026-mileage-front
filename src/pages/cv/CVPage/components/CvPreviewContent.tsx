@@ -501,7 +501,9 @@ const CvPreviewContent = ({
                       icon={PictureAsPdfIconWrap}
                       iconPosition="start"
                       onClick={handleDownloadPdf}
-                      disabled={pdfDownloading || !data}
+                      disabled={
+                        !htmlRaw.trim() || pdfDownloading || !data
+                      }
                     />
                     <Button
                       label={showHtmlPreview ? '소스 보기' : 'HTML 미리보기'}
