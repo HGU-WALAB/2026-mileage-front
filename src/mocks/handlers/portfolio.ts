@@ -489,6 +489,11 @@ export const PortfolioHandlers = [
   http.post(BASE_URL + `${ENDPOINT.PORTFOLIO_CV}/build-prompt`, async ({ request }) => {
     try {
       const body = (await request.json()) as PortfolioCvBuildPromptRequest;
+      const rawMode = body.mode;
+      if (rawMode != null && rawMode !== 'cv' && rawMode !== 'archive') {
+        return new HttpResponse(null, { status: 400 });
+      }
+      const mode: 'cv' | 'archive' = rawMode === 'archive' ? 'archive' : 'cv';
       const title = (body.title ?? '').trim();
       const job = (body.job_posting ?? '').trim();
       const pos = (body.target_position ?? '').trim();
@@ -498,6 +503,8 @@ export const PortfolioHandlers = [
       const r = body.selected_repo_ids ?? [];
       const prompt = [
         '# 맞춤 CV 프롬프트 (Mock)',
+        '',
+        `## mode: ${mode}`,
         '',
         '## 제목',
         title || '(미입력)',

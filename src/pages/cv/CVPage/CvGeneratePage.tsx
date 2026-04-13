@@ -254,6 +254,7 @@ const CvGeneratePage = () => {
     const ids = getCommittedSelection();
     buildPromptMutation.mutate(
       {
+        mode: employmentPrepChecked ? 'cv' : 'archive',
         title: '',
         job_posting: jp,
         target_position: tp,
@@ -277,6 +278,7 @@ const CvGeneratePage = () => {
   }, [
     additionalNotes,
     buildPromptMutation,
+    employmentPrepChecked,
     getCommittedSelection,
     jobPosting,
     setGeneratedPrompt,
