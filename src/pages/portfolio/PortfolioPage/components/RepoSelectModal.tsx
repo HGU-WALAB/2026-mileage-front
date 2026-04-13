@@ -84,6 +84,8 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const [listVersion, setListVersion] = useState(0);
 
+  /** 사용자가 체크박스를 건드린 뒤에는 컨텍스트 동기화로 선택을 덮어쓰지 않음 */
+  const selectionTouchedRef = useRef(false);
   const portfolioReposRef = useRef(portfolioRepos);
   portfolioReposRef.current = portfolioRepos;
 
@@ -124,6 +126,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
 
   useLayoutEffect(() => {
     if (!open) return;
+    selectionTouchedRef.current = false;
     setPage(1);
     setLoadedRepoById(new Map());
     setSearchQuery('');
@@ -134,6 +137,13 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       ),
     );
   }, [open]);
+
+  useEffect(() => {
+    if (!open || selectionTouchedRef.current) return;
+    setSelectedIds(
+      new Set(portfolioRepos.filter(r => r.is_visible).map(r => r.repo_id)),
+    );
+  }, [open, portfolioRepos]);
 
   // 모달이 열리거나 필터가 바뀌면 백그라운드에서 전체 레포 프리페치
   useEffect(() => {
@@ -197,6 +207,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   }, [queryParams]);
 
   const toggleRepo = useCallback((repoId: number) => {
+    selectionTouchedRef.current = true;
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(repoId)) next.delete(repoId);

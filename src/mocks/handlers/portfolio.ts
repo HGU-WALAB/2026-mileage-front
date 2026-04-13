@@ -559,6 +559,7 @@ export const PortfolioHandlers = [
     );
     const visibleOnly =
       url.searchParams.get('visible_only') === 'true' ? true : undefined;
+    const selectedOnly = url.searchParams.get('selected_only') === 'true';
     const sortParam = url.searchParams.get('sort') ?? 'updated';
     const visibilityParam = url.searchParams.get('visibility') ?? 'all';
     const searchParam = url.searchParams.get('search');
@@ -569,6 +570,10 @@ export const PortfolioHandlers = [
       : [...repositoriesStore];
 
     if (visibleOnly) {
+      list = list.filter(r => r.is_visible);
+    }
+
+    if (selectedOnly) {
       list = list.filter(r => r.is_visible);
     }
 

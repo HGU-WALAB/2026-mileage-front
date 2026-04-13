@@ -31,7 +31,10 @@ import {
 } from '../../utils/techStackDomains';
 import type { ActivityItem, MileageItem, RepoItem, UserInfo } from '../../types/portfolioItems';
 import type { PortfolioState } from '../../types/portfolioState';
-import { getGitHubStatus } from '@/pages/profile/apis/github';
+import {
+  getGitHubStatus,
+  readGitHubConnectedFromStorage,
+} from '@/pages/profile/apis/github';
 
 const SAVED_TOAST_OPTIONS = {
   position: 'top-center' as const,
@@ -72,6 +75,21 @@ function nonEmpty(s: string | null | undefined): string | null {
   return t !== undefined && t !== null && t !== '' ? t : null;
 }
 
+/** GET 응답에 snake_case / camelCase·숫자·문자열이 섞여 올 때 대비 */
+function repoItemIsVisible(p: PortfolioRepositoryItem): boolean {
+  const raw: unknown =
+    (p as { is_visible?: unknown }).is_visible ??
+    (p as { isVisible?: unknown }).isVisible;
+  if (raw === true || raw === 1) return true;
+  if (raw === false || raw === 0) return false;
+  if (typeof raw === 'string') {
+    const s = raw.trim().toLowerCase();
+    if (s === 'true' || s === '1') return true;
+    if (s === 'false' || s === '0' || s === '') return false;
+  }
+  return false;
+}
+
 export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
   const breakdown =
     p.languages && p.languages.length > 0 ? [...p.languages] : undefined;
@@ -83,7 +101,7 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
     id: p.id ?? undefined,
     repo_id: p.repo_id,
     custom_title: p.custom_title,
-    is_visible: p.is_visible,
+    is_visible: repoItemIsVisible(p),
     display_order: p.display_order,
     github_title: nonEmpty(p.github_title) ?? '',
     name:
@@ -164,6 +182,8 @@ interface PortfolioProviderProps {
 
 const QUERY_CONFIG = { retry: 1, refetchOnWindowFocus: false } as const;
 
+const EMPTY_PORTFOLIO_REPOS: RepoItem[] = [];
+
 export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
   const queryClient = useQueryClient();
   const [activitiesNextId, setActivitiesNextId] = useState(-1);
@@ -230,27 +250,37 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
     queryFn: () => getGitHubStatus(),
     ...QUERY_CONFIG,
   });
-  const githubConnected = githubStatusQuery.data?.connected === true;
+  const githubConnectedFromApi = githubStatusQuery.data?.connected === true;
+  /** 상태 GET이 늦어도, 직전 세션에서 연결됐으면 레포 목록을 바로 요청 (새로고침 후 빈 화면 방지) */
+  const reposFetchEnabled =
+    githubConnectedFromApi ||
+    (githubStatusQuery.isPending && readGitHubConnectedFromStorage());
 
   const reposQuery = useQuery<RepoItem[]>({
     queryKey: repoQueryKey,
     queryFn: async () => {
       const { getAllRepositories } = await import('../../apis/portfolio');
-      // 편집 화면 카드에는 선택(visible)된 레포만 필요합니다.
+      // 편집 화면 카드: 포트폴리오에 표시로 둔 레포만(is_visible). API는 visible_only 로 필터합니다.
       // 전체 목록은 선택 모달에서 별도로 불러옵니다.
       const list = await getAllRepositories({ visible_only: true });
       return (list ?? []).map(portfolioRepoToRepoItem);
     },
-    enabled: githubConnected,
+    enabled: reposFetchEnabled,
     ...QUERY_CONFIG,
   });
 
   useEffect(() => {
-    if (githubConnected) return;
-    // 깃허브 연결 해제 상태면 레포 GET 자체를 막고, 캐시/데이터를 비웁니다.
+    // 로딩 중에는 연결 여부 미확정 → 레포 캐시를 지우지 않음 (깃헙 상태보다 늦게 도착한 GET이 날아감)
+    if (githubStatusQuery.isPending) return;
+    if (githubConnectedFromApi) return;
     queryClient.removeQueries({ queryKey: repoQueryKey });
     queryClient.setQueryData<RepoItem[]>(repoQueryKey, []);
-  }, [githubConnected, queryClient, repoQueryKey]);
+  }, [
+    githubConnectedFromApi,
+    githubStatusQuery.isPending,
+    queryClient,
+    repoQueryKey,
+  ]);
 
   const setRepos = useCallback(
     (v: RepoItem[] | ((p: RepoItem[]) => RepoItem[])) => {
@@ -372,7 +402,7 @@ export const PortfolioProvider = ({ children }: PortfolioProviderProps) => {
       techStackDomains: techStackQuery.data ?? [],
       setTechStackDomains,
       isTechStackLoading: techStackQuery.isLoading,
-      repos: reposQuery.data ?? [],
+      repos: reposQuery.data ?? EMPTY_PORTFOLIO_REPOS,
       setRepos,
       isReposLoading: reposQuery.isLoading,
       mileageItems: mileageQuery.data ?? [],
