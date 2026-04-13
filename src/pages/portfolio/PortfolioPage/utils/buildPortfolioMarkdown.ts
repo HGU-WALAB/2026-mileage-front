@@ -90,7 +90,7 @@ function sectionRepos(repos: RepoItem[]): string {
   if (visible.length === 0) return '';
   const title = SECTION_TITLES.repo;
   const items = visible.map(r => {
-    const name = r.custom_title ?? r.name;
+    const name = r.custom_title ?? r.github_title ?? r.name;
     const desc = r.description ? ` - ${r.description}` : '';
     const lang = r.languages.length > 0 ? ` (${r.languages.join(', ')})` : '';
     return `- **${escapeMarkdown(name)}**${escapeMarkdown(desc)}${escapeMarkdown(lang)}`;

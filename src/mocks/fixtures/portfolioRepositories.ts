@@ -9,7 +9,7 @@ export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
   //   github_description: 'Spring Boot 기반 REST API 서버',
   //   is_visible: true,
   //   display_order: 0,
-  //   name: 'spring-boot-api',
+  //   github_title: 'spring-boot-api',
   //   html_url: 'https://github.com/user/spring-boot-api',
   //   language: 'Java',
   //   languages: [
@@ -33,7 +33,7 @@ export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
   //   github_description: 'React 기반 관리자 대시보드',
   //   is_visible: true,
   //   display_order: 1,
-  //   name: 'react-dashboard',
+  //   github_title: 'react-dashboard',
   //   html_url: 'https://github.com/user/react-dashboard',
   //   language: 'JavaScript',
   //   languages: [
@@ -57,7 +57,7 @@ export const mockPortfolioRepositories: PortfolioRepositoryItem[] = [
   //   github_description: 'ML 학습 및 실험 기록',
   //   is_visible: false,
   //   display_order: 2,
-  //   name: 'machine-learning-study',
+  //   github_title: 'machine-learning-study',
   //   html_url: 'https://github.com/user/machine-learning-study',
   //   language: 'Python',
   //   languages: [{ name: 'Python', percentage: 100 }],

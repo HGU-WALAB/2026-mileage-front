@@ -40,6 +40,8 @@ interface RepoSelectModalProps {
 const REPOS_PER_PAGE = 10;
 /** 정렬 UI 제거 시 API 기본 정렬 */
 const DEFAULT_REPO_LIST_SORT = 'updated' as const;
+/** 입력 디바운스 후 GET `search` 반영 (ms) */
+const SEARCH_DEBOUNCE_MS = 200;
 
 const VISIBILITY_OPTIONS = [
   { label: 'all', value: 'all' },
@@ -47,11 +49,15 @@ const VISIBILITY_OPTIONS = [
   { label: 'Private', value: 'private' },
 ] as const;
 
-const AFFILIATION_OPTIONS = [
-  { label: 'owner', value: 'owner' },
-  { label: '협업 레포', value: 'collaborator' },
-  { label: '조직 레포', value: 'organization_member' },
-] as const;
+function portfolioRepoListTitle(repo: PortfolioRepositoryItem): string {
+  if (repo.custom_title != null && repo.custom_title.trim() !== '') {
+    return repo.custom_title.trim();
+  }
+  if (repo.github_title != null && repo.github_title.trim() !== '') {
+    return repo.github_title.trim();
+  }
+  return String(repo.repo_id);
+}
 
 const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const theme = useTheme();
@@ -64,11 +70,10 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  /** 디바운스(또는 검색 버튼·Enter 즉시) 확정값 → queryParams.search */
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [visibilityFilter, setVisibilityFilter] = useState<string>(
     VISIBILITY_OPTIONS[0].label,
-  );
-  const [affiliationFilter, setAffiliationFilter] = useState<string>(
-    AFFILIATION_OPTIONS[0].label,
   );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -85,23 +90,44 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   // 모달이 열리자마자 백그라운드에서 전체 레포 프리페치 시작
   // 확인 클릭 시 이미 완료된 Promise를 재사용해 대기 시간 최소화
   const allReposPromiseRef = useRef<Promise<PortfolioRepositoryItem[]> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const queryParams = useMemo(() => {
     const sort = DEFAULT_REPO_LIST_SORT;
     const visibility =
       VISIBILITY_OPTIONS.find(option => option.label === visibilityFilter)
         ?.value ?? VISIBILITY_OPTIONS[0].value;
-    const affiliation =
-      AFFILIATION_OPTIONS.find(option => option.label === affiliationFilter)
-        ?.value ?? AFFILIATION_OPTIONS[0].value;
-    return { sort, visibility, affiliation };
-  }, [visibilityFilter, affiliationFilter]);
+    const search =
+      appliedSearch.trim() === '' ? undefined : appliedSearch.trim();
+    return { sort, visibility, search };
+  }, [visibilityFilter, appliedSearch]);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = window.setTimeout(() => {
+      setAppliedSearch(searchQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [searchQuery, open]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [appliedSearch]);
+
+  /** 디바운스 기다리지 않고 즉시 검색(Enter·버튼) */
+  const runSearch = useCallback(() => {
+    if (loading) return;
+    setAppliedSearch(searchQuery.trim());
+    setPage(1);
+    queueMicrotask(() => searchInputRef.current?.focus());
+  }, [searchQuery, loading]);
 
   useLayoutEffect(() => {
     if (!open) return;
     setPage(1);
     setLoadedRepoById(new Map());
     setSearchQuery('');
+    setAppliedSearch('');
     setSelectedIds(
       new Set(
         portfolioReposRef.current.filter(r => r.is_visible).map(r => r.repo_id),
@@ -124,14 +150,14 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    const { sort, visibility, affiliation } = queryParams;
+    const { sort, visibility, search } = queryParams;
 
     getRepositories({
       page,
       per_page: REPOS_PER_PAGE,
       sort,
       visibility,
-      affiliation,
+      search,
     })
       .then(res => {
         const list = res.repositories ?? [];
@@ -216,18 +242,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     onClose();
   }, [submitting, refreshing, onClose]);
 
-  const filteredRepos = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return pageRepos;
-    return pageRepos.filter(
-      r =>
-        (r.name ?? '').toLowerCase().includes(q) ||
-        (r.custom_title?.toLowerCase().includes(q) ?? false) ||
-        (r.description?.toLowerCase().includes(q) ?? false) ||
-        (r.github_description?.toLowerCase().includes(q) ?? false),
-    );
-  }, [pageRepos, searchQuery]);
-
   const selectedRepos = useMemo(() => {
     return [...selectedIds]
       .map(id => {
@@ -238,7 +252,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           return {
             repo_id: pr.repo_id,
             custom_title: pr.custom_title,
-            name: pr.name,
+            github_title: pr.github_title,
             description: pr.description,
             github_description: pr.github_description,
             is_visible: pr.is_visible,
@@ -256,7 +270,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
         return {
           repo_id: id,
           custom_title: null,
-          name: String(id),
+          github_title: '',
           description: '',
           github_description: '',
           is_visible: false,
@@ -279,11 +293,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     setVisibilityFilter(label);
     setPage(1);
   }, []);
-  const setAffiliationFilterAndResetPage = useCallback((label: string) => {
-    setAffiliationFilter(label);
-    setPage(1);
-  }, []);
-
   const selectedCount = selectedIds.size;
 
   return (
@@ -328,52 +337,59 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
             style={{ flexShrink: 0, marginLeft: 'auto' }}
           />
         </Flex.Row>
-        {!loading && (
-          <S.FilterBar>
-            <Flex.Row gap="0.5rem" align="center" style={{ flexShrink: 0 }}>
-              <Input
-                placeholder="레포지토리 검색..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  maxWidth: '20rem',
-                  backgroundColor:
-                    theme.palette.variant?.default ?? theme.palette.grey[50],
-                }}
-                inputProps={{ 'aria-label': '레포지토리 검색' }}
+        <S.FilterBar>
+          <Flex.Row gap="0.5rem" align="center" style={{ flexShrink: 0 }}>
+            <Input
+              placeholder="레포지토리 검색..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  runSearch();
+                }
+              }}
+              inputRef={searchInputRef}
+              style={{
+                width: '100%',
+                maxWidth: '20rem',
+                backgroundColor:
+                  theme.palette.variant?.default ?? theme.palette.grey[50],
+              }}
+              inputProps={{ 'aria-label': '레포지토리 검색' }}
+            />
+            <S.SearchButton
+              type="button"
+              aria-label="검색"
+              disabled={loading}
+              onMouseDown={e => {
+                if (!loading) e.preventDefault();
+              }}
+              onClick={runSearch}
+            >
+              <SearchIcon />
+            </S.SearchButton>
+          </Flex.Row>
+          <S.FilterDropdowns>
+            <Flex.Row
+              align="center"
+              justify="flex-end"
+              wrap="wrap"
+              gap="0.75rem"
+              style={{ flex: '1 1 auto', minWidth: 0 }}
+            >
+              <Dropdown
+                label="접근 권한"
+                items={VISIBILITY_OPTIONS.map(option => option.label)}
+                selectedItem={visibilityFilter}
+                setSelectedItem={setVisibilityFilterAndResetPage}
+                width="7rem"
+                disabled={loading}
               />
-              <S.SearchButton type="button" aria-label="검색">
-                <SearchIcon />
-              </S.SearchButton>
             </Flex.Row>
-            <S.FilterDropdowns>
-              <Flex.Row
-                align="center"
-                justify="flex-end"
-                wrap="wrap"
-                gap="0.75rem"
-                style={{ flex: '1 1 auto', minWidth: 0 }}
-              >
-                <Dropdown
-                  label="접근 권한"
-                  items={VISIBILITY_OPTIONS.map(option => option.label)}
-                  selectedItem={visibilityFilter}
-                  setSelectedItem={setVisibilityFilterAndResetPage}
-                  width="7rem"
-                />
-                <Dropdown
-                  label="소유 유형"
-                  items={AFFILIATION_OPTIONS.map(option => option.label)}
-                  selectedItem={affiliationFilter}
-                  setSelectedItem={setAffiliationFilterAndResetPage}
-                  width="8.5rem"
-                />
-              </Flex.Row>
-            </S.FilterDropdowns>
-          </S.FilterBar>
-        )}
-        {!loading && selectedRepos.length > 0 && (
+          </S.FilterDropdowns>
+        </S.FilterBar>
+        {selectedRepos.length > 0 && (
           <S.SelectedTags wrap="wrap" gap="0.5rem">
             {selectedRepos.map(repo => (
               <S.SelectedTag
@@ -384,9 +400,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                   e.stopPropagation();
                   toggleRepo(repo.repo_id);
                 }}
-                aria-label={`${(repo.custom_title?.trim() && repo.custom_title) || repo.name || repo.repo_id} 선택 해제`}
+                aria-label={`${portfolioRepoListTitle(repo)} 선택 해제`}
               >
-                <span>{(repo.custom_title != null && repo.custom_title.trim() !== '') ? repo.custom_title.trim() : (repo.name != null && repo.name.trim() !== '') ? repo.name.trim() : String(repo.repo_id)}</span>
+                <span>{portfolioRepoListTitle(repo)}</span>
                 <S.TagRemove aria-hidden>×</S.TagRemove>
               </S.SelectedTag>
             ))}
@@ -410,14 +426,14 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           ) : (
           <>
           <S.List>
-            {filteredRepos.length === 0 ? (
+            {pageRepos.length === 0 ? (
               <S.EmptyHint>
-                {searchQuery.trim()
-                  ? '이 페이지에서 검색 결과가 없습니다.'
+                {appliedSearch.trim()
+                  ? '검색 결과가 없습니다.'
                   : '표시할 레포지토리가 없습니다.'}
               </S.EmptyHint>
             ) : (
-            filteredRepos.map(repo => (
+            pageRepos.map(repo => (
               <S.Row
                 key={repo.repo_id}
                 role="button"
@@ -453,11 +469,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                         color: theme.palette.text.primary,
                       }}
                     >
-                      {(repo.custom_title != null && repo.custom_title.trim() !== '')
-                        ? repo.custom_title.trim()
-                        : (repo.name != null && repo.name.trim() !== '')
-                          ? repo.name.trim()
-                          : String(repo.repo_id)}
+                      {portfolioRepoListTitle(repo)}
                     </S.RepoNameLink>
                   ) : (
                     <Text
@@ -468,11 +480,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
                         color: theme.palette.text.primary,
                       }}
                     >
-                      {(repo.custom_title != null && repo.custom_title.trim() !== '')
-                        ? repo.custom_title.trim()
-                        : (repo.name != null && repo.name.trim() !== '')
-                          ? repo.name.trim()
-                          : String(repo.repo_id)}
+                      {portfolioRepoListTitle(repo)}
                     </Text>
                   )}
                   {repo.description && (
@@ -703,9 +711,13 @@ const S = {
     padding: 0.8rem 1.25rem;
     cursor: pointer;
     color: ${palette.white};
-    &:hover,
-    &:active {
+    &:hover:not(:disabled),
+    &:active:not(:disabled) {
       background-color: ${palette.blue600};
+    }
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
   `,
   ListWrap: styled('div')`

@@ -43,6 +43,29 @@ const repositoriesStore: PortfolioRepositoryItem[] = mockPortfolioRepositories.m
 );
 let nextRepoId = Math.max(0, ...repositoriesStore.map(r => r.id)) + 1;
 
+function mockRepositoryMatchesSearch(
+  r: PortfolioRepositoryItem,
+  searchRaw: string | null,
+): boolean {
+  if (searchRaw == null || searchRaw.trim() === '') return true;
+  const tokens = searchRaw.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const langNames = (r.languages ?? []).map(l => (l.name ?? '').toLowerCase());
+  const parts = [
+    r.github_title,
+    r.owner,
+    r.html_url,
+    r.description,
+    r.github_description ?? '',
+    r.custom_title ?? '',
+    r.language ?? '',
+    ...langNames,
+    String(r.repo_id),
+  ];
+  const haystack = parts.join(' ').toLowerCase();
+  return tokens.every(t => haystack.includes(t.toLowerCase()));
+}
+
 function getMockPortfolioState() {
   const g = globalThis as unknown as {
     __mockPortfolioState?: { repoSelectionReset?: boolean };
@@ -538,7 +561,7 @@ export const PortfolioHandlers = [
       url.searchParams.get('visible_only') === 'true' ? true : undefined;
     const sortParam = url.searchParams.get('sort') ?? 'updated';
     const visibilityParam = url.searchParams.get('visibility') ?? 'all';
-    const affiliationParam = url.searchParams.get('affiliation') ?? 'owner';
+    const searchParam = url.searchParams.get('search');
 
     const resetSelection = Boolean(getMockPortfolioState().repoSelectionReset);
     let list = resetSelection
@@ -553,11 +576,7 @@ export const PortfolioHandlers = [
       list = list.filter(r => r.visibility === visibilityParam);
     }
 
-    // affiliationParam 은 실제로는 GitHub API에서만 의미가 있지만,
-    // 목 환경에서는 모든 레포지토리를 동일하게 취급합니다.
-    if (affiliationParam === 'owner') {
-      // 기본 mock 데이터가 모두 owner 라고 가정하고 추가 필터는 적용하지 않습니다.
-    }
+    list = list.filter(r => mockRepositoryMatchesSearch(r, searchParam));
 
     const sorted = [...list].sort((a, b) => {
       switch (sortParam) {
@@ -567,7 +586,7 @@ export const PortfolioHandlers = [
           // mock 데이터에는 pushed_at 이 없으므로 updated_at 기준으로 정렬
           return b.updated_at.localeCompare(a.updated_at);
         case 'full_name':
-          return a.name.localeCompare(b.name);
+          return a.github_title.localeCompare(b.github_title);
         case 'updated':
         default:
           return b.updated_at.localeCompare(a.updated_at);
@@ -594,7 +613,7 @@ export const PortfolioHandlers = [
         github_description: existing?.github_description ?? '',
         is_visible: item.is_visible ?? true,
         display_order: index,
-        name: existing?.name ?? '',
+        github_title: existing?.github_title ?? '',
         html_url: existing?.html_url ?? '',
         language: existing?.language ?? '',
         languages: existing?.languages ?? [],

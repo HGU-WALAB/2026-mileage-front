@@ -85,7 +85,11 @@ export function portfolioRepoToRepoItem(p: PortfolioRepositoryItem): RepoItem {
     custom_title: p.custom_title,
     is_visible: p.is_visible,
     display_order: p.display_order,
-    name: nonEmpty(p.name) ?? nonEmpty(p.custom_title) ?? String(p.repo_id),
+    github_title: nonEmpty(p.github_title) ?? '',
+    name:
+      nonEmpty(p.github_title) ??
+      nonEmpty(p.custom_title) ??
+      String(p.repo_id),
     description: p.description ?? '',
     github_description: p.github_description ?? '',
     created_at: p.created_at ?? '',
@@ -112,6 +116,8 @@ export function mergePortfolioRepoPatch(
   return {
     ...prev,
     ...next,
+    github_title:
+      next.github_title !== '' ? next.github_title : prev.github_title,
     languages: next.languages.length > 0 ? next.languages : prev.languages,
     languageBreakdown:
       next.languageBreakdown != null && next.languageBreakdown.length > 0

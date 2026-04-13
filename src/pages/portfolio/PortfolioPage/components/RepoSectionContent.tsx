@@ -50,7 +50,7 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     setEditTitle(
       (repo.custom_title != null && repo.custom_title.trim() !== '')
         ? repo.custom_title.trim()
-        : repo.name,
+        : repo.github_title || repo.name,
     );
     setEditDescription(repo.description ?? '');
   }, []);
@@ -66,7 +66,8 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     setSubmitting(true);
     try {
       const res = await patchRepository(editingRepo.id, {
-        custom_title: editTitle.trim() || editingRepo.name,
+        custom_title:
+          editTitle.trim() || editingRepo.github_title || editingRepo.name,
         description: editDescription.trim(),
         is_visible: editingRepo.is_visible,
         display_order: editingRepo.display_order ?? 0,
@@ -136,16 +137,14 @@ const RepoSectionContent = ({ readOnly = false }: RepoSectionContentProps) => {
     return connectCard;
   }
 
-  const displayName = (repo: {
-    custom_title: string | null;
-    name: string;
-    repo_id: number;
-  }) =>
+  const displayName = (repo: RepoItem) =>
     (repo.custom_title != null && repo.custom_title.trim() !== '')
       ? repo.custom_title.trim()
-      : (repo.name != null && repo.name.trim() !== '')
-        ? repo.name.trim()
-        : String(repo.repo_id);
+      : (repo.github_title != null && repo.github_title.trim() !== '')
+        ? repo.github_title.trim()
+        : (repo.name != null && repo.name.trim() !== '')
+          ? repo.name.trim()
+          : String(repo.repo_id);
 
   const displayDescription = (repo: RepoItem) => {
     const custom = (repo.description ?? '').trim();
