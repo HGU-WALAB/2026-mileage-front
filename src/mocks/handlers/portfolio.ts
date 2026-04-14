@@ -597,9 +597,14 @@ export const PortfolioHandlers = [
     const body = (await request.json()) as PutRepositoryItem[];
     getMockPortfolioState().repoSelectionReset = false;
     const byRepoId = new Map(repositoriesStore.map(r => [r.repo_id, r]));
+    const warnings: string[] = [];
+    const skipped: string[] = [];
     repositoriesStore.length = 0;
     body.forEach((item, index) => {
       const existing = byRepoId.get(item.repo_id);
+      if (!existing) {
+        skipped.push(`repo_id=${item.repo_id} (캐시에 없음)`);
+      }
       repositoriesStore.push({
         id: existing?.id ?? nextRepoId++,
         repo_id: item.repo_id,
@@ -625,10 +630,10 @@ export const PortfolioHandlers = [
       nextRepoId =
         Math.max(...repositoriesStore.map(r => r.id), nextRepoId) + 1;
     }
-    const sorted = [...repositoriesStore].sort(
-      (a, b) => a.display_order - b.display_order,
-    );
-    return HttpResponse.json({ repositories: sorted }, { status: 200 });
+    if (skipped.length > 0) {
+      warnings.push('일부 레포는 동기화에서 제외되었습니다.');
+    }
+    return HttpResponse.json({ warnings, skipped }, { status: 200 });
   }),
 
   http.patch(

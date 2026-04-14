@@ -44,6 +44,12 @@ export interface RepositoriesResponse {
   repositories: PortfolioRepositoryItem[];
 }
 
+/** PUT /api/portfolio/repositories — 표시 설정 일괄 동기화 응답 */
+export interface PutRepositoriesSyncResponse {
+  warnings?: string[];
+  skipped?: string[];
+}
+
 /** POST /api/portfolio/repositories/github-cache/refresh 응답 */
 export interface GithubRepositoriesCacheRefreshResponse {
   reposSynced: number;
@@ -136,10 +142,10 @@ export const getAllRepositories = async (
 
 /** 활동 요약 - 포트폴리오 레포지토리 전체 교체 (PUT) */
 export const putRepositories = async (body: PutRepositoryItem[]) => {
-  const response = await http.put<PutRepositoryItem[], RepositoriesResponse>(
-    ENDPOINT.PORTFOLIO_REPOSITORIES,
-    body,
-  );
+  const response = await http.put<
+    PutRepositoryItem[],
+    PutRepositoriesSyncResponse
+  >(ENDPOINT.PORTFOLIO_REPOSITORIES, body);
   return response;
 };
 

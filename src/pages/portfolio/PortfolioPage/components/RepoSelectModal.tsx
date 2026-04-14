@@ -282,8 +282,9 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           });
         }
       }
-      const res = await putRepositories(putBody);
-      setRepos((res.repositories ?? []).map(portfolioRepoToRepoItem));
+      await putRepositories(putBody);
+      const visible = await getAllRepositories({ visible_only: true });
+      setRepos((visible ?? []).map(portfolioRepoToRepoItem));
       toast.success('변경사항이 저장되었습니다.', {
         position: 'top-center',
       });
@@ -376,7 +377,7 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
               minWidth: 'min(100%, 12rem)',
             }}
           >
-            포트폴리오에 추가할 레포지토리를 선택하세요.
+            포트폴리오에 추가할 레포지토리를 선택하세요. 기여하지 않은 레포지토리는 자동으로 제외됩니다.
           </Text>
           <Button
             label="레포지토리 목록 업데이트"
