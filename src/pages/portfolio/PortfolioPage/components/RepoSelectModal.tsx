@@ -107,9 +107,13 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       appliedSearch.trim() === '' ? undefined : appliedSearch.trim();
     const ownerRaw = selectedOwner.trim();
     const owner =
-      ownerRaw === '' || ownerRaw === SELF_OWNER_TOKEN ? undefined : ownerRaw;
+      ownerRaw === ''
+        ? undefined
+        : ownerRaw === SELF_OWNER_TOKEN
+          ? githubUsername.trim() || undefined
+          : ownerRaw;
     return { search, owner };
-  }, [appliedSearch, selectedOwner]);
+  }, [appliedSearch, selectedOwner, githubUsername]);
 
   useEffect(() => {
     if (!open) return;
@@ -542,23 +546,21 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           <>
           <S.List>
             {pageRepos.length === 0 ? (
-              appliedSearch.trim() ? (
-                <S.EmptyHint>검색 결과가 없습니다.</S.EmptyHint>
-              ) : (
-                <S.EmptyState
-                  width="100%"
-                  height="100%"
-                  justify="center"
-                  align="center"
-                  gap="0.75rem"
-                  style={{ minHeight: 180 }}
-                >
-                  <EmptyBoxImg width={72} height={72} />
-                  <Heading as="h3" style={{ color: theme.palette.grey300 }}>
-                    표시할 레포지토리가 없습니다
-                  </Heading>
-                </S.EmptyState>
-              )
+              <S.EmptyState
+                width="100%"
+                height="100%"
+                justify="center"
+                align="center"
+                gap="0.75rem"
+                style={{ minHeight: 180 }}
+              >
+                <EmptyBoxImg width={72} height={72} />
+                <Heading as="h3" style={{ color: theme.palette.grey300 }}>
+                  {appliedSearch.trim()
+                    ? '검색 결과가 없습니다'
+                    : '표시할 레포지토리가 없습니다'}
+                </Heading>
+              </S.EmptyState>
             ) : (
             pageRepos.map(repo => (
               <S.Row
