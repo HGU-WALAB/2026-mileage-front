@@ -1,5 +1,5 @@
 import { LoadingIcon, SearchIcon } from '@/assets';
-import { Button, Dropdown, Flex, Input, Modal, Text } from '@/components';
+import { Button, Flex, Input, Modal, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import type { PortfolioRepositoryItem, PutRepositoryItem } from '../../apis/portfolio';
 import {
@@ -38,16 +38,8 @@ interface RepoSelectModalProps {
 
 /** 목록은 페이지당 10건 GET, 확인 시에만 전체 페이지를 순회해 PUT (서버 스키마 유지) */
 const REPOS_PER_PAGE = 10;
-/** 정렬 UI 제거 시 API 기본 정렬 */
-const DEFAULT_REPO_LIST_SORT = 'updated' as const;
 /** 입력 디바운스 후 GET `search` 반영 (ms) */
 const SEARCH_DEBOUNCE_MS = 200;
-
-const VISIBILITY_OPTIONS = [
-  { label: 'all', value: 'all' },
-  { label: 'Public', value: 'public' },
-  { label: 'Private', value: 'private' },
-] as const;
 
 function portfolioRepoListTitle(repo: PortfolioRepositoryItem): string {
   if (repo.custom_title != null && repo.custom_title.trim() !== '') {
@@ -72,9 +64,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   /** 디바운스(또는 검색 버튼·Enter 즉시) 확정값 → queryParams.search */
   const [appliedSearch, setAppliedSearch] = useState('');
-  const [visibilityFilter, setVisibilityFilter] = useState<string>(
-    VISIBILITY_OPTIONS[0].label,
-  );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   /** 확인 클릭 후: 전체 목록 fetch → PUT 저장 단계 구분(오버레이 문구) */
@@ -97,14 +86,10 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const queryParams = useMemo(() => {
-    const sort = DEFAULT_REPO_LIST_SORT;
-    const visibility =
-      VISIBILITY_OPTIONS.find(option => option.label === visibilityFilter)
-        ?.value ?? VISIBILITY_OPTIONS[0].value;
     const search =
       appliedSearch.trim() === '' ? undefined : appliedSearch.trim();
-    return { sort, visibility, search };
-  }, [visibilityFilter, appliedSearch]);
+    return { search };
+  }, [appliedSearch]);
 
   useEffect(() => {
     if (!open) return;
@@ -148,15 +133,13 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   }, [open, portfolioRepos]);
 
   // 모달이 열리거나 캐시가 갱신되면 백그라운드에서 전체 레포 프리페치
-  // visibility: 'all' 명시 + 검색 필터 없이 전체를 가져와야 PUT body가 완전해짐
+  // 검색 필터 없이 전체를 가져와야 PUT body가 완전해짐
   useEffect(() => {
     if (!open) {
       allReposPromiseRef.current = null;
       return;
     }
     allReposPromiseRef.current = getAllRepositories({
-      sort: DEFAULT_REPO_LIST_SORT,
-      visibility: 'all',
       perPage: REPOS_PER_PAGE,
     });
   }, [open, listVersion]);
@@ -164,13 +147,11 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    const { sort, visibility, search } = queryParams;
+    const { search } = queryParams;
 
     getRepositories({
       page,
       per_page: REPOS_PER_PAGE,
-      sort,
-      visibility,
       search,
     })
       .then(res => {
@@ -197,8 +178,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
       await postGithubRepositoriesCacheRefresh();
       setListVersion(v => v + 1);
       allReposPromiseRef.current = getAllRepositories({
-        sort: DEFAULT_REPO_LIST_SORT,
-        visibility: 'all',
         perPage: REPOS_PER_PAGE,
       });
       toast.success('레포지토리 목록을 최신화했습니다.', {
@@ -227,10 +206,8 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
     // 상태 반영·로딩 오버레이가 한 프레임 그려진 뒤 네트워크 대기 (미표시 방지)
     await Promise.resolve();
     try {
-      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용 (visibility:'all', 검색 없이 전체 레포)
+      // 이미 백그라운드에서 시작된 프리페치 Promise를 재사용 (검색 없이 전체 레포)
       const fullList = await (allReposPromiseRef.current ?? getAllRepositories({
-        sort: DEFAULT_REPO_LIST_SORT,
-        visibility: 'all',
         perPage: REPOS_PER_PAGE,
       }));
       setSubmitPhase('save');
@@ -320,11 +297,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
 
   const hasPrevPage = page > 1;
   const hasNextPage = pageRepos.length >= REPOS_PER_PAGE;
-
-  const setVisibilityFilterAndResetPage = useCallback((label: string) => {
-    setVisibilityFilter(label);
-    setPage(1);
-  }, []);
   const selectedCount = selectedIds.size;
 
   return (
@@ -402,24 +374,6 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
               <SearchIcon />
             </S.SearchButton>
           </Flex.Row>
-          <S.FilterDropdowns>
-            <Flex.Row
-              align="center"
-              justify="flex-end"
-              wrap="wrap"
-              gap="0.75rem"
-              style={{ flex: '1 1 auto', minWidth: 0 }}
-            >
-              <Dropdown
-                label="접근 권한"
-                items={VISIBILITY_OPTIONS.map(option => option.label)}
-                selectedItem={visibilityFilter}
-                setSelectedItem={setVisibilityFilterAndResetPage}
-                width="7rem"
-                disabled={loading}
-              />
-            </Flex.Row>
-          </S.FilterDropdowns>
         </S.FilterBar>
         {selectedRepos.length > 0 && (
           <S.SelectedTags wrap="wrap" gap="0.5rem">
@@ -722,15 +676,6 @@ const S = {
     flex-wrap: wrap;
     gap: 0.75rem;
     width: 100%;
-  `,
-  FilterDropdowns: styled('div')`
-    flex: 1 1 auto;
-    min-width: 0;
-    display: flex;
-    justify-content: flex-end;
-    @media (max-width: 429px) {
-      display: none;
-    }
   `,
   SearchButton: styled('button')`
     display: flex;
