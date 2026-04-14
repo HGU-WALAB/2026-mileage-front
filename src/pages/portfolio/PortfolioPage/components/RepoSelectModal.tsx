@@ -1,5 +1,6 @@
 import { LoadingIcon, SearchIcon } from '@/assets';
-import { Button, Flex, Input, Modal, Text } from '@/components';
+import EmptyBoxImg from '@/assets/imgs/emptyBox.svg?react';
+import { Button, Flex, Heading, Input, Modal, Text } from '@/components';
 import { palette } from '@/styles/palette';
 import type { GitHubOrgItem } from '@/pages/profile/types/github';
 import { getGitHubOrgs, readGitHubNameFromStorage } from '@/pages/profile/apis/github';
@@ -541,11 +542,23 @@ const RepoSelectModal = ({ open, onClose }: RepoSelectModalProps) => {
           <>
           <S.List>
             {pageRepos.length === 0 ? (
-              <S.EmptyHint>
-                {appliedSearch.trim()
-                  ? '검색 결과가 없습니다.'
-                  : '표시할 레포지토리가 없습니다.'}
-              </S.EmptyHint>
+              appliedSearch.trim() ? (
+                <S.EmptyHint>검색 결과가 없습니다.</S.EmptyHint>
+              ) : (
+                <S.EmptyState
+                  width="100%"
+                  height="100%"
+                  justify="center"
+                  align="center"
+                  gap="0.75rem"
+                  style={{ minHeight: 180 }}
+                >
+                  <EmptyBoxImg width={72} height={72} />
+                  <Heading as="h3" style={{ color: theme.palette.grey300 }}>
+                    표시할 레포지토리가 없습니다
+                  </Heading>
+                </S.EmptyState>
+              )
             ) : (
             pageRepos.map(repo => (
               <S.Row
@@ -878,6 +891,10 @@ const S = {
     text-align: center;
     color: ${({ theme }) => theme.palette.grey[600]};
     font-size: 0.875rem;
+  `,
+  EmptyState: styled(Flex.Column)`
+    padding: 1.5rem 1rem;
+    box-sizing: border-box;
   `,
   PaginationBar: styled(Flex.Row)`
     flex-shrink: 0;
